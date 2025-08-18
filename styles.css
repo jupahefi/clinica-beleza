@@ -393,3 +393,253 @@ input.success:focus {
 .mt-2 { 
   margin-top: 1rem; 
 }
+
+/* === SESIONES ESPECÍFICAS === */
+.sesion-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.sesion-item:hover {
+  background: #f8f9fa;
+  border-color: #2563eb;
+}
+
+.sesion-hora {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #2563eb;
+  min-width: 60px;
+}
+
+.sesion-info {
+  flex: 1;
+}
+
+.sesion-acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* Buscador de Cliente */
+.buscador-container {
+  position: relative;
+}
+
+.resultado-busqueda {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.resultado-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.resultado-item:hover {
+  background: #f8f9fa;
+}
+
+.resultado-item:last-child {
+  border-bottom: none;
+}
+
+/* Ventas Disponibles */
+.venta-item {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.venta-item:hover {
+  background: #f8f9fa;
+  border-color: #2563eb;
+}
+
+.venta-item.selected {
+  background: #eff6ff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.venta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.sesiones-badge {
+  background: #2563eb;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.venta-progreso {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Plan de Sesiones */
+.plan-sesiones-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.plan-sesion-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.plan-sesion-item span {
+  flex: 1;
+  font-weight: 500;
+}
+
+.plan-sesion-item input[type="time"] {
+  width: 120px;
+}
+
+.plan-acciones {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Boxes/Salas */
+.box-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.box-item.disponible {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.box-item.ocupado {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.box-estado {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.box-item.disponible .box-estado {
+  color: #22c55e;
+}
+
+.box-item.ocupado .box-estado {
+  color: #ef4444;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Responsive para sesiones */
+@media (max-width: 768px) {
+  .sesion-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .sesion-acciones {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .plan-sesion-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .plan-sesion-item input[type="time"] {
+    width: 100%;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .box-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

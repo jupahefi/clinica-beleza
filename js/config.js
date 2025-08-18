@@ -153,8 +153,28 @@ export const ESTADOS = {
   },
   SESION: {
     AGENDADA: 'agendada',
+    CONFIRMADA: 'confirmada',
     EN_CURSO: 'en_curso',
     COMPLETADA: 'completada',
     CANCELADA: 'cancelada'
   }
 };
+
+/**
+ * Configuración de Google Calendar
+ */
+export const GOOGLE_CALENDAR_CONFIG = {
+  API_KEY: 'AIzaSyAECI_Mw6EfVm7sylQTg9dPJ_cxlMVttbw',
+  CALENDAR_ID: 'primary', // Se puede cambiar por un calendario específico
+  SCOPES: ['https://www.googleapis.com/auth/calendar'],
+  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
+};
+
+/**
+ * Configuración de boxes/salas
+ */
+export const BOXES_CONFIG = [
+  { id: 1, nombre: 'Box 1', disponible: true },
+  { id: 2, nombre: 'Box 2', disponible: true },
+  { id: 3, nombre: 'Box 3', disponible: true }
+];
