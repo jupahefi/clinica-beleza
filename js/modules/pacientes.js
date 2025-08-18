@@ -293,7 +293,7 @@ function formatearRutTiempoReal(event) {
     const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     rutFormateado = `${cuerpoFormateado}-${dv}`;
   } else if (soloNumeros.length === 9) {
-    // RUT con 9 dígitos (ej: 177048410)
+    // RUT con 9 dígitos (ej: 183648276)
     const cuerpo = soloNumeros.slice(0, 8);  // Primeros 8 dígitos
     const dv = soloNumeros.slice(8).toUpperCase();  // Último dígito
     const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
