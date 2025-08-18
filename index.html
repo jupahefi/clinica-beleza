@@ -44,12 +44,13 @@
         <img src="logo.png?v=3.1" alt="Clínica Beleza Logo">
         <span class="logo-text">Clínica Beleza</span>
       </a>
-      <button class="nav-btn active">Fichas</button>
-      <button class="nav-btn">Ventas</button>
-      <button class="nav-btn">Pagos</button>
-      <button class="nav-btn">Sesiones</button>
-      <button class="nav-btn">Ofertas</button>
-      <button class="nav-btn">Historial</button>
+      <button class="nav-btn active" onclick="showView('ficha')">Fichas</button>
+      <button class="nav-btn" onclick="showView('ventas')">Ventas</button>
+      <button class="nav-btn" onclick="showView('pagos')">Pagos</button>
+      <button class="nav-btn" onclick="showView('sesiones')">Sesiones</button>
+      <button class="nav-btn" onclick="showView('boxes')">Boxes</button>
+      <button class="nav-btn" onclick="showView('ofertas')">Ofertas</button>
+      <button class="nav-btn" onclick="showView('historial')">Historial</button>
     </nav>
   </header>
 
@@ -292,7 +293,6 @@
           </div>
           <div class="form-group">
             <button class="btn btn-secondary" onclick="cargarSesionesHoy()">Hoy</button>
-            <button class="btn btn-primary" onclick="autorizarCalendar()">🔗 Conectar Google Calendar</button>
           </div>
         </div>
 
@@ -354,16 +354,7 @@
         <!-- Se genera dinámicamente -->
       </div>
 
-      <!-- Gestión de Boxes -->
-      <div class="card">
-        <h3>🏢 Gestión de Boxes/Salas</h3>
-        <div id="boxesDisponibles">
-          <!-- Se cargan automáticamente -->
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-secondary" onclick="añadirBox()">➕ Añadir Box</button>
-        </div>
-      </div>
+
 
       <!-- Sesiones Agendadas (Vista Clásica) -->
       <div class="card">
@@ -392,6 +383,54 @@
         <div id="formularioEditarSesion">
           <!-- Contenido dinámico -->
         </div>
+      </div>
+    </div>
+
+    <!-- Vista de Boxes -->
+    <div id="boxes" class="view">
+      <div class="card">
+        <h1>🏢 Gestión de Boxes/Salas</h1>
+        <p>Administra las salas y boxes disponibles para los tratamientos.</p>
+        
+        <div class="form-actions mb-2">
+          <button class="btn btn-primary" onclick="añadirBox()">➕ Añadir Nuevo Box</button>
+        </div>
+        
+        <div id="boxesDisponibles">
+          <!-- Se cargan automáticamente -->
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📊 Estado de Boxes</h3>
+        <div id="estadoBoxes">
+          <!-- Estadísticas de uso -->
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ Configuración de Boxes</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Capacidad Total de Boxes</label>
+            <input type="number" id="capacidadTotal" min="1" max="20" value="3" readonly>
+          </div>
+          <div class="form-group">
+            <label>Boxes Activos</label>
+            <input type="number" id="boxesActivos" readonly>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Horario de Atención</label>
+          <div class="form-row">
+            <input type="time" id="horarioInicio" value="09:00">
+            <span>hasta</span>
+            <input type="time" id="horarioFin" value="18:00">
+          </div>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="guardarConfiguracionBoxes()">💾 Guardar Configuración</button>
       </div>
     </div>
 

@@ -4,7 +4,20 @@
  */
 
 import { generarId, formatearFecha, formatearFechaHora, fechaActualInput, mostrarNotificacion } from '../utils.js';
-import { obtenerVentasPorCliente, obtenerVentaPorId, guardarVenta, guardarSesion, guardarAgenda, obtenerAgenda, obtenerPacientePorId, obtenerPacientes } from '../storage.js';
+import { 
+  obtenerVentasPorCliente, 
+  obtenerVentaPorId, 
+  guardarVenta, 
+  guardarSesion, 
+  obtenerAgenda,
+  obtenerAgendaPorFecha,
+  obtenerPacientePorId, 
+  obtenerPacientes,
+  crearSesionAgendada,
+  iniciarSesionAgendada,
+  completarSesion,
+  obtenerProximasSesionesPorVenta
+} from '../storage.js';
 import { TRATAMIENTOS_CONFIG, ESTADOS, GOOGLE_CALENDAR_CONFIG, BOXES_CONFIG } from '../config.js';
 
 let sesionActual = null;
@@ -59,7 +72,7 @@ function configurarEventosSesiones() {
 }
 
 /**
- * Inicializa Google Calendar API
+ * Inicializa Google Calendar API automáticamente
  */
 async function inicializarGoogleCalendar() {
   try {
@@ -68,7 +81,7 @@ async function inicializarGoogleCalendar() {
       await cargarGoogleAPI();
     }
     
-    await window.gapi.load('client:auth2', inicializarGapiClient);
+    await window.gapi.load('client', inicializarGapiClient);
   } catch (error) {
     console.warn('Error al cargar Google Calendar API:', error);
   }
@@ -88,7 +101,7 @@ function cargarGoogleAPI() {
 }
 
 /**
- * Inicializa el cliente de Google API
+ * Inicializa el cliente de Google API con solo API Key (sin OAuth)
  */
 async function inicializarGapiClient() {
   try {
@@ -99,42 +112,16 @@ async function inicializarGapiClient() {
     
     gapi = window.gapi;
     gapiLoaded = true;
+    isCalendarAuthorized = true; // Con API Key no necesitamos OAuth para lectura
     
-    // Autorizar automáticamente si ya se concedió antes
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (authInstance && authInstance.isSignedIn.get()) {
-      isCalendarAuthorized = true;
-      cargarSesionesHoy();
-    }
-    
-    console.log('Google Calendar API inicializada');
+    console.log('Google Calendar API inicializada con API Key');
+    cargarSesionesHoy();
   } catch (error) {
     console.warn('Error al inicializar Google Calendar:', error);
   }
 }
 
-/**
- * Autoriza acceso a Google Calendar
- */
-export async function autorizarCalendar() {
-  if (!gapiLoaded) {
-    mostrarNotificacion('Google Calendar API no está disponible', 'error');
-    return false;
-  }
-  
-  try {
-    const authInstance = gapi.auth2.getAuthInstance();
-    await authInstance.signIn();
-    isCalendarAuthorized = true;
-    
-    cargarSesionesHoy();
-    mostrarNotificacion('Acceso a Google Calendar autorizado', 'success');
-    return true;
-  } catch (error) {
-    mostrarNotificacion('Error al autorizar Google Calendar: ' + error.message, 'error');
-    return false;
-  }
-}
+
 
 /**
  * Busca cliente para asignar sesión
@@ -271,19 +258,16 @@ function cargarSesionesDelDia() {
   const fechaSelector = document.getElementById('fechaSelector');
   const fecha = fechaSelector.value;
   
-  if (isCalendarAuthorized) {
-    cargarSesionesDelCalendar(fecha);
-  } else {
-    cargarSesionesLocales(fecha);
-  }
+  cargarSesionesDelCalendar(fecha);
 }
 
 /**
  * Carga sesiones desde Google Calendar
  */
 async function cargarSesionesDelCalendar(fecha) {
-  if (!gapiLoaded || !isCalendarAuthorized) {
-    cargarSesionesLocales(fecha);
+  if (!gapiLoaded) {
+    console.log('Esperando inicialización de Google Calendar API...');
+    setTimeout(() => cargarSesionesDelCalendar(fecha), 1000);
     return;
   }
   
@@ -300,37 +284,19 @@ async function cargarSesionesDelCalendar(fecha) {
     });
     
     sesionesHoyCalendar = response.result.items || [];
+    console.log(`✅ Cargados ${sesionesHoyCalendar.length} eventos desde Google Calendar`);
+    
     renderSesionesDelDia(fecha);
   } catch (error) {
-    console.error('Error al cargar eventos del calendario:', error);
-    cargarSesionesLocales(fecha);
+    console.error('❌ Error al cargar eventos del calendario:', error);
+    mostrarNotificacion('Error al conectar con Google Calendar: ' + error.message, 'error');
   }
 }
 
-/**
- * Carga sesiones locales (fallback)
- */
-function cargarSesionesLocales(fecha) {
-  const agenda = obtenerAgenda().filter(a => a.fecha.startsWith(fecha));
-  sesionesHoyCalendar = agenda.map(a => ({
-    id: a.id,
-    summary: `${a.tratamientoNombre} - ${a.pacienteNombre}`,
-    start: { dateTime: a.fecha },
-    description: `Paciente: ${a.pacienteNombre}\nTratamiento: ${a.tratamientoNombre}`,
-    extendedProperties: {
-      private: {
-        ventaId: a.ventaId,
-        pacienteId: a.pacienteId,
-        boxId: a.boxId
-      }
-    }
-  }));
-  
-  renderSesionesDelDia(fecha);
-}
+
 
 /**
- * Renderiza las sesiones del día
+ * Renderiza las sesiones del día ordenadas por timestamp
  */
 function renderSesionesDelDia(fecha) {
   const sesionesDiv = document.getElementById('sesionesHoy');
@@ -339,29 +305,59 @@ function renderSesionesDelDia(fecha) {
   const fechaObj = new Date(fecha);
   const esHoy = fechaObj.toDateString() === new Date().toDateString();
   
-  let html = `<h3>Sesiones ${esHoy ? 'de Hoy' : 'del ' + formatearFecha(fecha)}</h3>`;
+  let html = `<h3>📅 Sesiones ${esHoy ? 'de Hoy' : 'del ' + formatearFecha(fecha)}</h3>`;
   
-  if (sesionesHoyCalendar.length === 0) {
-    html += '<p>No hay sesiones programadas para esta fecha</p>';
+  // Ordenar sesiones por timestamp
+  const sesionesOrdenadas = [...sesionesHoyCalendar].sort((a, b) => {
+    const fechaA = new Date(a.start.dateTime || a.start.date);
+    const fechaB = new Date(b.start.dateTime || b.start.date);
+    return fechaA - fechaB;
+  });
+  
+  if (sesionesOrdenadas.length === 0) {
+    html += '<p class="text-center">📅 No hay sesiones programadas para esta fecha</p>';
   } else {
-    sesionesHoyCalendar.forEach(evento => {
+    sesionesOrdenadas.forEach(evento => {
       const inicio = new Date(evento.start.dateTime || evento.start.date);
       const hora = inicio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       
-      html += `
+      // Extraer información de la sesión
+      const props = evento.extendedProperties?.private || {};
+      const numeroSesion = props.numeroSesion || '?';
+      const totalSesiones = props.totalSesiones || '?';
+      const boxId = props.boxId || '?';
+      
+      // Determinar estado visual
+      let claseEstado = 'status-pending';
+      let iconoEstado = '⏰';
+      
+      if (esHoy) {
+        const ahora = new Date();
+        if (inicio <= ahora) {
+          claseEstado = 'status-completed';
+          iconoEstado = '✅';
+        }
+      }
+    
+    html += `
         <div class="sesion-item">
-          <div class="sesion-hora">${hora}</div>
+          <div class="sesion-hora">
+            ${iconoEstado} ${hora}
+        </div>
           <div class="sesion-info">
             <strong>${evento.summary}</strong><br>
-            <small>${evento.description || ''}</small>
-          </div>
-          <div class="sesion-acciones">
-            <button class="btn btn-sm" onclick="abrirSesion('${evento.id}')">Abrir</button>
-            <button class="btn btn-sm btn-secondary" onclick="editarSesion('${evento.id}')">Editar</button>
-          </div>
+            <small>📋 Sesión ${numeroSesion}/${totalSesiones} • 🏢 Box ${boxId}</small><br>
+            <small class="text-muted">${evento.description?.split('\\n')[0] || ''}</small>
         </div>
-      `;
-    });
+          <div class="sesion-acciones">
+            <button class="btn btn-sm btn-primary" onclick="abrirSesion('${evento.id}')">
+              ${iconoEstado === '✅' ? '▶️ Abrir' : '⏰ Programada'}
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="editarSesion('${evento.id}')">✏️ Editar</button>
+        </div>
+      </div>
+    `;
+  });
   }
   
   sesionesDiv.innerHTML = html;
@@ -692,9 +688,13 @@ async function agendarSesionEnCalendar(fecha, boxId = 1) {
   const tratamiento = TRATAMIENTOS_CONFIG[ventaSeleccionada.tratamientoKey];
   const box = boxesDisponibles.find(b => b.id === boxId) || boxesDisponibles[0];
   
+  // Calcular número de sesión actual
+  const sesionesCompletadas = ventaSeleccionada.sesionesTotales - ventaSeleccionada.sesionesRestantes;
+  const numeroSesion = sesionesCompletadas + 1;
+  
   const evento = {
     summary: `${tratamiento.nombre} - ${pacienteSeleccionadoSesion.nombre}`,
-    description: `Paciente: ${pacienteSeleccionadoSesion.nombre}\nRUT: ${pacienteSeleccionadoSesion.rut}\nTratamiento: ${tratamiento.nombre}\nBox: ${box.nombre}\nProgreso: ${ventaSeleccionada.sesionesTotales - ventaSeleccionada.sesionesRestantes + 1} de ${ventaSeleccionada.sesionesTotales}`,
+    description: `Paciente: ${pacienteSeleccionadoSesion.nombre}\nRUT: ${pacienteSeleccionadoSesion.rut}\nTratamiento: ${tratamiento.nombre}\nBox: ${box.nombre}\nSesión: ${numeroSesion} de ${ventaSeleccionada.sesionesTotales}`,
     start: {
       dateTime: fecha.toISOString(),
       timeZone: 'America/Santiago'
@@ -708,56 +708,33 @@ async function agendarSesionEnCalendar(fecha, boxId = 1) {
         ventaId: ventaSeleccionada.id.toString(),
         pacienteId: pacienteSeleccionadoSesion.id.toString(),
         boxId: boxId.toString(),
-        sesionNumero: (ventaSeleccionada.sesionesTotales - ventaSeleccionada.sesionesRestantes + 1).toString()
+        numeroSesion: numeroSesion.toString(),
+        totalSesiones: ventaSeleccionada.sesionesTotales.toString(),
+        tratamientoKey: ventaSeleccionada.tratamientoKey
       }
     }
   };
   
   try {
-    if (isCalendarAuthorized) {
-      const response = await gapi.client.calendar.events.insert({
-        calendarId: GOOGLE_CALENDAR_CONFIG.CALENDAR_ID,
-        resource: evento
-      });
-      
-      // Guardar también localmente como respaldo
-      const agendamientoLocal = {
-        id: response.result.id,
-        pacienteId: pacienteSeleccionadoSesion.id,
-        pacienteNombre: pacienteSeleccionadoSesion.nombre,
-        ventaId: ventaSeleccionada.id,
-        tratamientoKey: ventaSeleccionada.tratamientoKey,
-        tratamientoNombre: tratamiento.nombre,
-        fecha: fecha.toISOString(),
-        duracion: tratamiento.duracionSesion,
-        boxId,
-        estado: ESTADOS.SESION.AGENDADA,
-        fechaCreacion: new Date().toISOString(),
-        googleEventId: response.result.id
-      };
-      
-      guardarAgenda(agendamientoLocal);
-      
-      mostrarNotificacion('Sesión agendada en Google Calendar', 'success');
-    } else {
-      // Agendar solo localmente
-      const agendamientoLocal = {
-        id: generarId(),
-        pacienteId: pacienteSeleccionadoSesion.id,
-        pacienteNombre: pacienteSeleccionadoSesion.nombre,
-        ventaId: ventaSeleccionada.id,
-        tratamientoKey: ventaSeleccionada.tratamientoKey,
-        tratamientoNombre: tratamiento.nombre,
-        fecha: fecha.toISOString(),
-        duracion: tratamiento.duracionSesion,
-        boxId,
-        estado: ESTADOS.SESION.AGENDADA,
-        fechaCreacion: new Date().toISOString()
-      };
-      
-      guardarAgenda(agendamientoLocal);
-      mostrarNotificacion('Sesión agendada localmente', 'success');
-    }
+    const response = await gapi.client.calendar.events.insert({
+      calendarId: GOOGLE_CALENDAR_CONFIG.CALENDAR_ID,
+      resource: evento
+    });
+    
+    // Crear registro local de la sesión
+    const datosSesion = {
+      clienteId: pacienteSeleccionadoSesion.id,
+      ventaId: ventaSeleccionada.id,
+      fechaHora: fecha.toISOString(),
+      boxId,
+      googleEventId: response.result.id,
+      numeroSesion,
+      totalSesiones: ventaSeleccionada.sesionesTotales
+    };
+    
+    crearSesionAgendada(datosSesion);
+    
+    mostrarNotificacion(`✅ Sesión ${numeroSesion}/${ventaSeleccionada.sesionesTotales} agendada`, 'success');
     
     // Actualizar vistas
     cargarSesionesDelDia();
@@ -780,49 +757,72 @@ window.abrirSesion = async function(eventoId) {
     return;
   }
   
-  // Obtener datos del evento
-  const ventaId = evento.extendedProperties?.private?.ventaId;
-  const pacienteId = evento.extendedProperties?.private?.pacienteId;
+  // Buscar la sesión local correspondiente
+  const sesionesLocales = obtenerAgenda();
+  const sesionLocal = sesionesLocales.find(s => s.googleEventId === eventoId);
   
-  if (!ventaId || !pacienteId) {
-    mostrarNotificacion('Sesión sin datos de venta asociados', 'error');
+  if (!sesionLocal) {
+    mostrarNotificacion('No se encontró la sesión en los registros locales', 'error');
+    return;
+  }
+  
+  // Verificar que no hay otra sesión en curso
+  if (sesionActual) {
+    mostrarNotificacion('Ya hay una sesión en curso. Termínala antes de abrir otra.', 'warning');
     return;
   }
   
   // Mostrar diálogo de confirmación
-  mostrarDialogoConfirmacionSesion(evento, parseInt(ventaId), parseInt(pacienteId));
+  mostrarDialogoConfirmacionSesion(evento, sesionLocal);
 }
 
 /**
  * Muestra diálogo para confirmar apertura de sesión
  */
-function mostrarDialogoConfirmacionSesion(evento, ventaId, pacienteId) {
-  const venta = obtenerVentaPorId(ventaId);
-  const paciente = obtenerPacientePorId(pacienteId);
+function mostrarDialogoConfirmacionSesion(evento, sesionLocal) {
+  const venta = obtenerVentaPorId(sesionLocal.ventaId);
+  const paciente = obtenerPacientePorId(sesionLocal.clienteId);
   
   if (!venta || !paciente) {
     mostrarNotificacion('Error: No se encontraron los datos de la venta o paciente', 'error');
     return;
   }
   
-  const progreso = venta.sesionesTotales - venta.sesionesRestantes + 1;
-  
   const modal = document.getElementById('modalConfirmacionSesion');
   const detalles = document.getElementById('detallesSesionConfirmar');
   
+  // Calcular diferencia de tiempo (planificado vs actual)
+  const horaProgramada = new Date(sesionLocal.fechaProgramada);
+    const ahora = new Date();
+  const diferenciaMins = Math.round((ahora - horaProgramada) / 60000);
+  
+  let estadoPuntualidad = '';
+  if (Math.abs(diferenciaMins) <= 5) {
+    estadoPuntualidad = '<span style="color: green;">✅ A tiempo</span>';
+  } else if (diferenciaMins > 5) {
+    estadoPuntualidad = `<span style="color: orange;">⏰ ${diferenciaMins} min tarde</span>`;
+  } else {
+    estadoPuntualidad = `<span style="color: blue;">⚡ ${Math.abs(diferenciaMins)} min temprano</span>`;
+  }
+  
   detalles.innerHTML = `
-    <h4>Confirmar Apertura de Sesión</h4>
-    <p><strong>Paciente:</strong> ${paciente.nombre}</p>
-    <p><strong>RUT:</strong> ${paciente.rut}</p>
-    <p><strong>Tratamiento:</strong> ${venta.tratamiento}</p>
-    <p><strong>Progreso:</strong> Sesión ${progreso} de ${venta.sesionesTotales}</p>
-    <p><strong>Hora programada:</strong> ${new Date(evento.start.dateTime).toLocaleTimeString()}</p>
-    <p><strong>Sesiones restantes:</strong> ${venta.sesionesRestantes}</p>
+    <h4>🎯 Confirmar Apertura de Sesión</h4>
+    <div class="session-details">
+      <p><strong>👤 Paciente:</strong> ${paciente.nombre}</p>
+      <p><strong>🆔 RUT:</strong> ${paciente.rut}</p>
+      <p><strong>💆 Tratamiento:</strong> ${venta.tratamiento}</p>
+      <p><strong>📊 Progreso:</strong> Sesión ${sesionLocal.numeroSesion} de ${sesionLocal.totalSesiones}</p>
+      <p><strong>🏢 Box:</strong> Box ${sesionLocal.boxId}</p>
+      <p><strong>⏰ Hora programada:</strong> ${horaProgramada.toLocaleTimeString()}</p>
+      <p><strong>🕐 Hora actual:</strong> ${ahora.toLocaleTimeString()}</p>
+      <p><strong>📈 Puntualidad:</strong> ${estadoPuntualidad}</p>
+      <p><strong>📋 Sesiones restantes:</strong> ${venta.sesionesRestantes}</p>
+    </div>
   `;
   
   // Configurar botones
   document.getElementById('btnConfirmarSesion').onclick = () => {
-    confirmarInicioSesion(ventaId, evento.id);
+    confirmarInicioSesion(sesionLocal, evento.id);
     modal.classList.add('hidden');
   };
   
@@ -836,32 +836,42 @@ function mostrarDialogoConfirmacionSesion(evento, ventaId, pacienteId) {
 /**
  * Confirma e inicia la sesión
  */
-function confirmarInicioSesion(ventaId, eventoId) {
-  const venta = obtenerVentaPorId(ventaId);
-  const paciente = obtenerPacientePorId(venta.clienteId);
-  const tratamiento = TRATAMIENTOS_CONFIG[venta.tratamientoKey];
+function confirmarInicioSesion(sesionLocal, eventoId) {
+  const venta = obtenerVentaPorId(sesionLocal.ventaId);
+  const paciente = obtenerPacientePorId(sesionLocal.clienteId);
+  const tratamiento = TRATAMIENTOS_CONFIG[sesionLocal.tratamientoKey];
   
   if (sesionActual) {
     mostrarNotificacion('Ya hay una sesión en curso', 'warning');
     return;
   }
   
-  // Crear sesión actual
-  sesionActual = {
-    ventaId,
-    pacienteId: venta.clienteId,
-    tratamiento: venta.tratamiento,
-    tratamientoKey: venta.tratamientoKey,
-    duracion: tratamiento.duracionSesion,
-    horaInicio: new Date().toISOString(),
-    pacienteNombre: paciente.nombre,
-    eventoId,
-    horaProgramada: null, // Se puede obtener del evento
-    sesionNumero: venta.sesionesTotales - venta.sesionesRestantes + 1
-  };
-  
-  mostrarSesionEnCurso();
-  mostrarNotificacion(`Sesión ${sesionActual.sesionNumero} iniciada con ${paciente.nombre}`, 'success');
+  try {
+    // Marcar sesión como iniciada en storage
+    iniciarSesionAgendada(sesionLocal.id);
+    
+    // Crear sesión actual en memoria
+    sesionActual = {
+      sesionLocalId: sesionLocal.id,
+      ventaId: sesionLocal.ventaId,
+      pacienteId: sesionLocal.clienteId,
+      tratamiento: sesionLocal.tratamientoNombre,
+      tratamientoKey: sesionLocal.tratamientoKey,
+      duracion: tratamiento.duracionSesion,
+      horaInicio: new Date().toISOString(),
+      pacienteNombre: paciente.nombre,
+      eventoId,
+      horaProgramada: sesionLocal.fechaProgramada,
+      sesionNumero: sesionLocal.numeroSesion,
+      totalSesiones: sesionLocal.totalSesiones,
+      boxId: sesionLocal.boxId
+    };
+    
+    mostrarSesionEnCurso();
+    mostrarNotificacion(`✅ Sesión ${sesionActual.sesionNumero}/${sesionActual.totalSesiones} iniciada con ${paciente.nombre}`, 'success');
+  } catch (error) {
+    mostrarNotificacion('Error al iniciar sesión: ' + error.message, 'error');
+  }
 }
 
 /**
@@ -1129,7 +1139,7 @@ export function terminarSesion() {
     
     mostrarNotificacion(mensaje, 'success');
     
-    return true;
+  return true;
   } catch (error) {
     mostrarNotificacion(`Error al terminar sesión: ${error.message}`, 'error');
     return false;
@@ -1285,7 +1295,6 @@ export function eliminarBox(boxId) {
 /**
  * Exporta funciones globales necesarias
  */
-window.autorizarCalendar = autorizarCalendar;
 window.agendarSesionUnica = agendarSesionUnica;
 window.generarPlanSesiones = generarPlanSesiones;
 window.terminarSesion = terminarSesion;

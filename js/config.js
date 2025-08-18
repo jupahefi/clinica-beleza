@@ -165,9 +165,10 @@ export const ESTADOS = {
  */
 export const GOOGLE_CALENDAR_CONFIG = {
   API_KEY: 'AIzaSyAECI_Mw6EfVm7sylQTg9dPJ_cxlMVttbw',
-  CALENDAR_ID: 'primary', // Se puede cambiar por un calendario específico
-  SCOPES: ['https://www.googleapis.com/auth/calendar'],
-  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
+  CALENDAR_ID: 'primary', // Calendario principal - cambiar por el ID específico si es necesario
+  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+  // Para usar solo API Key (sin OAuth), el calendario debe ser público o compartido
+  USE_API_KEY_ONLY: true
 };
 
 /**

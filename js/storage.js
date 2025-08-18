@@ -3,7 +3,7 @@
  * Maneja toda la persistencia de datos en localStorage
  */
 
-import { guardarContadorIds } from './utils.js';
+import { guardarContadorIds, generarId } from './utils.js';
 
 /**
  * Claves para localStorage
@@ -215,7 +215,7 @@ export function guardarOferta(oferta) {
   return oferta;
 }
 
-// === AGENDA ===
+// === SESIONES Y AGENDA ===
 
 export function obtenerAgenda() {
   return [...DATA.agenda];
@@ -240,6 +240,104 @@ export function guardarAgenda(agenda) {
   
   guardarEntidad('agenda');
   return agenda;
+}
+
+/**
+ * Crea una nueva sesión agendada con estructura completa
+ * @param {Object} datosSesion - Datos de la sesión
+ * @returns {Object} Sesión creada
+ */
+export function crearSesionAgendada(datosSesion) {
+  const {
+    clienteId,
+    ventaId,
+    fechaHora,
+    boxId,
+    googleEventId,
+    numeroSesion,
+    totalSesiones
+  } = datosSesion;
+  
+  const cliente = obtenerPacientePorId(clienteId);
+  const venta = obtenerVentaPorId(ventaId);
+  
+  if (!cliente || !venta) {
+    throw new Error('Cliente o venta no encontrada');
+  }
+  
+  const sesion = {
+    id: generarId(),
+    clienteId,
+    clienteNombre: cliente.nombre,
+    clienteRut: cliente.rut,
+    ventaId,
+    tratamientoKey: venta.tratamientoKey,
+    tratamientoNombre: venta.tratamiento,
+    fecha: fechaHora,
+    boxId,
+    googleEventId,
+    numeroSesion,
+    totalSesiones,
+    estado: 'agendada',
+    fechaCreacion: new Date().toISOString(),
+    fechaProgramada: fechaHora, // Para comparar con ejecución real
+    fechaEjecucion: null,
+    horaInicioReal: null,
+    horaFinReal: null,
+    observaciones: null
+  };
+  
+  return guardarAgenda(sesion);
+}
+
+/**
+ * Marca una sesión como iniciada
+ */
+export function iniciarSesionAgendada(sesionId) {
+  const sesion = DATA.agenda.find(a => a.id === sesionId);
+  if (!sesion) throw new Error('Sesión no encontrada');
+  
+  sesion.estado = 'en_curso';
+  sesion.horaInicioReal = new Date().toISOString();
+  
+  guardarEntidad('agenda');
+  return sesion;
+}
+
+/**
+ * Marca una sesión como completada y reduce sesiones restantes
+ */
+export function completarSesion(sesionId, observaciones = '') {
+  const sesion = DATA.agenda.find(a => a.id === sesionId);
+  if (!sesion) throw new Error('Sesión no encontrada');
+  
+  const venta = obtenerVentaPorId(sesion.ventaId);
+  if (!venta) throw new Error('Venta no encontrada');
+  
+  // Actualizar sesión
+  sesion.estado = 'completada';
+  sesion.horaFinReal = new Date().toISOString();
+  sesion.fechaEjecucion = new Date().toISOString();
+  sesion.observaciones = observaciones;
+  
+  // Reducir sesiones restantes
+  venta.sesionesRestantes = Math.max(0, venta.sesionesRestantes - 1);
+  
+  // Guardar cambios
+  guardarEntidad('agenda');
+  guardarVenta(venta);
+  
+  return { sesion, venta };
+}
+
+/**
+ * Obtiene las próximas sesiones de una venta específica
+ */
+export function obtenerProximasSesionesPorVenta(ventaId) {
+  return DATA.agenda.filter(a => 
+    a.ventaId === ventaId && 
+    ['agendada', 'en_curso'].includes(a.estado)
+  ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 }
 
 // === UTILIDADES ===

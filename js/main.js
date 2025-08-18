@@ -7,7 +7,7 @@ import { inicializarStorage } from './storage.js';
 import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
 import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
 import { inicializarPagos, registrarPago } from './modules/pagos.js';
-import { inicializarSesiones, iniciarSesion, terminarSesion, agendarSesion, confirmarAgenda, cancelarAgenda, reprogramarAgenda } from './modules/sesiones.js';
+import { inicializarSesiones, iniciarSesion, terminarSesion, confirmarAgenda, cancelarAgenda, reprogramarAgenda } from './modules/sesiones.js';
 
 /**
  * Estado de la aplicación
@@ -293,7 +293,6 @@ function exponerFuncionesGlobales() {
   // Sesiones
   window.iniciarSesion = iniciarSesion;
   window.terminarSesion = terminarSesion;
-  window.agendarSesion = agendarSesion;
   window.confirmarAgenda = confirmarAgenda;
   window.cancelarAgenda = cancelarAgenda;
   window.reprogramarAgenda = reprogramarAgenda;
