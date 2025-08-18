@@ -606,73 +606,7 @@ function mostrarSesionEnCurso() {
   window.sesionInterval = setInterval(mostrarSesionEnCurso, 60000);
 }
 
-/**
- * Termina la sesión actual
- */
-export function terminarSesion() {
-  if (!sesionActual) {
-    mostrarNotificacion('No hay sesión activa', 'warning');
-    return false;
-  }
-  
-  const observaciones = document.getElementById('observacionesSesion').value.trim();
-  const horaFin = new Date().toISOString();
-  
-  // Calcular duración real
-  const inicio = new Date(sesionActual.horaInicio);
-  const fin = new Date(horaFin);
-  const duracionReal = Math.floor((fin - inicio) / 60000); // minutos
-  
-  const registroSesion = {
-    id: generarId(),
-    ventaId: sesionActual.ventaId,
-    pacienteId: sesionActual.pacienteId,
-    tratamiento: sesionActual.tratamiento,
-    tratamientoKey: sesionActual.tratamientoKey,
-    horaInicio: sesionActual.horaInicio,
-    horaFin,
-    duracionEstimada: sesionActual.duracion,
-    duracionReal,
-    observaciones,
-    fechaRegistro: new Date().toISOString()
-  };
-  
-  try {
-    // Guardar registro de sesión
-    guardarSesion(registroSesion);
-    
-    // Reducir sesiones restantes
-    const venta = obtenerVentaPorId(sesionActual.ventaId);
-    venta.sesionesRestantes = Math.max(0, venta.sesionesRestantes - 1);
-    guardarVenta(venta);
-    
-    // Limpiar sesión actual
-    const sesionTerminada = { ...sesionActual };
-    sesionActual = null;
-    
-    // Limpiar interfaz
-    document.getElementById('sesionActualCard').classList.add('hidden');
-    document.getElementById('observacionesSesion').value = '';
-    
-    if (window.sesionInterval) {
-      clearInterval(window.sesionInterval);
-    }
-    
-    // Actualizar listas
-    cargarSesionesPaciente();
-    
-    const mensaje = venta.sesionesRestantes === 0 
-      ? `Sesión terminada. ¡Tratamiento ${sesionTerminada.tratamiento} completado!`
-      : `Sesión terminada. Quedan ${venta.sesionesRestantes} sesiones.`;
-    
-    mostrarNotificacion(mensaje, 'success');
-    
-    return true;
-  } catch (error) {
-    mostrarNotificacion(`Error al terminar sesión: ${error.message}`, 'error');
-    return false;
-  }
-}
+
 
 /**
  * Carga los tratamientos para agendamiento
