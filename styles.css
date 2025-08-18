@@ -182,6 +182,24 @@ input.success:focus {
   border-color: #27ae60 !important;
 }
 
+/* === INPUT DE TELÉFONO === */
+.phone-input-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.country-select {
+  width: auto !important;
+  min-width: 120px;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  padding: 0.8rem 0.5rem;
+}
+
+.phone-input-container input {
+  flex: 1;
+}
+
 /* === BOTONES === */
 .btn {
   background: linear-gradient(45deg, #667eea, #764ba2);

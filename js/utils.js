@@ -309,36 +309,44 @@ export function formatearTelefono(telefono) {
   if (!telefono) return '';
   
   // Limpiar: solo números
-  const soloNumeros = telefono.replace(/\D/g, '');
+  let soloNumeros = telefono.replace(/\D/g, '');
   
   // Si empieza con 56, remover el prefijo del país para formatear
-  const sinPrefijo = soloNumeros.startsWith('56') ? soloNumeros.slice(2) : soloNumeros;
+  if (soloNumeros.startsWith('56')) {
+    soloNumeros = soloNumeros.slice(2);
+  }
   
-  // Validar formato chileno
-  if (sinPrefijo.length === 0) return '';
+  if (soloNumeros.length === 0) return '';
   
-  // Formatear según la longitud
-  if (sinPrefijo.length <= 1) {
-    return `+56 ${sinPrefijo}`;
-  } else if (sinPrefijo.length <= 5) {
-    return `+56 ${sinPrefijo}`;
-  } else if (sinPrefijo.length <= 9) {
-    const codigo = sinPrefijo.slice(0, 1);
-    const parte1 = sinPrefijo.slice(1, 5);
-    const parte2 = sinPrefijo.slice(5, 9);
+  // Formatear según la longitud para móviles y fijos chilenos
+  if (soloNumeros.length <= 1) {
+    return soloNumeros;
+  } else if (soloNumeros.length <= 4) {
+    return soloNumeros;
+  } else if (soloNumeros.length <= 8) {
+    // Hasta 8 dígitos: X XXXX XXXX
+    const parte1 = soloNumeros.slice(0, 1);
+    const parte2 = soloNumeros.slice(1, 5);
+    const parte3 = soloNumeros.slice(5);
     
-    if (sinPrefijo.length <= 5) {
-      return `+56 ${codigo} ${parte1}`;
+    if (soloNumeros.length <= 5) {
+      return `${parte1} ${parte2}`;
     } else {
-      return `+56 ${codigo} ${parte1} ${parte2}`;
+      return `${parte1} ${parte2} ${parte3}`;
     }
+  } else if (soloNumeros.length === 9) {
+    // 9 dígitos (móvil): 9 XXXX XXXX
+    const codigo = soloNumeros.slice(0, 1);
+    const parte1 = soloNumeros.slice(1, 5);
+    const parte2 = soloNumeros.slice(5, 9);
+    return `${codigo} ${parte1} ${parte2}`;
   } else {
     // Muy largo, cortar a 9 dígitos
-    const recortado = sinPrefijo.slice(0, 9);
+    const recortado = soloNumeros.slice(0, 9);
     const codigo = recortado.slice(0, 1);
     const parte1 = recortado.slice(1, 5);
     const parte2 = recortado.slice(5, 9);
-    return `+56 ${codigo} ${parte1} ${parte2}`;
+    return `${codigo} ${parte1} ${parte2}`;
   }
 }
 

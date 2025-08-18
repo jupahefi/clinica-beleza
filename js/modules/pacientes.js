@@ -25,6 +25,7 @@ function configurarEventosPacientes() {
   const rutInput = document.getElementById('rutPaciente');
   const emailInput = document.getElementById('emailPaciente');
   const telefonoInput = document.getElementById('telefonoPaciente');
+  const codigoPaisSelect = document.getElementById('codigoPais');
   
   if (pacienteSelect) {
     pacienteSelect.addEventListener('change', cargarPacienteSeleccionado);
@@ -39,7 +40,7 @@ function configurarEventosPacientes() {
   
   // Configurar Email
   if (emailInput) {
-    emailInput.addEventListener('input', validarEmailTiempoReal);
+    emailInput.addEventListener('input', manejarEmailTiempoReal);
     emailInput.addEventListener('blur', validarEmailFinal);
   }
   
@@ -47,6 +48,16 @@ function configurarEventosPacientes() {
   if (telefonoInput) {
     telefonoInput.addEventListener('input', formatearTelefonoTiempoReal);
     telefonoInput.addEventListener('blur', validarTelefonoFinal);
+  }
+  
+  // Configurar selector de país
+  if (codigoPaisSelect) {
+    codigoPaisSelect.addEventListener('change', () => {
+      // Revalidar teléfono cuando cambie el país
+      if (telefonoInput.value.trim()) {
+        formatearTelefonoTiempoReal({ target: telefonoInput });
+      }
+    });
   }
   
   // Configurar checkboxes de fichas específicas
@@ -385,9 +396,9 @@ function validarRutFinal(event) {
 }
 
 /**
- * Valida email en tiempo real mientras el usuario escribe
+ * Maneja email en tiempo real mientras el usuario escribe
  */
-function validarEmailTiempoReal(event) {
+function manejarEmailTiempoReal(event) {
   const input = event.target;
   const email = input.value;
   
@@ -470,22 +481,42 @@ function formatearTelefonoTiempoReal(event) {
   const telefono = input.value;
   const cursorPos = input.selectionStart;
   
-  // Formatear automáticamente
+  // Formatear automáticamente (sin código de país)
   const telefonoFormateado = formatearTelefono(telefono);
   
   if (telefonoFormateado !== telefono) {
     input.value = telefonoFormateado;
     
     // Restaurar posición del cursor
-    const nuevaPos = Math.min(cursorPos + (telefonoFormateado.length - telefono.length), telefonoFormateado.length);
+    const diferencia = telefonoFormateado.length - telefono.length;
+    const nuevaPos = Math.min(Math.max(cursorPos + diferencia, 0), telefonoFormateado.length);
     setTimeout(() => {
       input.setSelectionRange(nuevaPos, nuevaPos);
     }, 0);
   }
   
-  // Limpiar estilos mientras escribe
-  input.classList.remove('error', 'success');
-  input.title = '';
+  // Validar en tiempo real
+  const codigoPais = document.getElementById('codigoPais').value;
+  const telefonoCompleto = codigoPais + ' ' + telefonoFormateado;
+  
+  if (telefonoFormateado.length === 0) {
+    input.classList.remove('error', 'success');
+    input.title = '';
+  } else if (validarTelefono(telefonoCompleto)) {
+    input.classList.remove('error');
+    input.classList.add('success');
+    input.title = '';
+  } else {
+    input.classList.add('error');
+    input.classList.remove('success');
+    
+    // Mostrar ayuda según el código de país
+    if (codigoPais === '+56') {
+      input.title = 'Móvil: 9 XXXX XXXX | Fijo: 2 XXXX XXXX';
+    } else {
+      input.title = 'Formato de teléfono no válido';
+    }
+  }
 }
 
 /**
@@ -494,6 +525,7 @@ function formatearTelefonoTiempoReal(event) {
 function validarTelefonoFinal(event) {
   const input = event.target;
   const telefono = input.value.trim();
+  const codigoPais = document.getElementById('codigoPais').value;
   
   if (!telefono) {
     input.classList.remove('error', 'success');
@@ -501,7 +533,9 @@ function validarTelefonoFinal(event) {
     return;
   }
   
-  if (validarTelefono(telefono)) {
+  const telefonoCompleto = codigoPais + ' ' + telefono;
+  
+  if (validarTelefono(telefonoCompleto)) {
     input.classList.remove('error');
     input.classList.add('success');
     input.title = '';
@@ -509,18 +543,21 @@ function validarTelefonoFinal(event) {
     input.classList.add('error');
     input.classList.remove('success');
     
-    // Sugerir corrección si es posible
-    const sugerencia = sugerirTelefono(telefono);
-    if (sugerencia) {
-      const confirmar = confirm(`¿Quisiste decir "${sugerencia}"?`);
-      if (confirmar) {
-        input.value = sugerencia;
-        input.classList.remove('error');
-        input.classList.add('success');
-        input.title = '';
+    // Sugerir corrección para números chilenos
+    if (codigoPais === '+56') {
+      const soloNumeros = telefono.replace(/\D/g, '');
+      
+      if (soloNumeros.length === 8 && soloNumeros.startsWith('9')) {
+        // Le falta un dígito al móvil
+        input.title = 'Móvil chileno debe tener 9 dígitos (ej: 9 4286 0208)';
+      } else if (soloNumeros.length === 9 && !soloNumeros.startsWith('9')) {
+        // Es fijo con 9 dígitos?
+        input.title = 'Fijo chileno debe tener 8 dígitos (ej: 2 1234 5678)';
+      } else {
+        input.title = 'Móvil: 9 XXXX XXXX | Fijo: 2 XXXX XXXX';
       }
     } else {
-      input.title = 'Teléfono no válido (debe ser móvil +56 9 XXXX XXXX o fijo +56 X XXXX XXXX)';
+      input.title = 'Formato de teléfono no válido para este país';
     }
   }
 }
@@ -550,8 +587,12 @@ function validarFormularioPaciente() {
     errores.push('El email no es válido');
   }
   
-  if (telefono && !validarTelefono(telefono)) {
-    errores.push('El teléfono no es válido');
+  if (telefono) {
+    const codigoPais = document.getElementById('codigoPais').value;
+    const telefonoCompleto = codigoPais + ' ' + telefono;
+    if (!validarTelefono(telefonoCompleto)) {
+      errores.push('El teléfono no es válido');
+    }
   }
   
   return errores;
