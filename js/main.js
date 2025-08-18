@@ -64,7 +64,7 @@ function configurarNavegacion() {
 function mapearNombreVista(nombre) {
   const mapeo = {
     'fichas': 'ficha',
-    'ventas': 'ventas',
+    'ventas': 'venta',
     'pagos': 'pagos',
     'sesiones': 'sesiones',
     'boxes': 'boxes',
@@ -226,7 +226,7 @@ function ejecutarLogicaVista(viewId) {
       // La lógica ya está en el módulo de pacientes
       break;
       
-    case 'ventas':
+    case 'venta':
       // La lógica ya está en el módulo de ventas
       break;
       
