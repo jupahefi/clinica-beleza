@@ -162,9 +162,11 @@ export const ESTADOS = {
 
 /**
  * Configuración de Google Calendar
+ * Las credenciales se cargan dinámicamente desde variables de entorno
  */
 export const GOOGLE_CALENDAR_CONFIG = {
-  API_KEY: 'AIzaSyAECI_Mw6EfVm7sylQTg9dPJ_cxlMVttbw',
+  API_KEY: null, // Se carga dinámicamente desde ENV
+  CLIENT_ID: null, // Se carga dinámicamente desde ENV
   CALENDAR_NAME: 'sesiones', // Nombre del calendario específico para sesiones
   CALENDAR_ID: null, // Se establecerá dinámicamente al encontrar/crear el calendario
   DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
@@ -179,3 +181,68 @@ export const BOXES_CONFIG = [
   { id: 2, nombre: 'Box 2', disponible: true },
   { id: 3, nombre: 'Box 3', disponible: true }
 ];
+
+/**
+ * Configuración de la aplicación que se carga dinámicamente
+ */
+export const APP_CONFIG = {
+  CLINIC_NAME: 'Clínica Beleza',
+  CLINIC_EMAIL: '',
+  CLINIC_PHONE: '',
+  APP_URL: '',
+  API_URL: '',
+  TIMEZONE: 'America/Santiago',
+  CACHE_ENABLED: true,
+  CACHE_DURATION: 3600
+};
+
+/**
+ * Inicializa las configuraciones con las variables de entorno
+ * @param {Object} envConfig - Configuración de entorno cargada
+ */
+export function initializeConfig(envConfig) {
+  // Configurar Google Calendar
+  GOOGLE_CALENDAR_CONFIG.API_KEY = envConfig.GOOGLE_CALENDAR_API_KEY || '';
+  GOOGLE_CALENDAR_CONFIG.CLIENT_ID = envConfig.GOOGLE_CLIENT_ID || '';
+  
+  // Configurar aplicación
+  APP_CONFIG.CLINIC_NAME = envConfig.CLINIC_NAME || 'Clínica Beleza';
+  APP_CONFIG.CLINIC_EMAIL = envConfig.CLINIC_EMAIL || '';
+  APP_CONFIG.CLINIC_PHONE = envConfig.CLINIC_PHONE || '';
+  APP_CONFIG.APP_URL = envConfig.APP_URL || window.location.origin;
+  APP_CONFIG.API_URL = envConfig.API_URL || window.location.origin + '/api';
+  APP_CONFIG.TIMEZONE = envConfig.TIMEZONE || 'America/Santiago';
+  APP_CONFIG.CACHE_ENABLED = envConfig.ENABLE_CACHE === 'true';
+  APP_CONFIG.CACHE_DURATION = parseInt(envConfig.CACHE_DURATION) || 3600;
+  
+  console.log('✅ Configuración inicializada con variables de entorno');
+}
+
+/**
+ * Verifica si las configuraciones críticas están disponibles
+ * @returns {Object} Estado de la configuración
+ */
+export function validateConfig() {
+  const validation = {
+    isValid: true,
+    errors: [],
+    warnings: []
+  };
+  
+  // Verificar Google Calendar
+  if (!GOOGLE_CALENDAR_CONFIG.API_KEY) {
+    validation.warnings.push('Google Calendar API Key no configurada');
+  }
+  
+  if (!GOOGLE_CALENDAR_CONFIG.CLIENT_ID) {
+    validation.warnings.push('Google Client ID no configurado');
+  }
+  
+  // Verificar configuración de la clínica
+  if (!APP_CONFIG.CLINIC_NAME) {
+    validation.errors.push('Nombre de la clínica no configurado');
+    validation.isValid = false;
+  }
+  
+  return validation;
+}

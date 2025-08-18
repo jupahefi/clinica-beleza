@@ -3,11 +3,13 @@
  * Orquesta todos los módulos y maneja la navegación
  */
 
-import { inicializarStorage } from './storage.js';
+import { inicializarStorage } from './storage-api.js';
 import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
 import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
 import { inicializarPagos, registrarPago } from './modules/pagos.js';
 import { inicializarSesiones, iniciarSesion, terminarSesion, confirmarAgenda, cancelarAgenda, reprogramarAgenda } from './modules/sesiones.js';
+import { loadEnvironment, isEnvironmentLoaded } from './env.js';
+import { initializeConfig, validateConfig } from './config.js';
 
 /**
  * Estado de la aplicación
@@ -20,12 +22,32 @@ const AppState = {
 /**
  * Inicializa la aplicación
  */
-function inicializarApp() {
+async function inicializarApp() {
   if (AppState.inicializado) return;
   
   try {
+    console.log('🚀 Iniciando aplicación...');
+    
+    // Cargar variables de entorno primero
+    const envConfig = await loadEnvironment();
+    
+    // Inicializar configuración con variables de entorno
+    initializeConfig(envConfig);
+    
+    // Validar configuración
+    const validation = validateConfig();
+    if (!validation.isValid) {
+      console.error('❌ Errores de configuración:', validation.errors);
+      alert('Error en la configuración de la aplicación: ' + validation.errors.join(', '));
+      return;
+    }
+    
+    if (validation.warnings.length > 0) {
+      console.warn('⚠️ Advertencias de configuración:', validation.warnings);
+    }
+    
     // Inicializar almacenamiento
-    inicializarStorage();
+    await inicializarStorage();
     
     // Inicializar módulos
     inicializarPacientes();
@@ -44,6 +66,7 @@ function inicializarApp() {
     
     AppState.inicializado = true;
     console.log('✅ Aplicación inicializada correctamente');
+    
   } catch (error) {
     console.error('❌ Error al inicializar aplicación:', error);
     alert('Error al inicializar la aplicación. Por favor, recarga la página.');
@@ -303,9 +326,9 @@ function exponerFuncionesGlobales() {
 /**
  * Punto de entrada principal
  */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   exponerFuncionesGlobales();
-  inicializarApp();
+  await inicializarApp();
 });
 
 // Para desarrollo y debugging

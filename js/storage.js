@@ -1,12 +1,32 @@
 /**
- * Módulo de gestión de almacenamiento local
- * Maneja toda la persistencia de datos en localStorage
+ * Módulo de gestión de almacenamiento
+ * Ahora usa API REST con SQLite como backend, con localStorage como fallback
  */
 
 import { guardarContadorIds, generarId } from './utils.js';
+import { 
+    initializeApiClient, 
+    pacientesAPI, 
+    ventasAPI, 
+    pagosAPI, 
+    sesionesAPI, 
+    ofertasAPI, 
+    boxesAPI,
+    handleApiError,
+    checkConnection
+} from './api-client.js';
 
 /**
- * Claves para localStorage
+ * Configuración del storage híbrido
+ */
+const STORAGE_CONFIG = {
+    useApi: true,
+    useLocalStorageFallback: true,
+    syncInterval: 30000 // 30 segundos
+};
+
+/**
+ * Claves para localStorage (fallback)
  */
 const STORAGE_KEYS = {
   PACIENTES: 'clinica_pacientes',
@@ -18,36 +38,147 @@ const STORAGE_KEYS = {
 };
 
 /**
- * Datos en memoria para optimizar acceso
+ * Cache local para datos de la API
  */
-const DATA = {
+const DATA_CACHE = {
   pacientes: [],
   ventas: [],
   pagos: [],
   sesiones: [],
   ofertas: [],
-  agenda: []
+  boxes: [],
+  lastSync: null,
+  isOnline: true
 };
 
 /**
- * Inicializa el almacenamiento cargando datos desde localStorage
+ * Inicializa el almacenamiento
  */
-export function inicializarStorage() {
-  Object.keys(DATA).forEach(key => {
-    const storageKey = STORAGE_KEYS[key.toUpperCase()];
-    DATA[key] = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  });
+export async function inicializarStorage() {
+    try {
+        // Inicializar cliente API
+        initializeApiClient();
+        
+        // Verificar conectividad
+        const isOnline = await checkConnection();
+        DATA_CACHE.isOnline = isOnline;
+        
+        if (isOnline && STORAGE_CONFIG.useApi) {
+            console.log('🌐 Modo API habilitado - usando SQLite');
+            await cargarDatosDesdeAPI();
+        } else {
+            console.log('💾 Modo offline - usando localStorage');
+            cargarDatosDesdeLocalStorage();
+        }
+        
+        // Configurar sincronización automática
+        if (STORAGE_CONFIG.useApi) {
+            configurarSincronizacionAutomatica();
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Error inicializando storage, usando localStorage:', error);
+        STORAGE_CONFIG.useApi = false;
+        cargarDatosDesdeLocalStorage();
+    }
 }
 
 /**
- * Guarda todos los datos en localStorage
+ * Carga datos desde la API
+ */
+async function cargarDatosDesdeAPI() {
+    try {
+        // Cargar datos en paralelo
+        const [pacientes, ventas, pagos, sesiones, ofertas, boxes] = await Promise.all([
+            pacientesAPI.getAll().catch(() => []),
+            ventasAPI.getAll().catch(() => []),
+            pagosAPI.getAll().catch(() => []),
+            sesionesAPI.getAll().catch(() => []),
+            ofertasAPI.getActive().catch(() => []),
+            boxesAPI.getAll().catch(() => [])
+        ]);
+        
+        DATA_CACHE.pacientes = pacientes;
+        DATA_CACHE.ventas = ventas;
+        DATA_CACHE.pagos = pagos;
+        DATA_CACHE.sesiones = sesiones;
+        DATA_CACHE.ofertas = ofertas;
+        DATA_CACHE.boxes = boxes;
+        DATA_CACHE.lastSync = Date.now();
+        
+        // Respaldar en localStorage
+        if (STORAGE_CONFIG.useLocalStorageFallback) {
+            respaldarEnLocalStorage();
+        }
+        
+        console.log('✅ Datos cargados desde API');
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos desde API:', error);
+        throw error;
+    }
+}
+
+/**
+ * Carga datos desde localStorage
+ */
+function cargarDatosDesdeLocalStorage() {
+    Object.keys(DATA_CACHE).forEach(key => {
+        if (key === 'lastSync' || key === 'isOnline') return;
+        
+        const storageKey = STORAGE_KEYS[key.toUpperCase()];
+        if (storageKey) {
+            DATA_CACHE[key] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        }
+    });
+    
+    console.log('✅ Datos cargados desde localStorage');
+}
+
+/**
+ * Respalda datos en localStorage
+ */
+function respaldarEnLocalStorage() {
+    Object.keys(DATA_CACHE).forEach(key => {
+        if (key === 'lastSync' || key === 'isOnline') return;
+        
+        const storageKey = STORAGE_KEYS[key.toUpperCase()];
+        if (storageKey && Array.isArray(DATA_CACHE[key])) {
+            localStorage.setItem(storageKey, JSON.stringify(DATA_CACHE[key]));
+        }
+    });
+}
+
+/**
+ * Configura sincronización automática
+ */
+function configurarSincronizacionAutomatica() {
+    setInterval(async () => {
+        try {
+            const isOnline = await checkConnection();
+            
+            if (isOnline && !DATA_CACHE.isOnline) {
+                // Reconectado - sincronizar
+                console.log('🔄 Reconectado - sincronizando datos');
+                await cargarDatosDesdeAPI();
+            }
+            
+            DATA_CACHE.isOnline = isOnline;
+            
+        } catch (error) {
+            console.warn('⚠️ Error en sincronización automática:', error);
+        }
+    }, STORAGE_CONFIG.syncInterval);
+}
+
+/**
+ * Guarda todos los datos
  */
 export function guardarTodos() {
-  Object.keys(DATA).forEach(key => {
-    const storageKey = STORAGE_KEYS[key.toUpperCase()];
-    localStorage.setItem(storageKey, JSON.stringify(DATA[key]));
-  });
-  guardarContadorIds();
+    if (STORAGE_CONFIG.useLocalStorageFallback) {
+        respaldarEnLocalStorage();
+    }
+    guardarContadorIds();
 }
 
 /**

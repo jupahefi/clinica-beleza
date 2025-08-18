@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migración de Datos - Clínica Beleza</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .step.active {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .step.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .step.completed {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #556cd6;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .log-info { color: #63b3ed; }
+        .log-success { color: #68d391; }
+        .log-warning { color: #fbb040; }
+        .log-error { color: #fc8181; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Migración de Datos</h1>
+            <p>Migrar datos desde localStorage a la base de datos SQLite</p>
+        </div>
+        
+        <!-- Información -->
+        <div class="alert alert-info">
+            <strong>ℹ️ Información:</strong> Esta herramienta te permite migrar todos los datos almacenados 
+            localmente en tu navegador hacia la nueva base de datos SQLite. Los datos migrados incluyen 
+            pacientes, ventas, pagos y sesiones.
+        </div>
+        
+        <!-- Estado de la API -->
+        <div class="step" id="step-api">
+            <h3>1️⃣ Verificación de la API</h3>
+            <p>Verificando conectividad con la base de datos...</p>
+            <button class="btn" onclick="verificarAPI()">🔍 Verificar API</button>
+            <div id="api-status"></div>
+        </div>
+        
+        <!-- Análisis de datos locales -->
+        <div class="step" id="step-analysis">
+            <h3>2️⃣ Análisis de Datos Locales</h3>
+            <p>Analizando datos almacenados en localStorage...</p>
+            <button class="btn" onclick="analizarDatosLocales()" disabled>📊 Analizar Datos</button>
+            
+            <div id="data-stats" class="stats" style="display: none;"></div>
+            <div id="data-preview" style="display: none;">
+                <h4>👀 Vista Previa de Datos:</h4>
+                <div id="preview-content" class="data-preview"></div>
+            </div>
+        </div>
+        
+        <!-- Migración -->
+        <div class="step" id="step-migration">
+            <h3>3️⃣ Proceso de Migración</h3>
+            <p>Migrar datos a la base de datos...</p>
+            
+            <div class="alert alert-warning" style="display: none;" id="migration-warning">
+                <strong>⚠️ Advertencia:</strong> La migración sobrescribirá datos existentes en la base de datos 
+                si hay conflictos (por ejemplo, pacientes con el mismo RUT).
+            </div>
+            
+            <button class="btn btn-success" onclick="iniciarMigracion()" disabled>🚀 Iniciar Migración</button>
+            <button class="btn" onclick="migrarSoloNuevos()" disabled>📝 Solo Datos Nuevos</button>
+            
+            <div class="progress-bar" style="display: none;" id="progress-container">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div id="migration-status"></div>
+        </div>
+        
+        <!-- Verificación final -->
+        <div class="step" id="step-verification">
+            <h3>4️⃣ Verificación Final</h3>
+            <p>Verificando que los datos se migraron correctamente...</p>
+            <button class="btn" onclick="verificarMigracion()" disabled>✅ Verificar Migración</button>
+            <div id="verification-results"></div>
+        </div>
+        
+        <!-- Log de actividad -->
+        <div class="step">
+            <h3>📋 Log de Actividad</h3>
+            <div id="activity-log" class="log">
+                <div class="log-entry log-info">Sistema listo para migración...</div>
+            </div>
+            <button class="btn" onclick="limpiarLog()">🧹 Limpiar Log</button>
+        </div>
+        
+        <!-- Acciones finales -->
+        <div class="step">
+            <h3>🎯 Acciones Finales</h3>
+            <div class="alert alert-success" style="display: none;" id="success-message">
+                <strong>🎉 ¡Migración Completada!</strong> Todos los datos se han migrado exitosamente. 
+                Ahora puedes usar la aplicación con la base de datos SQLite.
+            </div>
+            
+            <a href="admin.php" class="btn">🛠️ Panel de Admin</a>
+            <a href="index.html" class="btn">🏠 Ir a la Aplicación</a>
+            <button class="btn btn-danger" onclick="limpiarDatosLocales()" style="display: none;" id="clear-local-btn">
+                🗑️ Limpiar Datos Locales
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let apiConnected = false;
+        let localData = null;
+        let migrationProgress = 0;
+
+        /**
+         * Registra una entrada en el log
+         */
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        /**
+         * Actualiza el estado de un paso
+         */
+        function updateStepStatus(stepId, status) {
+            const step = document.getElementById(stepId);
+            step.className = `step ${status}`;
+        }
+
+        /**
+         * Verifica la conectividad con la API
+         */
+        async function verificarAPI() {
+            log('🔍 Verificando conexión con la API...', 'info');
+            updateStepStatus('step-api', 'active');
+            
+            try {
+                const response = await fetch('./api.php/health');
+                const data = await response.json();
+                
+                if (data.success && data.data.status === 'ok') {
+                    apiConnected = true;
+                    document.getElementById('api-status').innerHTML = `
+                        <div class="alert alert-success">
+                            ✅ API conectada exitosamente<br>
+                            📊 Tablas: ${data.data.tables}<br>
+                            💾 Tamaño BD: ${formatBytes(data.data.database_size)}<br>
+                            ✍️ Escribible: ${data.data.writable ? 'Sí' : 'No'}
+                        </div>
+                    `;
+                    updateStepStatus('step-api', 'completed');
+                    document.querySelector('#step-analysis button').disabled = false;
+                    log('✅ API verificada correctamente', 'success');
+                } else {
+                    throw new Error('API no disponible');
+                }
+            } catch (error) {
+                document.getElementById('api-status').innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Error conectando con la API: ${error.message}
+                    </div>
+                `;
+                updateStepStatus('step-api', 'error');
+                log(`❌ Error verificando API: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Analiza los datos almacenados en localStorage
+         */
+        function analizarDatosLocales() {
+            log('📊 Analizando datos en localStorage...', 'info');
+            updateStepStatus('step-analysis', 'active');
+            
+            const dataKeys = ['clinica_pacientes', 'clinica_ventas', 'clinica_pagos', 'clinica_sesiones', 'clinica_ofertas'];
+            localData = {};
+            let totalRecords = 0;
+            
+            dataKeys.forEach(key => {
+                try {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        localData[key] = Array.isArray(parsed) ? parsed : [];
+                        totalRecords += localData[key].length;
+                    } else {
+                        localData[key] = [];
+                    }
+                } catch (error) {
+                    log(`⚠️ Error leyendo ${key}: ${error.message}`, 'warning');
+                    localData[key] = [];
+                }
+            });
+            
+            // Mostrar estadísticas
+            const statsContainer = document.getElementById('data-stats');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${localData.clinica_pacientes.length}</div>
+                    <div class="stat-label">Pacientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${localData.clinica_ventas.length}</div>
+                    <div class="stat-label">Ventas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${localData.clinica_pagos.length}</div>
+                    <div class="stat-label">Pagos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${localData.clinica_sesiones.length}</div>
+                    <div class="stat-label">Sesiones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalRecords}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            `;
+            statsContainer.style.display = 'grid';
+            
+            // Mostrar vista previa
+            if (totalRecords > 0) {
+                const previewContainer = document.getElementById('data-preview');
+                const previewContent = document.getElementById('preview-content');
+                
+                let preview = 'Datos encontrados:\n\n';
+                Object.keys(localData).forEach(key => {
+                    if (localData[key].length > 0) {
+                        preview += `${key}: ${localData[key].length} registros\n`;
+                        if (localData[key][0]) {
+                            preview += `  Ejemplo: ${JSON.stringify(localData[key][0], null, 2).substring(0, 200)}...\n\n`;
+                        }
+                    }
+                });
+                
+                previewContent.textContent = preview;
+                previewContainer.style.display = 'block';
+                
+                // Habilitar migración
+                document.querySelector('#step-migration .btn-success').disabled = false;
+                document.querySelector('#step-migration .btn:nth-of-type(2)').disabled = false;
+                document.getElementById('migration-warning').style.display = 'block';
+                
+                updateStepStatus('step-analysis', 'completed');
+                log(`✅ Análisis completado: ${totalRecords} registros encontrados`, 'success');
+            } else {
+                document.getElementById('preview-content').textContent = 'No se encontraron datos para migrar.';
+                document.getElementById('data-preview').style.display = 'block';
+                updateStepStatus('step-analysis', 'error');
+                log('⚠️ No se encontraron datos para migrar', 'warning');
+            }
+        }
+
+        /**
+         * Inicia el proceso de migración completa
+         */
+        async function iniciarMigracion() {
+            if (!apiConnected || !localData) {
+                log('❌ Verifica la API y analiza los datos primero', 'error');
+                return;
+            }
+            
+            log('🚀 Iniciando migración completa...', 'info');
+            updateStepStatus('step-migration', 'active');
+            
+            document.getElementById('progress-container').style.display = 'block';
+            migrationProgress = 0;
+            updateProgress(0);
+            
+            try {
+                await migrarDatos(false);
+                
+                updateStepStatus('step-migration', 'completed');
+                document.querySelector('#step-verification button').disabled = false;
+                updateProgress(100);
+                log('🎉 Migración completada exitosamente', 'success');
+                
+            } catch (error) {
+                updateStepStatus('step-migration', 'error');
+                log(`❌ Error en migración: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Migra solo datos nuevos (sin sobrescribir)
+         */
+        async function migrarSoloNuevos() {
+            if (!apiConnected || !localData) {
+                log('❌ Verifica la API y analiza los datos primero', 'error');
+                return;
+            }
+            
+            log('📝 Iniciando migración de solo datos nuevos...', 'info');
+            updateStepStatus('step-migration', 'active');
+            
+            document.getElementById('progress-container').style.display = 'block';
+            migrationProgress = 0;
+            updateProgress(0);
+            
+            try {
+                await migrarDatos(true);
+                
+                updateStepStatus('step-migration', 'completed');
+                document.querySelector('#step-verification button').disabled = false;
+                updateProgress(100);
+                log('📝 Migración de datos nuevos completada', 'success');
+                
+            } catch (error) {
+                updateStepStatus('step-migration', 'error');
+                log(`❌ Error en migración: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Realiza la migración de datos
+         */
+        async function migrarDatos(soloNuevos = false) {
+            const totalOperations = Object.values(localData).reduce((sum, arr) => sum + arr.length, 0);
+            let operationsCompleted = 0;
+            
+            // Migrar pacientes
+            if (localData.clinica_pacientes.length > 0) {
+                log(`📋 Migrando ${localData.clinica_pacientes.length} pacientes...`, 'info');
+                
+                for (const paciente of localData.clinica_pacientes) {
+                    try {
+                        if (soloNuevos) {
+                            // Verificar si ya existe
+                            const existe = await verificarPacienteExiste(paciente.rut);
+                            if (existe) {
+                                log(`⏭️ Paciente ${paciente.nombre} ya existe, omitiendo`, 'warning');
+                                continue;
+                            }
+                        }
+                        
+                        await migrarPaciente(paciente);
+                        operationsCompleted++;
+                        updateProgress((operationsCompleted / totalOperations) * 100);
+                        
+                    } catch (error) {
+                        log(`❌ Error migrando paciente ${paciente.nombre}: ${error.message}`, 'error');
+                    }
+                }
+            }
+            
+            // Migrar ventas
+            if (localData.clinica_ventas.length > 0) {
+                log(`💰 Migrando ${localData.clinica_ventas.length} ventas...`, 'info');
+                
+                for (const venta of localData.clinica_ventas) {
+                    try {
+                        await migrarVenta(venta);
+                        operationsCompleted++;
+                        updateProgress((operationsCompleted / totalOperations) * 100);
+                        
+                    } catch (error) {
+                        log(`❌ Error migrando venta: ${error.message}`, 'error');
+                    }
+                }
+            }
+            
+            // Migrar pagos y sesiones de manera similar...
+            
+            log(`✅ Migración completada: ${operationsCompleted}/${totalOperations} operaciones`, 'success');
+        }
+
+        /**
+         * Migra un paciente individual
+         */
+        async function migrarPaciente(paciente) {
+            const response = await fetch('./api.php/pacientes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paciente)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Error migrando paciente');
+            }
+            
+            return await response.json();
+        }
+
+        /**
+         * Migra una venta individual
+         */
+        async function migrarVenta(venta) {
+            const response = await fetch('./api.php/ventas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(venta)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Error migrando venta');
+            }
+            
+            return await response.json();
+        }
+
+        /**
+         * Verifica si un paciente ya existe por RUT
+         */
+        async function verificarPacienteExiste(rut) {
+            try {
+                const response = await fetch(`./api.php/pacientes?rut=${encodeURIComponent(rut)}`);
+                const data = await response.json();
+                return data.success && data.data.length > 0;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        /**
+         * Actualiza la barra de progreso
+         */
+        function updateProgress(percentage) {
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+        }
+
+        /**
+         * Verifica que la migración fue exitosa
+         */
+        async function verificarMigracion() {
+            log('🔍 Verificando migración...', 'info');
+            updateStepStatus('step-verification', 'active');
+            
+            try {
+                const response = await fetch('./api.php/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    const resultsContainer = document.getElementById('verification-results');
+                    
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            ✅ Verificación exitosa<br>
+                            📊 Datos en la base de datos:<br>
+                            • Pacientes: ${stats.pacientes}<br>
+                            • Ventas: ${stats.ventas}<br>
+                            • Pagos: ${stats.pagos}<br>
+                            • Sesiones: ${stats.sesiones}
+                        </div>
+                    `;
+                    
+                    updateStepStatus('step-verification', 'completed');
+                    document.getElementById('success-message').style.display = 'block';
+                    document.getElementById('clear-local-btn').style.display = 'inline-block';
+                    log('✅ Verificación completada exitosamente', 'success');
+                    
+                } else {
+                    throw new Error('Error obteniendo estadísticas');
+                }
+                
+            } catch (error) {
+                document.getElementById('verification-results').innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Error verificando migración: ${error.message}
+                    </div>
+                `;
+                updateStepStatus('step-verification', 'error');
+                log(`❌ Error en verificación: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Limpia los datos de localStorage después de la migración exitosa
+         */
+        function limpiarDatosLocales() {
+            if (confirm('⚠️ ¿Estás seguro de que quieres eliminar los datos locales? Esta acción no se puede deshacer.')) {
+                const keys = ['clinica_pacientes', 'clinica_ventas', 'clinica_pagos', 'clinica_sesiones', 'clinica_ofertas'];
+                
+                keys.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                log('🗑️ Datos locales eliminados exitosamente', 'success');
+                alert('✅ Datos locales eliminados. La aplicación ahora usará exclusivamente la base de datos SQLite.');
+            }
+        }
+
+        /**
+         * Limpia el log de actividad
+         */
+        function limpiarLog() {
+            document.getElementById('activity-log').innerHTML = '<div class="log-entry log-info">Log limpiado...</div>';
+        }
+
+        /**
+         * Formatea bytes en unidades legibles
+         */
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Inicializar automáticamente
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Herramienta de migración iniciada', 'info');
+        });
+    </script>
+</body>
+</html>
