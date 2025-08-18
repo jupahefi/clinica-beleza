@@ -64,7 +64,7 @@ function configurarNavegacion() {
 function mapearNombreVista(nombre) {
   const mapeo = {
     'fichas': 'ficha',
-    'ventas': 'venta',
+    'ventas': 'ventas',
     'pagos': 'pagos',
     'sesiones': 'sesiones',
     'boxes': 'boxes',
