@@ -3,7 +3,7 @@
  * Maneja todas las operaciones relacionadas con fichas de pacientes
  */
 
-import { generarId, formatearRut, validarRut, validarEmail, mostrarNotificacion } from '../utils.js';
+import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
 import { obtenerPacientes, obtenerPacientePorId, guardarPaciente } from '../storage.js';
 import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../config.js';
 
@@ -24,17 +24,29 @@ function configurarEventosPacientes() {
   const pacienteSelect = document.getElementById('pacienteSelect');
   const rutInput = document.getElementById('rutPaciente');
   const emailInput = document.getElementById('emailPaciente');
+  const telefonoInput = document.getElementById('telefonoPaciente');
   
   if (pacienteSelect) {
     pacienteSelect.addEventListener('change', cargarPacienteSeleccionado);
   }
   
+  // Configurar RUT
   if (rutInput) {
-    rutInput.addEventListener('blur', formatearRutInput);
+    rutInput.addEventListener('input', formatearRutTiempoReal);
+    rutInput.addEventListener('blur', validarRutFinal);
+    rutInput.addEventListener('keydown', manejarTeclasRut);
   }
   
+  // Configurar Email
   if (emailInput) {
-    emailInput.addEventListener('blur', validarEmailInput);
+    emailInput.addEventListener('input', validarEmailTiempoReal);
+    emailInput.addEventListener('blur', validarEmailFinal);
+  }
+  
+  // Configurar Teléfono
+  if (telefonoInput) {
+    telefonoInput.addEventListener('input', formatearTelefonoTiempoReal);
+    telefonoInput.addEventListener('blur', validarTelefonoFinal);
   }
   
   // Configurar checkboxes de fichas específicas
@@ -243,31 +255,273 @@ function cargarOpcionesZonasTratamiento() {
 }
 
 /**
- * Formatea el RUT mientras el usuario escribe
+ * Formatea RUT en tiempo real mientras el usuario escribe
  */
-function formatearRutInput(event) {
+function formatearRutTiempoReal(event) {
   const input = event.target;
-  const rut = input.value.trim();
+  const valor = input.value;
+  const cursorPos = input.selectionStart;
   
-  if (rut && validarRut(rut)) {
-    input.value = formatearRut(rut);
-    input.classList.remove('error');
-  } else if (rut) {
-    input.classList.add('error');
+  // Limpiar y formatear
+  const soloNumeros = valor.replace(/[^0-9kK]/g, '');
+  let rutFormateado = '';
+  
+  if (soloNumeros.length === 0) {
+    input.value = '';
+    return;
+  }
+  
+  // Formatear según la longitud
+  if (soloNumeros.length <= 7) {
+    // Solo números, sin DV aún
+    rutFormateado = soloNumeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  } else if (soloNumeros.length === 8) {
+    // Con DV, formatear completo
+    const cuerpo = soloNumeros.slice(0, -1);
+    const dv = soloNumeros.slice(-1).toUpperCase();
+    const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    rutFormateado = `${cuerpoFormateado}-${dv}`;
+  } else {
+    // Muy largo, mantener solo los primeros 8 caracteres
+    const rutRecortado = soloNumeros.slice(0, 8);
+    const cuerpo = rutRecortado.slice(0, -1);
+    const dv = rutRecortado.slice(-1).toUpperCase();
+    const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    rutFormateado = `${cuerpoFormateado}-${dv}`;
+  }
+  
+  input.value = rutFormateado;
+  
+  // Restaurar posición del cursor de forma inteligente
+  const nuevaPos = Math.min(cursorPos + (rutFormateado.length - valor.length), rutFormateado.length);
+  setTimeout(() => {
+    input.setSelectionRange(nuevaPos, nuevaPos);
+  }, 0);
+  
+  // Limpiar estilos de error mientras escribe
+  input.classList.remove('error', 'success');
+}
+
+/**
+ * Autocompletar RUT con dígito verificador
+ */
+function autocompletarRutInput(event) {
+  const input = event.target;
+  const valor = input.value.replace(/[^0-9]/g, '');
+  
+  // Solo autocompletar si tiene exactamente 7 u 8 números
+  if (valor.length === 7 || valor.length === 8) {
+    const rutCompleto = autocompletarRut(valor);
+    input.value = rutCompleto;
+    
+    // Mover cursor al final
+    setTimeout(() => {
+      input.setSelectionRange(rutCompleto.length, rutCompleto.length);
+    }, 0);
   }
 }
 
 /**
- * Valida el email mientras el usuario escribe
+ * Maneja teclas especiales en el input de RUT
  */
-function validarEmailInput(event) {
+function manejarTeclasRut(event) {
+  const input = event.target;
+  
+  // TAB: autocompletar RUT si tiene 7 dígitos
+  if (event.key === 'Tab') {
+    const soloNumeros = input.value.replace(/[^0-9]/g, '');
+    if (soloNumeros.length === 7) {
+      event.preventDefault();
+      autocompletarRutInput(event);
+      
+      // Luego permitir que el TAB continúe al siguiente campo
+      setTimeout(() => {
+        const nextElement = input.form?.elements[Array.from(input.form.elements).indexOf(input) + 1];
+        if (nextElement) nextElement.focus();
+      }, 0);
+    }
+  }
+  
+  // ENTER: autocompletar y validar
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    autocompletarRutInput(event);
+    validarRutFinal(event);
+  }
+}
+
+/**
+ * Valida RUT al salir del campo
+ */
+function validarRutFinal(event) {
+  const input = event.target;
+  const rut = input.value.trim();
+  
+  if (!rut) {
+    input.classList.remove('error', 'success');
+    return;
+  }
+  
+  if (validarRut(rut)) {
+    input.value = formatearRut(rut);
+    input.classList.remove('error');
+    input.classList.add('success');
+  } else {
+    input.classList.add('error');
+    input.classList.remove('success');
+    
+    // Mostrar sugerencia si tiene 7 dígitos
+    const soloNumeros = rut.replace(/[^0-9]/g, '');
+    if (soloNumeros.length === 7) {
+      const rutSugerido = autocompletarRut(soloNumeros);
+      const confirmar = confirm(`¿Quisiste decir ${rutSugerido}?`);
+      if (confirmar) {
+        input.value = rutSugerido;
+        input.classList.remove('error');
+        input.classList.add('success');
+      }
+    }
+  }
+}
+
+/**
+ * Valida email en tiempo real mientras el usuario escribe
+ */
+function validarEmailTiempoReal(event) {
+  const input = event.target;
+  const email = input.value;
+  
+  // Formatear automáticamente (minúsculas, sin espacios)
+  const emailFormateado = formatearEmail(email);
+  if (emailFormateado !== email) {
+    const cursorPos = input.selectionStart;
+    input.value = emailFormateado;
+    setTimeout(() => {
+      input.setSelectionRange(cursorPos, cursorPos);
+    }, 0);
+  }
+  
+  // Validar en tiempo real
+  const validacion = validarEmailTiempoReal(emailFormateado);
+  
+  if (!validacion.valido) {
+    input.classList.add('error');
+    input.classList.remove('success');
+    input.title = validacion.mensaje;
+  } else {
+    input.classList.remove('error');
+    input.title = '';
+    
+    // Si parece completo, mostrar como éxito
+    if (emailFormateado.includes('@') && emailFormateado.includes('.') && emailFormateado.length > 5) {
+      if (validarEmail(emailFormateado)) {
+        input.classList.add('success');
+      } else {
+        input.classList.remove('success');
+      }
+    } else {
+      input.classList.remove('success');
+    }
+  }
+}
+
+/**
+ * Valida email al salir del campo
+ */
+function validarEmailFinal(event) {
   const input = event.target;
   const email = input.value.trim();
   
-  if (email && !validarEmail(email)) {
-    input.classList.add('error');
-  } else {
+  if (!email) {
+    input.classList.remove('error', 'success');
+    input.title = '';
+    return;
+  }
+  
+  if (validarEmail(email)) {
     input.classList.remove('error');
+    input.classList.add('success');
+    input.title = '';
+  } else {
+    input.classList.add('error');
+    input.classList.remove('success');
+    
+    // Sugerir corrección si es posible
+    const sugerencia = sugerirEmail(email);
+    if (sugerencia) {
+      const confirmar = confirm(`¿Quisiste decir "${sugerencia}"?`);
+      if (confirmar) {
+        input.value = sugerencia;
+        input.classList.remove('error');
+        input.classList.add('success');
+        input.title = '';
+      }
+    } else {
+      input.title = 'Email no válido';
+    }
+  }
+}
+
+/**
+ * Formatea teléfono en tiempo real
+ */
+function formatearTelefonoTiempoReal(event) {
+  const input = event.target;
+  const telefono = input.value;
+  const cursorPos = input.selectionStart;
+  
+  // Formatear automáticamente
+  const telefonoFormateado = formatearTelefono(telefono);
+  
+  if (telefonoFormateado !== telefono) {
+    input.value = telefonoFormateado;
+    
+    // Restaurar posición del cursor
+    const nuevaPos = Math.min(cursorPos + (telefonoFormateado.length - telefono.length), telefonoFormateado.length);
+    setTimeout(() => {
+      input.setSelectionRange(nuevaPos, nuevaPos);
+    }, 0);
+  }
+  
+  // Limpiar estilos mientras escribe
+  input.classList.remove('error', 'success');
+  input.title = '';
+}
+
+/**
+ * Valida teléfono al salir del campo
+ */
+function validarTelefonoFinal(event) {
+  const input = event.target;
+  const telefono = input.value.trim();
+  
+  if (!telefono) {
+    input.classList.remove('error', 'success');
+    input.title = '';
+    return;
+  }
+  
+  if (validarTelefono(telefono)) {
+    input.classList.remove('error');
+    input.classList.add('success');
+    input.title = '';
+  } else {
+    input.classList.add('error');
+    input.classList.remove('success');
+    
+    // Sugerir corrección si es posible
+    const sugerencia = sugerirTelefono(telefono);
+    if (sugerencia) {
+      const confirmar = confirm(`¿Quisiste decir "${sugerencia}"?`);
+      if (confirmar) {
+        input.value = sugerencia;
+        input.classList.remove('error');
+        input.classList.add('success');
+        input.title = '';
+      }
+    } else {
+      input.title = 'Teléfono no válido (debe ser móvil +56 9 XXXX XXXX o fijo +56 X XXXX XXXX)';
+    }
   }
 }
 
@@ -278,6 +532,7 @@ function validarFormularioPaciente() {
   const nombre = document.getElementById('nombrePaciente').value.trim();
   const rut = document.getElementById('rutPaciente').value.trim();
   const email = document.getElementById('emailPaciente').value.trim();
+  const telefono = document.getElementById('telefonoPaciente').value.trim();
   
   const errores = [];
   
@@ -293,6 +548,10 @@ function validarFormularioPaciente() {
   
   if (email && !validarEmail(email)) {
     errores.push('El email no es válido');
+  }
+  
+  if (telefono && !validarTelefono(telefono)) {
+    errores.push('El teléfono no es válido');
   }
   
   return errores;

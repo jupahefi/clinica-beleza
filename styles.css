@@ -161,6 +161,27 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 4px 12px rgba(102,126,234,0.15);
 }
 
+/* Estados de validación */
+input.error {
+  border-color: #e74c3c !important;
+  background: #fdf2f2 !important;
+  box-shadow: 0 4px 12px rgba(231,76,60,0.15) !important;
+}
+
+input.success {
+  border-color: #27ae60 !important;
+  background: #f2fdf5 !important;
+  box-shadow: 0 4px 12px rgba(39,174,96,0.15) !important;
+}
+
+input.error:focus {
+  border-color: #e74c3c !important;
+}
+
+input.success:focus {
+  border-color: #27ae60 !important;
+}
+
 /* === BOTONES === */
 .btn {
   background: linear-gradient(45deg, #667eea, #764ba2);

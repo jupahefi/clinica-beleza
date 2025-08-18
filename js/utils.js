@@ -82,65 +82,333 @@ export function capitalizar(texto) {
 }
 
 /**
- * Valida RUT chileno
+ * Calcula el dígito verificador usando módulo 11
+ */
+export function calcularDvRut(rutSinDv) {
+  const rutNumerico = rutSinDv.replace(/\D/g, '');
+  let suma = 0;
+  let multiplo = 2;
+  
+  for (let i = rutNumerico.length - 1; i >= 0; i--) {
+    suma += parseInt(rutNumerico.charAt(i)) * multiplo;
+    multiplo = multiplo === 7 ? 2 : multiplo + 1;
+  }
+  
+  const dvCalculado = 11 - (suma % 11);
+  return dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'K' : dvCalculado.toString();
+}
+
+/**
+ * Valida RUT chileno usando módulo 11
  */
 export function validarRut(rut) {
   if (!rut) return false;
   
-  // Remover puntos y guión
-  const rutLimpio = rut.replace(/\./g, '').replace('-', '');
+  // Limpiar RUT: solo números y K
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase();
   
   // Validar formato básico
   if (rutLimpio.length < 8 || rutLimpio.length > 9) return false;
   
   const cuerpo = rutLimpio.slice(0, -1);
-  const dv = rutLimpio.slice(-1).toLowerCase();
+  const dv = rutLimpio.slice(-1);
   
-  // Calcular dígito verificador
-  let suma = 0;
-  let multiplo = 2;
+  // Validar que el cuerpo sean solo números
+  if (!/^\d+$/.test(cuerpo)) return false;
   
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    suma += parseInt(cuerpo.charAt(i)) * multiplo;
-    multiplo = multiplo === 7 ? 2 : multiplo + 1;
-  }
+  // Calcular DV esperado
+  const dvEsperado = calcularDvRut(cuerpo);
   
-  const dvCalculado = 11 - (suma % 11);
-  const dvFinal = dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'k' : dvCalculado.toString();
-  
-  return dv === dvFinal;
+  return dv === dvEsperado;
 }
 
 /**
- * Formatea RUT con puntos y guión
+ * Formatea RUT con puntos y guión automáticamente
  */
 export function formatearRut(rut) {
   if (!rut) return '';
   
-  const rutLimpio = rut.replace(/\./g, '').replace('-', '');
+  // Limpiar: solo números y K
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+  
+  if (rutLimpio.length === 0) return '';
+  
+  // Si tiene menos de 2 caracteres, devolver como está
+  if (rutLimpio.length < 2) return rutLimpio;
+  
   const cuerpo = rutLimpio.slice(0, -1);
   const dv = rutLimpio.slice(-1);
   
-  // Agregar puntos cada 3 dígitos desde la derecha
+  // Formatear cuerpo con puntos cada 3 dígitos desde la derecha
   const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   
   return `${cuerpoFormateado}-${dv}`;
 }
 
 /**
- * Valida email
+ * Auto-completar RUT con dígito verificador
+ */
+export function autocompletarRut(rutIncompleto) {
+  if (!rutIncompleto) return '';
+  
+  // Limpiar entrada
+  const soloNumeros = rutIncompleto.replace(/\D/g, '');
+  
+  // Si tiene menos de 7 dígitos, no calcular DV aún
+  if (soloNumeros.length < 7) {
+    return formatearRut(soloNumeros);
+  }
+  
+  // Si ya tiene 8 o 9 caracteres, no modificar
+  if (soloNumeros.length >= 8) {
+    return formatearRut(rutIncompleto);
+  }
+  
+  // Calcular y agregar DV automáticamente
+  const dv = calcularDvRut(soloNumeros);
+  const rutCompleto = soloNumeros + dv;
+  
+  return formatearRut(rutCompleto);
+}
+
+/**
+ * Formatea email automáticamente
+ */
+export function formatearEmail(email) {
+  if (!email) return '';
+  
+  // Convertir a minúsculas y limpiar espacios
+  return email.toLowerCase().trim();
+}
+
+/**
+ * Valida email con reglas más estrictas
  */
 export function validarEmail(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  if (!email) return false;
+  
+  const emailLimpio = email.toLowerCase().trim();
+  
+  // Regex más completa para email
+  const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  
+  if (!regex.test(emailLimpio)) {
+    return false;
+  }
+  
+  // Validaciones adicionales
+  const partes = emailLimpio.split('@');
+  if (partes.length !== 2) return false;
+  
+  const [usuario, dominio] = partes;
+  
+  // Usuario no puede estar vacío o ser muy largo
+  if (usuario.length === 0 || usuario.length > 64) return false;
+  
+  // Dominio debe tener al menos un punto
+  if (!dominio.includes('.')) return false;
+  
+  // Dominio no puede empezar o terminar con punto o guión
+  if (dominio.startsWith('.') || dominio.endsWith('.') || 
+      dominio.startsWith('-') || dominio.endsWith('-')) return false;
+  
+  return true;
+}
+
+/**
+ * Detecta errores comunes en emails y sugiere correcciones
+ */
+export function sugerirEmail(email) {
+  if (!email) return null;
+  
+  const emailLimpio = email.toLowerCase().trim();
+  
+  // Dominios comunes mal escritos
+  const correccionesDominio = {
+    'gmail.com': ['gmai.com', 'gmail.co', 'gmial.com', 'gmaill.com', 'gmail.con'],
+    'hotmail.com': ['hotmial.com', 'hotmai.com', 'hotmail.co', 'hotmil.com'],
+    'yahoo.com': ['yahoo.co', 'yaho.com', 'yahho.com', 'yahooo.com'],
+    'outlook.com': ['outlook.co', 'outlok.com', 'outook.com'],
+    'live.com': ['live.co', 'liv.com'],
+    'icloud.com': ['iclou.com', 'icloud.co', 'icoud.com']
+  };
+  
+  // Verificar si falta @ 
+  if (!emailLimpio.includes('@')) {
+    // Si parece tener un dominio pero falta @
+    const dominiosComunes = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
+    for (const dominio of dominiosComunes) {
+      if (emailLimpio.includes(dominio.replace('.', ''))) {
+        return emailLimpio.replace(dominio.replace('.', ''), '@' + dominio);
+      }
+    }
+    return null;
+  }
+  
+  const partes = emailLimpio.split('@');
+  if (partes.length !== 2) return null;
+  
+  const [usuario, dominio] = partes;
+  
+  // Buscar corrección de dominio
+  for (const [dominioCorreto, variantes] of Object.entries(correccionesDominio)) {
+    if (variantes.includes(dominio)) {
+      return `${usuario}@${dominioCorreto}`;
+    }
+  }
+  
+  // Verificar errores comunes
+  if (dominio.endsWith('.co') && !dominio.endsWith('.com.co')) {
+    return `${usuario}@${dominio}m`; // Probablemente quiso decir .com
+  }
+  
+  if (dominio.endsWith('.con')) {
+    return `${usuario}@${dominio.replace('.con', '.com')}`;
+  }
+  
+  return null;
+}
+
+/**
+ * Valida formato de email en tiempo real
+ */
+export function validarEmailTiempoReal(email) {
+  if (!email) return { valido: true, mensaje: '' };
+  
+  const emailLimpio = email.toLowerCase().trim();
+  
+  // Verificar caracteres básicos
+  if (!/^[a-zA-Z0-9.@_-]*$/.test(emailLimpio)) {
+    return { valido: false, mensaje: 'Contiene caracteres no válidos' };
+  }
+  
+  // Verificar múltiples @
+  const cantidadArroba = (emailLimpio.match(/@/g) || []).length;
+  if (cantidadArroba > 1) {
+    return { valido: false, mensaje: 'Solo puede tener un @' };
+  }
+  
+  // Si tiene @, verificar estructura básica
+  if (emailLimpio.includes('@')) {
+    const partes = emailLimpio.split('@');
+    if (partes[0].length === 0) {
+      return { valido: false, mensaje: 'Falta nombre de usuario' };
+    }
+    if (partes[1].length === 0) {
+      return { valido: false, mensaje: 'Falta dominio' };
+    }
+  }
+  
+  return { valido: true, mensaje: '' };
+}
+
+/**
+ * Formatea teléfono chileno automáticamente
+ */
+export function formatearTelefono(telefono) {
+  if (!telefono) return '';
+  
+  // Limpiar: solo números
+  const soloNumeros = telefono.replace(/\D/g, '');
+  
+  // Si empieza con 56, remover el prefijo del país para formatear
+  const sinPrefijo = soloNumeros.startsWith('56') ? soloNumeros.slice(2) : soloNumeros;
+  
+  // Validar formato chileno
+  if (sinPrefijo.length === 0) return '';
+  
+  // Formatear según la longitud
+  if (sinPrefijo.length <= 1) {
+    return `+56 ${sinPrefijo}`;
+  } else if (sinPrefijo.length <= 5) {
+    return `+56 ${sinPrefijo}`;
+  } else if (sinPrefijo.length <= 9) {
+    const codigo = sinPrefijo.slice(0, 1);
+    const parte1 = sinPrefijo.slice(1, 5);
+    const parte2 = sinPrefijo.slice(5, 9);
+    
+    if (sinPrefijo.length <= 5) {
+      return `+56 ${codigo} ${parte1}`;
+    } else {
+      return `+56 ${codigo} ${parte1} ${parte2}`;
+    }
+  } else {
+    // Muy largo, cortar a 9 dígitos
+    const recortado = sinPrefijo.slice(0, 9);
+    const codigo = recortado.slice(0, 1);
+    const parte1 = recortado.slice(1, 5);
+    const parte2 = recortado.slice(5, 9);
+    return `+56 ${codigo} ${parte1} ${parte2}`;
+  }
 }
 
 /**
  * Valida teléfono chileno
  */
 export function validarTelefono(telefono) {
-  const regex = /^\+?56\s?[9]\s?\d{4}\s?\d{4}$/;
-  return regex.test(telefono.replace(/\s/g, ''));
+  if (!telefono) return false;
+  
+  // Limpiar números
+  const soloNumeros = telefono.replace(/\D/g, '');
+  
+  // Verificar formatos válidos:
+  // +56 9 1234 5678 (móvil)
+  // +56 2 1234 5678 (fijo Santiago)
+  // +56 XX 123 4567 (fijo regiones)
+  
+  let numeroSinPrefijo = soloNumeros;
+  
+  // Remover prefijo +56 si existe
+  if (numeroSinPrefijo.startsWith('56')) {
+    numeroSinPrefijo = numeroSinPrefijo.slice(2);
+  }
+  
+  // Validar longitud (8 o 9 dígitos)
+  if (numeroSinPrefijo.length < 8 || numeroSinPrefijo.length > 9) {
+    return false;
+  }
+  
+  // Validar móviles (empiezan con 9 y tienen 9 dígitos)
+  if (numeroSinPrefijo.startsWith('9') && numeroSinPrefijo.length === 9) {
+    return true;
+  }
+  
+  // Validar fijos (8 dígitos, primer dígito 2-9)
+  if (numeroSinPrefijo.length === 8 && /^[2-9]/.test(numeroSinPrefijo)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Detecta y corrige errores comunes en teléfonos
+ */
+export function sugerirTelefono(telefono) {
+  const soloNumeros = telefono.replace(/\D/g, '');
+  
+  // Si es muy corto o muy largo
+  if (soloNumeros.length < 8) {
+    return null; // Muy corto para sugerir
+  }
+  
+  // Si empieza con 9 pero le falta un dígito (móvil)
+  if (soloNumeros.startsWith('9') && soloNumeros.length === 8) {
+    // Podría faltarle un dígito al final
+    return null; // No podemos adivinar el dígito faltante
+  }
+  
+  // Si no empieza con 56 pero parece móvil completo
+  if (soloNumeros.length === 9 && soloNumeros.startsWith('9')) {
+    return formatearTelefono('56' + soloNumeros);
+  }
+  
+  // Si es un fijo pero le falta el código de área
+  if (soloNumeros.length === 7) {
+    return formatearTelefono('562' + soloNumeros); // Asumir Santiago
+  }
+  
+  return null;
 }
 
 /**
