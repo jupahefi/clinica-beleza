@@ -15,7 +15,7 @@ body {
 .header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 1rem 2rem;
+  padding: 1.2rem 2rem;
   box-shadow: 0 2px 20px rgba(0,0,0,0.1);
   position: sticky;
   top: 0;
@@ -37,10 +37,11 @@ body {
 }
 
 .logo img {
-  height: 40px;
+  height: 60px;
   width: auto;
-  margin-right: 0.5rem;
-  border-radius: 8px;
+  margin-right: 0.8rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .logo-text {
@@ -51,7 +52,12 @@ body {
 
 .logo:hover {
   opacity: 0.8;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  transform: scale(1.05);
+}
+
+.logo:hover img {
+  box-shadow: 0 4px 16px rgba(102,126,234,0.3);
 }
 
 .nav-btn {
@@ -313,7 +319,7 @@ input:focus, select:focus, textarea:focus {
   }
   
   .logo img {
-    height: 32px;
+    height: 45px;
   }
   
   .logo-text {
