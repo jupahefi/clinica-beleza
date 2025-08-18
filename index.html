@@ -13,9 +13,10 @@
   <meta property="og:url" content="https://clinica-beleza.equalitech.xyz/">
   <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
   <meta property="og:description" content="Sistema integral de gestión para clínica estética. Maneja pacientes, ventas, pagos y sesiones de tratamientos de belleza.">
-  <meta property="og:image" content="https://clinica-beleza.equalitech.xyz/logo.png">
+  <meta property="og:image" content="https://clinica-beleza.equalitech.xyz/logo.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:locale" content="es_ES">
   
   <!-- Twitter -->
@@ -23,7 +24,7 @@
   <meta property="twitter:url" content="https://clinica-beleza.equalitech.xyz/">
   <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
   <meta property="twitter:description" content="Sistema integral de gestión para clínica estética. Maneja pacientes, ventas, pagos y sesiones de tratamientos de belleza.">
-  <meta property="twitter:image" content="https://clinica-beleza.equalitech.xyz/logo.png">
+  <meta property="twitter:image" content="https://clinica-beleza.equalitech.xyz/logo.png?v=2">
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="logo.png">
@@ -93,18 +94,14 @@
         </div>
 
         <div class="form-group">
-          <label>Tipo de Ficha Específica</label>
-          <div class="radio-group">
-            <div class="radio-item">
-              <input type="radio" name="tipoFicha" value="general" id="fichaGeneral" checked>
-              <label for="fichaGeneral">General</label>
-            </div>
-            <div class="radio-item">
-              <input type="radio" name="tipoFicha" value="depilacion" id="fichaDepilacion">
+          <label>Fichas Específicas (puedes seleccionar múltiples)</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="fichaDepilacion" value="depilacion">
               <label for="fichaDepilacion">Depilación</label>
             </div>
-            <div class="radio-item">
-              <input type="radio" name="tipoFicha" value="corporal" id="fichaCorporal">
+            <div class="checkbox-item">
+              <input type="checkbox" id="fichaCorporal" value="corporal">
               <label for="fichaCorporal">Corporal/Facial</label>
             </div>
           </div>

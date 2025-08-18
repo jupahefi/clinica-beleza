@@ -4,7 +4,7 @@
  */
 
 import { inicializarStorage } from './storage.js';
-import { inicializarPacientes, toggleFichaEspecifica, guardarPacienteFormulario } from './modules/pacientes.js';
+import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
 import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
 import { inicializarPagos, registrarPago } from './modules/pagos.js';
 import { inicializarSesiones, iniciarSesion, terminarSesion, agendarSesion, confirmarAgenda, cancelarAgenda, reprogramarAgenda } from './modules/sesiones.js';
@@ -280,7 +280,8 @@ function exponerFuncionesGlobales() {
   window.showView = showView;
   
   // Pacientes
-  window.toggleFichaEspecifica = toggleFichaEspecifica;
+  window.toggleFichaEspecifica = toggleFichasEspecificas; // Mantener compatibilidad
+  window.toggleFichasEspecificas = toggleFichasEspecificas;
   window.guardarPaciente = guardarPacienteFormulario;
   
   // Ventas

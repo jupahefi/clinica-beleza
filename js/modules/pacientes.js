@@ -37,10 +37,10 @@ function configurarEventosPacientes() {
     emailInput.addEventListener('blur', validarEmailInput);
   }
   
-  // Configurar radio buttons de tipo de ficha
-  const radioFichas = document.querySelectorAll('input[name="tipoFicha"]');
-  radioFichas.forEach(radio => {
-    radio.addEventListener('change', toggleFichaEspecifica);
+  // Configurar checkboxes de fichas específicas
+  const checkboxFichas = document.querySelectorAll('input[type="checkbox"][id^="ficha"]');
+  checkboxFichas.forEach(checkbox => {
+    checkbox.addEventListener('change', toggleFichasEspecificas);
   });
 }
 
@@ -95,16 +95,29 @@ function cargarPacienteSeleccionado() {
   document.getElementById('emailPaciente').value = paciente.email || '';
   document.getElementById('observacionesPaciente').value = paciente.observaciones || '';
   
-  // Cargar tipo de ficha
-  const tipoFicha = paciente.tipoFicha || 'general';
-  const radioTipo = document.querySelector(`input[name="tipoFicha"][value="${tipoFicha}"]`);
-  if (radioTipo) {
-    radioTipo.checked = true;
-    toggleFichaEspecifica();
-  }
+  // Cargar fichas específicas
+  const fichasEspecificas = paciente.fichasEspecificas || [];
+  
+  // Limpiar checkboxes
+  document.querySelectorAll('input[type="checkbox"][id^="ficha"]').forEach(cb => cb.checked = false);
+  
+  // Marcar checkboxes según las fichas del paciente
+  fichasEspecificas.forEach(tipo => {
+    const checkbox = document.getElementById(`ficha${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    if (checkbox) {
+      checkbox.checked = true;
+    }
+  });
+  
+  toggleFichasEspecificas();
   
   // Cargar datos específicos
-  cargarDatosFichaEspecifica(tipoFicha, paciente.fichaEspecifica);
+  if (paciente.fichaDepilacion) {
+    cargarDatosFichaEspecifica('depilacion', paciente.fichaDepilacion);
+  }
+  if (paciente.fichaCorporal) {
+    cargarDatosFichaEspecifica('corporal', paciente.fichaCorporal);
+  }
 }
 
 /**
@@ -143,12 +156,9 @@ function limpiarFormularioPaciente() {
   // Limpiar fichas específicas
   limpiarFichasEspecificas();
   
-  // Seleccionar ficha general
-  const fichaGeneral = document.getElementById('fichaGeneral');
-  if (fichaGeneral) {
-    fichaGeneral.checked = true;
-    toggleFichaEspecifica();
-  }
+  // Desmarcar todos los checkboxes
+  document.querySelectorAll('input[type="checkbox"][id^="ficha"]').forEach(cb => cb.checked = false);
+  toggleFichasEspecificas();
   
   pacienteActual = null;
 }
@@ -167,24 +177,39 @@ function limpiarFichasEspecificas() {
 }
 
 /**
- * Muestra/oculta las fichas específicas según el tipo seleccionado
+ * Muestra/oculta las fichas específicas según los checkboxes seleccionados
  */
-export function toggleFichaEspecifica() {
-  const tipoSeleccionado = document.querySelector('input[name="tipoFicha"]:checked')?.value;
-  
+export function toggleFichasEspecificas() {
   const fichaDepilacion = document.getElementById('fichaDepilacionCard');
   const fichaCorporal = document.getElementById('fichaCorporalCard');
   
-  if (fichaDepilacion) fichaDepilacion.classList.add('hidden');
-  if (fichaCorporal) fichaCorporal.classList.add('hidden');
+  const depilacionChecked = document.getElementById('fichaDepilacion')?.checked;
+  const corporalChecked = document.getElementById('fichaCorporal')?.checked;
   
-  if (tipoSeleccionado === 'depilacion' && fichaDepilacion) {
-    fichaDepilacion.classList.remove('hidden');
-    cargarOpcionesTipoPiel();
-  } else if (tipoSeleccionado === 'corporal' && fichaCorporal) {
-    fichaCorporal.classList.remove('hidden');
-    cargarOpcionesZonasTratamiento();
+  // Mostrar/ocultar ficha de depilación
+  if (fichaDepilacion) {
+    if (depilacionChecked) {
+      fichaDepilacion.classList.remove('hidden');
+      cargarOpcionesTipoPiel();
+    } else {
+      fichaDepilacion.classList.add('hidden');
+    }
   }
+  
+  // Mostrar/ocultar ficha corporal
+  if (fichaCorporal) {
+    if (corporalChecked) {
+      fichaCorporal.classList.remove('hidden');
+      cargarOpcionesZonasTratamiento();
+    } else {
+      fichaCorporal.classList.add('hidden');
+    }
+  }
+}
+
+// Mantener compatibilidad con llamadas anteriores
+export function toggleFichaEspecifica() {
+  toggleFichasEspecificas();
 }
 
 /**
@@ -274,25 +299,38 @@ function validarFormularioPaciente() {
 }
 
 /**
- * Obtiene los datos de la ficha específica según el tipo
+ * Obtiene los datos de las fichas específicas seleccionadas
  */
-function obtenerDatosFichaEspecifica(tipo) {
-  if (tipo === 'depilacion') {
-    return {
+function obtenerDatosFichasEspecificas() {
+  const fichasData = {};
+  const fichasSeleccionadas = [];
+  
+  // Verificar ficha de depilación
+  if (document.getElementById('fichaDepilacion')?.checked) {
+    fichasSeleccionadas.push('depilacion');
+    fichasData.fichaDepilacion = {
       zonas: document.getElementById('zonasDepilacion').value.trim(),
       tipoPiel: document.getElementById('tipoPiel').value,
       medicamentos: document.getElementById('medicamentos').value.trim(),
       observacionesMedicas: document.getElementById('observacionesMedicas').value.trim()
     };
-  } else if (tipo === 'corporal') {
-    return {
+  }
+  
+  // Verificar ficha corporal
+  if (document.getElementById('fichaCorporal')?.checked) {
+    fichasSeleccionadas.push('corporal');
+    fichasData.fichaCorporal = {
       tratamientosPrevios: document.getElementById('tratamientosPrevios').value.trim(),
       objetivoEstetico: document.getElementById('objetivoEstetico').value.trim(),
       zonaTratamiento: document.getElementById('zonaTratamiento').value,
       expectativas: document.getElementById('expectativas').value.trim()
     };
   }
-  return null;
+  
+  return {
+    fichasEspecificas: fichasSeleccionadas,
+    ...fichasData
+  };
 }
 
 /**
@@ -306,8 +344,8 @@ export function guardarPacienteFormulario() {
     return false;
   }
   
-  const tipoFicha = document.querySelector('input[name="tipoFicha"]:checked').value;
   const esNuevo = !pacienteActual;
+  const datosEspecificos = obtenerDatosFichasEspecificas();
   
   const paciente = {
     id: pacienteActual?.id || generarId(),
@@ -317,8 +355,7 @@ export function guardarPacienteFormulario() {
     telefono: document.getElementById('telefonoPaciente').value.trim(),
     email: document.getElementById('emailPaciente').value.trim(),
     observaciones: document.getElementById('observacionesPaciente').value.trim(),
-    tipoFicha,
-    fichaEspecifica: obtenerDatosFichaEspecifica(tipoFicha),
+    ...datosEspecificos,
     fechaCreacion: pacienteActual?.fechaCreacion || new Date().toISOString(),
     fechaActualizacion: new Date().toISOString()
   };

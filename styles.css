@@ -183,17 +183,30 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(45deg, #2ecc71, #27ae60);
 }
 
-/* === RADIO BUTTONS === */
-.radio-group {
+/* === CHECKBOXES Y RADIO BUTTONS === */
+.radio-group, .checkbox-group {
   display: flex;
   gap: 2rem;
   margin-top: 1rem;
 }
 
-.radio-item {
+.radio-item, .checkbox-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  transform: scale(1.2);
+  accent-color: #667eea;
+}
+
+.checkbox-item label {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 500;
 }
 
 /* === LISTA DE ITEMS === */
