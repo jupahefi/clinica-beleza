@@ -93,7 +93,7 @@ async function inicializarGoogleCalendar() {
       await cargarGoogleAPI();
     }
     
-    await window.gapi.load('client', inicializarGapiClient);
+    await window.gapi.load('client:auth2', inicializarGapiClient);
   } catch (error) {
     console.warn('Error al cargar Google Calendar API:', error);
   }
@@ -113,23 +113,112 @@ function cargarGoogleAPI() {
 }
 
 /**
- * Inicializa el cliente de Google API con solo API Key (sin OAuth)
+ * Inicializa el cliente de Google API con OAuth para poder crear calendarios
  */
 async function inicializarGapiClient() {
   try {
     await window.gapi.client.init({
       apiKey: GOOGLE_CALENDAR_CONFIG.API_KEY,
-      discoveryDocs: [GOOGLE_CALENDAR_CONFIG.DISCOVERY_DOC]
+      discoveryDocs: [GOOGLE_CALENDAR_CONFIG.DISCOVERY_DOC],
+      clientId: '434463998987-mkkl8a9gfn9e5p6u4d2a9q2v3q7m8k3m.apps.googleusercontent.com', // Cliente OAuth para crear calendarios
+      scope: 'https://www.googleapis.com/auth/calendar'
     });
     
     gapi = window.gapi;
     gapiLoaded = true;
-    isCalendarAuthorized = true; // Con API Key no necesitamos OAuth para lectura
     
-    console.log('Google Calendar API inicializada con API Key');
-    cargarSesionesHoy();
+    // Intentar autorización automática
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (authInstance.isSignedIn.get()) {
+      isCalendarAuthorized = true;
+      await buscarOCrearCalendarioSesiones();
+    } else {
+      // Intentar autorización silenciosa
+      try {
+        await authInstance.signIn({ prompt: 'none' });
+        isCalendarAuthorized = true;
+        await buscarOCrearCalendarioSesiones();
+      } catch (authError) {
+        console.log('Autorización requerida. Mostrando botón de autorización.');
+        mostrarBotonAutorizacion();
+      }
+    }
+    
+    console.log('Google Calendar API inicializada');
   } catch (error) {
     console.warn('Error al inicializar Google Calendar:', error);
+    mostrarNotificacion('Error al conectar con Google Calendar. Funcionalidad limitada.', 'warning');
+  }
+}
+
+/**
+ * Busca el calendario "sesiones" o lo crea si no existe
+ */
+async function buscarOCrearCalendarioSesiones() {
+  try {
+    // Buscar el calendario "sesiones" en la lista de calendarios del usuario
+    const response = await gapi.client.calendar.calendarList.list();
+    const calendarios = response.result.items || [];
+    
+    let calendarioSesiones = calendarios.find(cal => 
+      cal.summary?.toLowerCase() === GOOGLE_CALENDAR_CONFIG.CALENDAR_NAME.toLowerCase()
+    );
+    
+    if (calendarioSesiones) {
+      // Encontró el calendario
+      GOOGLE_CALENDAR_CONFIG.CALENDAR_ID = calendarioSesiones.id;
+      console.log('✅ Calendario "sesiones" encontrado:', calendarioSesiones.id);
+    } else {
+      // Crear el calendario
+      calendarioSesiones = await crearCalendarioSesiones();
+      GOOGLE_CALENDAR_CONFIG.CALENDAR_ID = calendarioSesiones.id;
+      console.log('✅ Calendario "sesiones" creado:', calendarioSesiones.id);
+    }
+    
+    // Ahora cargar las sesiones
+    cargarSesionesHoy();
+    
+  } catch (error) {
+    console.error('Error al buscar/crear calendario:', error);
+    mostrarNotificacion('Error al configurar calendario de sesiones: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Crea un nuevo calendario para sesiones
+ */
+async function crearCalendarioSesiones() {
+  const calendarioData = {
+    summary: 'Sesiones',
+    description: 'Calendario para gestión de sesiones de tratamientos - Clínica Beleza',
+    timeZone: 'America/Santiago'
+  };
+  
+  const response = await gapi.client.calendar.calendars.insert({
+    resource: calendarioData
+  });
+  
+  return response.result;
+}
+
+/**
+ * Muestra botón de autorización cuando es necesario
+ */
+function mostrarBotonAutorizacion() {
+  const botonAuth = document.getElementById('btnAutorizarCalendar');
+  if (botonAuth) {
+    botonAuth.style.display = 'inline-block';
+    botonAuth.onclick = async () => {
+      try {
+        const authInstance = gapi.auth2.getAuthInstance();
+        await authInstance.signIn();
+        isCalendarAuthorized = true;
+        await buscarOCrearCalendarioSesiones();
+        botonAuth.style.display = 'none';
+      } catch (error) {
+        mostrarNotificacion('Error al autorizar: ' + error.message, 'error');
+      }
+    };
   }
 }
 
