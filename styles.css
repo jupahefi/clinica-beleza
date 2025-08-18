@@ -410,6 +410,17 @@ input.success:focus {
 .sesion-item:hover {
   background: #f8f9fa;
   border-color: #2563eb;
+  cursor: pointer;
+}
+
+.sesion-item.sesion-incompleta {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.sesion-item.sesion-incompleta:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
 }
 
 .sesion-hora {
@@ -609,6 +620,12 @@ input.success:focus {
   gap: 1rem;
   justify-content: center;
   margin-top: 1.5rem;
+}
+
+/* Session Details */
+.session-details p {
+  margin: 0.5rem 0;
+  line-height: 1.4;
 }
 
 /* Responsive para sesiones */

@@ -33,13 +33,18 @@ let boxesDisponibles = [...BOXES_CONFIG];
  * Inicializa el módulo de sesiones
  */
 export function inicializarSesiones() {
+  console.log('🔄 Inicializando módulo de sesiones...');
+  
   cargarTratamientosAgenda();
   configurarEventosSesiones();
-  inicializarGoogleCalendar();
   cargarBoxes();
-  cargarSelectorFecha();
+  cargarSelectorFecha(); // Esto ya incluye cargar sesiones del día
   renderSesionesAgendadas();
-  cargarSesionesHoy();
+  
+  // Inicializar Google Calendar en paralelo
+  inicializarGoogleCalendar();
+  
+  console.log('✅ Módulo de sesiones inicializado');
 }
 
 /**
@@ -245,9 +250,14 @@ function cargarSelectorFecha() {
   const fechaSelector = document.getElementById('fechaSelector');
   if (fechaSelector) {
     const hoy = new Date();
-    hoy.setMinutes(hoy.getMinutes() - hoy.getTimezoneOffset());
-    fechaSelector.value = hoy.toISOString().split('T')[0];
-    cargarSesionesDelDia();
+    const fechaHoy = hoy.toISOString().split('T')[0];
+    fechaSelector.value = fechaHoy;
+    console.log('📅 Fecha por defecto establecida:', fechaHoy);
+    
+    // Cargar sesiones después de un pequeño delay para asegurar que la API esté lista
+    setTimeout(() => {
+      cargarSesionesDelDia();
+    }, 500);
   }
 }
 
@@ -321,42 +331,63 @@ function renderSesionesDelDia(fecha) {
       const inicio = new Date(evento.start.dateTime || evento.start.date);
       const hora = inicio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
       
-      // Extraer información de la sesión
+            // Extraer información de la sesión
       const props = evento.extendedProperties?.private || {};
-      const numeroSesion = props.numeroSesion || '?';
-      const totalSesiones = props.totalSesiones || '?';
-      const boxId = props.boxId || '?';
+      const numeroSesion = props.numeroSesion || '';
+      const totalSesiones = props.totalSesiones || '';
+      const boxId = props.boxId || '';
+      const pacienteId = props.pacienteId || '';
+      const ventaId = props.ventaId || '';
+      
+      // Determinar si la sesión tiene datos completos
+      const tieneCliente = pacienteId && ventaId;
+      const progresoTexto = numeroSesion && totalSesiones ? `📋 Sesión ${numeroSesion}/${totalSesiones}` : '📋 Sin datos de progreso';
+      const boxTexto = boxId ? `🏢 Box ${boxId}` : '🏢 Sin box asignado';
       
       // Determinar estado visual
       let claseEstado = 'status-pending';
       let iconoEstado = '⏰';
+      let estadoTexto = 'Programada';
       
       if (esHoy) {
         const ahora = new Date();
         if (inicio <= ahora) {
           claseEstado = 'status-completed';
           iconoEstado = '✅';
+          estadoTexto = 'Lista para abrir';
         }
       }
-    
-    html += `
-        <div class="sesion-item">
+      
+      if (!tieneCliente) {
+        claseEstado = 'status-warning';
+        iconoEstado = '⚠️';
+        estadoTexto = 'Sin cliente';
+      }
+      
+      html += `
+        <div class="sesion-item ${!tieneCliente ? 'sesion-incompleta' : ''}" onclick="mostrarDetallesSesion('${evento.id}')">
           <div class="sesion-hora">
             ${iconoEstado} ${hora}
-        </div>
+          </div>
           <div class="sesion-info">
             <strong>${evento.summary}</strong><br>
-            <small>📋 Sesión ${numeroSesion}/${totalSesiones} • 🏢 Box ${boxId}</small><br>
-            <small class="text-muted">${evento.description?.split('\\n')[0] || ''}</small>
-        </div>
-          <div class="sesion-acciones">
-            <button class="btn btn-sm btn-primary" onclick="abrirSesion('${evento.id}')">
-              ${iconoEstado === '✅' ? '▶️ Abrir' : '⏰ Programada'}
-            </button>
+            <small>${progresoTexto} • ${boxTexto}</small><br>
+            <small class="text-muted">${evento.description?.split('\\n')[0] || 'Clic para ver detalles'}</small>
+          </div>
+          <div class="sesion-acciones" onclick="event.stopPropagation()">
+            ${tieneCliente ? `
+              <button class="btn btn-sm btn-primary" onclick="abrirSesion('${evento.id}')">
+                ${iconoEstado === '✅' ? '▶️ Abrir' : '⏰ Programada'}
+              </button>
+            ` : `
+              <button class="btn btn-sm btn-warning" onclick="completarDatosSesion('${evento.id}')">
+                ⚠️ Completar datos
+              </button>
+            `}
             <button class="btn btn-sm btn-secondary" onclick="editarSesion('${evento.id}')">✏️ Editar</button>
+          </div>
         </div>
-      </div>
-    `;
+      `;
   });
   }
   
@@ -1290,6 +1321,54 @@ export function eliminarBox(boxId) {
     
     mostrarNotificacion(`${box.nombre} eliminado`, 'success');
   }
+}
+
+/**
+ * Muestra los detalles de una sesión al hacer clic
+ */
+window.mostrarDetallesSesion = function(eventoId) {
+  const evento = sesionesHoyCalendar.find(e => e.id === eventoId);
+  if (!evento) return;
+  
+  const props = evento.extendedProperties?.private || {};
+  const inicio = new Date(evento.start.dateTime || evento.start.date);
+  
+  let detalles = `
+    <h4>📋 Detalles de la Sesión</h4>
+    <p><strong>🕐 Hora:</strong> ${inicio.toLocaleTimeString()}</p>
+    <p><strong>📝 Título:</strong> ${evento.summary}</p>
+  `;
+  
+  if (props.pacienteId && props.ventaId) {
+    const paciente = obtenerPacientePorId(parseInt(props.pacienteId));
+    const venta = obtenerVentaPorId(parseInt(props.ventaId));
+    
+    if (paciente && venta) {
+      detalles += `
+        <p><strong>👤 Paciente:</strong> ${paciente.nombre}</p>
+        <p><strong>🆔 RUT:</strong> ${paciente.rut}</p>
+        <p><strong>💆 Tratamiento:</strong> ${venta.tratamiento}</p>
+        <p><strong>📊 Progreso:</strong> Sesión ${props.numeroSesion || '?'} de ${props.totalSesiones || '?'}</p>
+        <p><strong>🏢 Box:</strong> Box ${props.boxId || 'No asignado'}</p>
+        <p><strong>📋 Sesiones restantes:</strong> ${venta.sesionesRestantes}</p>
+      `;
+    }
+  } else {
+    detalles += `
+      <p style="color: orange;"><strong>⚠️ Esta sesión no tiene cliente asociado</strong></p>
+      <p>Necesitas completar los datos para poder iniciarla.</p>
+    `;
+  }
+  
+  mostrarNotificacion(detalles, 'info');
+}
+
+/**
+ * Permite completar los datos de una sesión incompleta
+ */
+window.completarDatosSesion = function(eventoId) {
+  mostrarNotificacion('Funcionalidad próximamente: Completar datos de sesión', 'info');
+  // TODO: Implementar modal para asignar cliente, venta y box a una sesión existente
 }
 
 /**

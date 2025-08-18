@@ -54,17 +54,8 @@ function inicializarApp() {
  * Configura la navegación entre vistas
  */
 function configurarNavegacion() {
-  const navButtons = document.querySelectorAll('.nav-btn');
-  
-  navButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      const vista = e.target.textContent.toLowerCase();
-      const vistaId = mapearNombreVista(vista);
-      if (vistaId) {
-        showView(vistaId);
-      }
-    });
-  });
+  // Los botones ya tienen onclick en el HTML, no necesitamos listeners adicionales
+  console.log('✅ Navegación configurada');
 }
 
 /**
@@ -73,9 +64,10 @@ function configurarNavegacion() {
 function mapearNombreVista(nombre) {
   const mapeo = {
     'fichas': 'ficha',
-    'ventas': 'venta',
+    'ventas': 'ventas',
     'pagos': 'pagos',
     'sesiones': 'sesiones',
+    'boxes': 'boxes',
     'ofertas': 'ofertas',
     'historial': 'historial'
   };
