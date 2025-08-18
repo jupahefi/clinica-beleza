@@ -226,16 +226,23 @@ function ejecutarLogicaVista(viewId) {
       // La lógica ya está en el módulo de pacientes
       break;
       
-    case 'venta':
+    case 'ventas':
       // La lógica ya está en el módulo de ventas
       break;
       
     case 'pagos':
-      inicializarPagos(); // Actualizar datos
+      // Solo actualizar si ya está inicializado
       break;
       
     case 'sesiones':
-      inicializarSesiones(); // Actualizar datos
+      // Solo cargar sesiones del día actual si ya está inicializado
+      if (window.cargarSesionesHoy) {
+        window.cargarSesionesHoy();
+      }
+      break;
+      
+    case 'boxes':
+      // Lógica para boxes
       break;
       
     case 'ofertas':
@@ -288,6 +295,9 @@ function exponerFuncionesGlobales() {
   window.confirmarAgenda = confirmarAgenda;
   window.cancelarAgenda = cancelarAgenda;
   window.reprogramarAgenda = reprogramarAgenda;
+  
+  console.log('✅ Funciones globales expuestas');
+  console.log('showView disponible:', typeof window.showView);
 }
 
 /**

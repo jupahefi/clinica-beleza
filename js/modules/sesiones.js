@@ -33,6 +33,12 @@ let boxesDisponibles = [...BOXES_CONFIG];
  * Inicializa el módulo de sesiones
  */
 export function inicializarSesiones() {
+  // Solo inicializar una vez
+  if (window.sesionesInicializadas) {
+    console.log('⚠️ Sesiones ya inicializadas, saltando...');
+    return;
+  }
+  
   console.log('🔄 Inicializando módulo de sesiones...');
   
   cargarTratamientosAgenda();
@@ -44,6 +50,7 @@ export function inicializarSesiones() {
   // Inicializar Google Calendar en paralelo
   inicializarGoogleCalendar();
   
+  window.sesionesInicializadas = true;
   console.log('✅ Módulo de sesiones inicializado');
 }
 
