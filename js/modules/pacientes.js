@@ -284,19 +284,25 @@ function formatearRutTiempoReal(event) {
   
   // Formatear según la longitud
   if (soloNumeros.length <= 7) {
-    // Solo números, sin DV aún
+    // Solo números, sin DV aún - aplicar puntos
     rutFormateado = soloNumeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   } else if (soloNumeros.length === 8) {
     // Con DV, formatear completo
-    const cuerpo = soloNumeros.slice(0, -1);
-    const dv = soloNumeros.slice(-1).toUpperCase();
+    const cuerpo = soloNumeros.slice(0, 7);  // Primeros 7 dígitos
+    const dv = soloNumeros.slice(7).toUpperCase();  // Último dígito
+    const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    rutFormateado = `${cuerpoFormateado}-${dv}`;
+  } else if (soloNumeros.length === 9) {
+    // RUT con 9 dígitos (ej: 177048410)
+    const cuerpo = soloNumeros.slice(0, 8);  // Primeros 8 dígitos
+    const dv = soloNumeros.slice(8).toUpperCase();  // Último dígito
     const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     rutFormateado = `${cuerpoFormateado}-${dv}`;
   } else {
-    // Muy largo, mantener solo los primeros 8 caracteres
-    const rutRecortado = soloNumeros.slice(0, 8);
-    const cuerpo = rutRecortado.slice(0, -1);
-    const dv = rutRecortado.slice(-1).toUpperCase();
+    // Muy largo, mantener solo los primeros 9 caracteres
+    const rutRecortado = soloNumeros.slice(0, 9);
+    const cuerpo = rutRecortado.slice(0, 8);
+    const dv = rutRecortado.slice(8).toUpperCase();
     const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     rutFormateado = `${cuerpoFormateado}-${dv}`;
   }
@@ -320,8 +326,8 @@ function autocompletarRutInput(event) {
   const input = event.target;
   const valor = input.value.replace(/[^0-9]/g, '');
   
-  // Solo autocompletar si tiene exactamente 7 u 8 números
-  if (valor.length === 7 || valor.length === 8) {
+  // Solo autocompletar si tiene exactamente 7 números (para calcular DV)
+  if (valor.length === 7) {
     const rutCompleto = autocompletarRut(valor);
     input.value = rutCompleto;
     
@@ -549,7 +555,7 @@ function validarTelefonoFinal(event) {
       
       if (soloNumeros.length === 8 && soloNumeros.startsWith('9')) {
         // Le falta un dígito al móvil
-        input.title = 'Móvil chileno debe tener 9 dígitos (ej: 9 4286 0208)';
+        input.title = 'Móvil chileno debe tener 9 dígitos (ej: 9 5359 1938)';
       } else if (soloNumeros.length === 9 && !soloNumeros.startsWith('9')) {
         // Es fijo con 9 dígitos?
         input.title = 'Fijo chileno debe tener 8 dígitos (ej: 2 1234 5678)';

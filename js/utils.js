@@ -107,7 +107,7 @@ export function validarRut(rut) {
   // Limpiar RUT: solo números y K
   const rutLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase();
   
-  // Validar formato básico
+  // Validar formato básico (7 a 9 dígitos + DV)
   if (rutLimpio.length < 8 || rutLimpio.length > 9) return false;
   
   const cuerpo = rutLimpio.slice(0, -1);
@@ -115,6 +115,9 @@ export function validarRut(rut) {
   
   // Validar que el cuerpo sean solo números
   if (!/^\d+$/.test(cuerpo)) return false;
+  
+  // El cuerpo debe tener entre 7 y 8 dígitos
+  if (cuerpo.length < 7 || cuerpo.length > 8) return false;
   
   // Calcular DV esperado
   const dvEsperado = calcularDvRut(cuerpo);
@@ -159,16 +162,19 @@ export function autocompletarRut(rutIncompleto) {
     return formatearRut(soloNumeros);
   }
   
-  // Si ya tiene 8 o 9 caracteres, no modificar
+  // Si ya tiene 8 o 9 dígitos, no modificar (ya tiene DV)
   if (soloNumeros.length >= 8) {
     return formatearRut(rutIncompleto);
   }
   
-  // Calcular y agregar DV automáticamente
-  const dv = calcularDvRut(soloNumeros);
-  const rutCompleto = soloNumeros + dv;
+  // Si tiene exactamente 7 dígitos, calcular y agregar DV automáticamente
+  if (soloNumeros.length === 7) {
+    const dv = calcularDvRut(soloNumeros);
+    const rutCompleto = soloNumeros + dv;
+    return formatearRut(rutCompleto);
+  }
   
-  return formatearRut(rutCompleto);
+  return formatearRut(rutIncompleto);
 }
 
 /**
