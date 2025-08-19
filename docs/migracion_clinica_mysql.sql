@@ -9,6 +9,11 @@ USE clinica_estetica;
 
 -- ---------- Helper functions ----------
 
+-- Drop existing helper procedures
+DROP PROCEDURE IF EXISTS AddIndexIfNotExists;
+DROP PROCEDURE IF EXISTS AddForeignKeyIfNotExists;
+DROP PROCEDURE IF EXISTS AddCheckConstraintIfNotExists;
+
 DELIMITER $$
 
 CREATE PROCEDURE AddIndexIfNotExists(
