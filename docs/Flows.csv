@@ -1,0 +1,17 @@
+Flujo,Paso,Descripción
+Evaluación→Venta,1,Profesional crea Evaluación con sesiones_sugeridas y precio_sugerido=0
+Evaluación→Venta,2,Vendedor crea Venta desde la Evaluación; define cantidad_sesiones (inicialmente = sugeridas)
+Evaluación→Venta,3,Sistema valida requisito de ficha específica según Tratamiento (trigger BD)
+Evaluación→Venta,4,Se aplican descuentos: manual y Ofertas en orden de prioridad (descuento sobre descuento)
+Evaluación→Venta,5,Venta queda lista para agendamiento
+Agendamiento,1,Recepcionista busca ficha (código/RUT/nombre/email) y selecciona venta
+Agendamiento,2,Puede generar plan completo o agendar una sola sesión
+Agendamiento,3,"Cada sesión requiere sucursal, box y profesional; se asigna numero_sesion x de y"
+Agendamiento,4,Confirmación del paciente cuando la hora existe
+Agendamiento,5,Reprogramaciones conservan el numero_sesion para trazabilidad
+Ejecución,1,Profesional abre sesión (abierta_en) al inicio de la atención
+Ejecución,2,"Al finalizar, cierra sesión (cerrada_en) y cambia estado a 'realizada'"
+Ejecución,3,Reporte compara fecha_planificada vs fecha_ejecucion para medir desfase
+Ofertas,1,"Admin configura ofertas: pack_temporal, descuento_manual, combo_packs"
+Ofertas,2,Marca si son combinables y su prioridad; el cálculo aplica en secuencia
+Ofertas,3,Se registran pasos en venta_oferta para auditoría

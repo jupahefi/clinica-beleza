@@ -327,18 +327,18 @@ END$$;
 
 -- numero_sesion must be positive
 ALTER TABLE sesion
-  ADD CONSTRAINT IF NOT EXISTS ck_sesion_numero_pos CHECK (numero_sesion >= 1);
+  ADD CONSTRAINT ck_sesion_numero_pos CHECK (numero_sesion >= 1);
 
 -- cantidad_sesiones must be positive
 ALTER TABLE venta
-  ADD CONSTRAINT IF NOT EXISTS ck_venta_cantidad_pos CHECK (cantidad_sesiones >= 1);
+  ADD CONSTRAINT ck_venta_cantidad_pos CHECK (cantidad_sesiones >= 1);
 
 -- estado enums (kept as CHECKs to avoid rigid ENUMs)
 ALTER TABLE venta
-  ADD CONSTRAINT IF NOT EXISTS ck_venta_estado CHECK (estado IN ('pendiente','pagado','anulado'));
+  ADD CONSTRAINT ck_venta_estado CHECK (estado IN ('pendiente','pagado','anulado'));
 
 ALTER TABLE sesion
-  ADD CONSTRAINT IF NOT EXISTS ck_sesion_estado CHECK (estado IN ('planificada','confirmada','realizada','no_show','cancelada'));
+  ADD CONSTRAINT ck_sesion_estado CHECK (estado IN ('planificada','confirmada','realizada','no_show','cancelada'));
 
 -- If tratamiento requires specific form, venta must reference a matching evaluacion with a ficha_especifica on same ficha.
 -- Enforced via trigger for strong consistency.

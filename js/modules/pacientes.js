@@ -4,7 +4,7 @@
  */
 
 import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
-import { obtenerPacientes, obtenerPacientePorId, guardarPaciente } from '../storage-api.js';
+import { fichasAPI, tiposFichaEspecificaAPI, fichasEspecificasAPI } from '../api-client.js';
 import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../config.js';
 
 let pacienteActual = null;
@@ -70,32 +70,38 @@ function configurarEventosPacientes() {
 /**
  * Carga la lista de pacientes en el select
  */
-export function cargarPacientesSelect() {
-  const selects = document.querySelectorAll('#pacienteSelect, #clienteVenta, #pacienteSesion');
-  const pacientes = obtenerPacientes();
-  
-  selects.forEach(select => {
-    if (!select) return;
+export async function cargarPacientesSelect() {
+  try {
+    const selects = document.querySelectorAll('#pacienteSelect, #clienteVenta, #pacienteSesion');
+    const response = await fichasAPI.getAll();
+    const pacientes = response.data || response;
     
-    const opcionVacia = select.id === 'pacienteSelect' 
-      ? '-- Crear nuevo paciente --' 
-      : '-- Seleccionar paciente --';
-    
-    select.innerHTML = `<option value="">${opcionVacia}</option>`;
-    
-    pacientes.forEach(paciente => {
-      const option = document.createElement('option');
-      option.value = paciente.id.toString();
-      option.textContent = `${paciente.nombre} - ${paciente.rut}`;
-      select.appendChild(option);
+    selects.forEach(select => {
+      if (!select) return;
+      
+      const opcionVacia = select.id === 'pacienteSelect' 
+        ? '-- Crear nuevo paciente --' 
+        : '-- Seleccionar paciente --';
+      
+      select.innerHTML = `<option value="">${opcionVacia}</option>`;
+      
+      pacientes.forEach(paciente => {
+        const option = document.createElement('option');
+        option.value = paciente.id.toString();
+        option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
+        select.appendChild(option);
+      });
     });
-  });
+  } catch (error) {
+    console.error('Error cargando pacientes:', error);
+    mostrarMensaje('Error cargando pacientes', 'error');
+  }
 }
 
 /**
  * Carga los datos de un paciente seleccionado
  */
-function cargarPacienteSeleccionado() {
+async function cargarPacienteSeleccionado() {
   const select = document.getElementById('pacienteSelect');
   const pacienteId = parseInt(select.value);
   
@@ -105,41 +111,46 @@ function cargarPacienteSeleccionado() {
     return;
   }
   
-  const paciente = obtenerPacientePorId(pacienteId);
-  if (!paciente) return;
+    try {
+    const paciente = await fichasAPI.getById(pacienteId);
+    if (!paciente) return;
+   
+    pacienteActual = paciente;
+    
+    // Cargar datos básicos
+    document.getElementById('nombrePaciente').value = paciente.nombres || '';
+    document.getElementById('rutPaciente').value = paciente.rut || '';
+    document.getElementById('edadPaciente').value = paciente.edad || '';
+    document.getElementById('telefonoPaciente').value = paciente.telefono || '';
+    document.getElementById('emailPaciente').value = paciente.email || '';
+    document.getElementById('observacionesPaciente').value = paciente.observaciones || '';
   
-  pacienteActual = paciente;
-  
-  // Cargar datos básicos
-  document.getElementById('nombrePaciente').value = paciente.nombre || '';
-  document.getElementById('rutPaciente').value = paciente.rut || '';
-  document.getElementById('edadPaciente').value = paciente.edad || '';
-  document.getElementById('telefonoPaciente').value = paciente.telefono || '';
-  document.getElementById('emailPaciente').value = paciente.email || '';
-  document.getElementById('observacionesPaciente').value = paciente.observaciones || '';
-  
-  // Cargar fichas específicas
-  const fichasEspecificas = paciente.fichasEspecificas || [];
-  
-  // Limpiar checkboxes
-  document.querySelectorAll('input[type="checkbox"][id^="ficha"]').forEach(cb => cb.checked = false);
-  
-  // Marcar checkboxes según las fichas del paciente
-  fichasEspecificas.forEach(tipo => {
-    const checkbox = document.getElementById(`ficha${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
-    if (checkbox) {
-      checkbox.checked = true;
+    // Cargar fichas específicas
+    const fichasEspecificas = paciente.fichas_especificas || [];
+    
+    // Limpiar checkboxes
+    document.querySelectorAll('input[type="checkbox"][id^="ficha"]').forEach(cb => cb.checked = false);
+    
+    // Marcar checkboxes según las fichas del paciente
+    fichasEspecificas.forEach(tipo => {
+      const checkbox = document.getElementById(`ficha${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+    
+    toggleFichasEspecificas();
+    
+    // Cargar datos específicos
+    if (paciente.fichaDepilacion) {
+      cargarDatosFichaEspecifica('depilacion', paciente.fichaDepilacion);
     }
-  });
-  
-  toggleFichasEspecificas();
-  
-  // Cargar datos específicos
-  if (paciente.fichaDepilacion) {
-    cargarDatosFichaEspecifica('depilacion', paciente.fichaDepilacion);
-  }
-  if (paciente.fichaCorporal) {
-    cargarDatosFichaEspecifica('corporal', paciente.fichaCorporal);
+    if (paciente.fichaCorporal) {
+      cargarDatosFichaEspecifica('corporal', paciente.fichaCorporal);
+    }
+  } catch (error) {
+    console.error('Error cargando paciente:', error);
+    mostrarMensaje('Error cargando paciente', 'error');
   }
 }
 
@@ -642,7 +653,7 @@ function obtenerDatosFichasEspecificas() {
 /**
  * Guarda o actualiza un paciente
  */
-export function guardarPacienteFormulario() {
+export async function guardarPacienteFormulario() {
   const errores = validarFormularioPaciente();
   
   if (errores.length > 0) {
@@ -654,23 +665,25 @@ export function guardarPacienteFormulario() {
   const datosEspecificos = obtenerDatosFichasEspecificas();
   
   const paciente = {
-    id: pacienteActual?.id || generarId(),
-    nombre: document.getElementById('nombrePaciente').value.trim(),
+    id: pacienteActual?.id,
+    nombres: document.getElementById('nombrePaciente').value.trim(),
     rut: formatearRut(document.getElementById('rutPaciente').value.trim()),
-    edad: parseInt(document.getElementById('edadPaciente').value) || 0,
     telefono: document.getElementById('telefonoPaciente').value.trim(),
     email: document.getElementById('emailPaciente').value.trim(),
-    observaciones: document.getElementById('observacionesPaciente').value.trim(),
-    ...datosEspecificos,
-    fechaCreacion: pacienteActual?.fechaCreacion || new Date().toISOString(),
-    fechaActualizacion: new Date().toISOString()
+    ...datosEspecificos
   };
   
   try {
-    const pacienteGuardado = guardarPaciente(paciente);
+    let pacienteGuardado;
+    if (esNuevo) {
+      pacienteGuardado = await fichasAPI.create(paciente);
+    } else {
+      pacienteGuardado = await fichasAPI.update(paciente.id, paciente);
+    }
+    
     pacienteActual = pacienteGuardado;
     
-    cargarPacientesSelect();
+    await cargarPacientesSelect();
     
     const mensaje = esNuevo ? 'Paciente creado exitosamente' : 'Paciente actualizado exitosamente';
     mostrarNotificacion(mensaje, 'success');
@@ -685,17 +698,12 @@ export function guardarPacienteFormulario() {
 /**
  * Busca pacientes por nombre o RUT
  */
-export function buscarPacientes(termino) {
+export async function buscarPacientes(termino) {
   if (!termino || termino.length < 2) {
-    return obtenerPacientes();
+    return await fichasAPI.getAll();
   }
   
-  const terminoLimpio = termino.toLowerCase();
-  
-  return obtenerPacientes().filter(paciente => 
-    paciente.nombre.toLowerCase().includes(terminoLimpio) ||
-    paciente.rut.includes(terminoLimpio)
-  );
+  return await fichasAPI.search(termino);
 }
 
 /**

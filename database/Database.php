@@ -1,19 +1,27 @@
 <?php
 
 /**
- * Clase para manejo de la base de datos SQLite
+ * Clase para manejo de la base de datos PostgreSQL
  * Clínica Beleza - Sistema de Gestión
+ * Server-based architecture (sin modo offline)
  */
 
 class Database {
     private static $instance = null;
     private $pdo = null;
-    private $dbPath;
+    private $config;
     
     private function __construct() {
-        $this->dbPath = __DIR__ . '/clinica_beleza.db';
+        // Configuración de PostgreSQL
+        $this->config = [
+            'host' => $_ENV['DB_HOST'] ?? 'localhost',
+            'port' => $_ENV['DB_PORT'] ?? '5432',
+            'dbname' => $_ENV['DB_NAME'] ?? 'clinica_beleza',
+            'username' => $_ENV['DB_USER'] ?? 'postgres',
+            'password' => $_ENV['DB_PASS'] ?? ''
+        ];
+        
         $this->connect();
-        $this->initializeDatabase();
     }
     
     /**
@@ -27,43 +35,21 @@ class Database {
     }
     
     /**
-     * Conecta a la base de datos SQLite
+     * Conecta a la base de datos PostgreSQL
      */
     private function connect() {
         try {
-            $this->pdo = new PDO("sqlite:" . $this->dbPath);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $dsn = "pgsql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']}";
             
-            // Habilitar claves foráneas
-            $this->pdo->exec('PRAGMA foreign_keys = ON');
-            
-            // Configurar WAL mode para mejor concurrencia
-            $this->pdo->exec('PRAGMA journal_mode = WAL');
+            $this->pdo = new PDO($dsn, $this->config['username'], $this->config['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false
+            ]);
             
         } catch (PDOException $e) {
-            error_log("Error conectando a la base de datos: " . $e->getMessage());
+            error_log("Error conectando a PostgreSQL: " . $e->getMessage());
             throw new Exception("Error de conexión a la base de datos");
-        }
-    }
-    
-    /**
-     * Inicializa la base de datos ejecutando el schema
-     */
-    private function initializeDatabase() {
-        $schemaPath = __DIR__ . '/schema.sql';
-        
-        if (!file_exists($schemaPath)) {
-            throw new Exception("Archivo de schema no encontrado");
-        }
-        
-        $schema = file_get_contents($schemaPath);
-        
-        try {
-            $this->pdo->exec($schema);
-        } catch (PDOException $e) {
-            error_log("Error inicializando base de datos: " . $e->getMessage());
-            throw new Exception("Error inicializando base de datos");
         }
     }
     
@@ -84,7 +70,7 @@ class Database {
             return $stmt->fetchAll();
         } catch (PDOException $e) {
             error_log("Error en SELECT: " . $e->getMessage());
-            throw new Exception("Error ejecutando consulta");
+            throw new Exception("Error ejecutando consulta: " . $e->getMessage());
         }
     }
     
@@ -99,7 +85,7 @@ class Database {
             return $result === false ? null : $result;
         } catch (PDOException $e) {
             error_log("Error en SELECT ONE: " . $e->getMessage());
-            throw new Exception("Error ejecutando consulta");
+            throw new Exception("Error ejecutando consulta: " . $e->getMessage());
         }
     }
     
@@ -113,7 +99,22 @@ class Database {
             return $this->pdo->lastInsertId();
         } catch (PDOException $e) {
             error_log("Error en INSERT: " . $e->getMessage());
-            throw new Exception("Error insertando datos");
+            throw new Exception("Error insertando datos: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Ejecuta una consulta INSERT con RETURNING
+     */
+    public function insertReturning($sql, $params = [], $returnColumn = 'id') {
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch();
+            return $result[$returnColumn] ?? null;
+        } catch (PDOException $e) {
+            error_log("Error en INSERT RETURNING: " . $e->getMessage());
+            throw new Exception("Error insertando datos: " . $e->getMessage());
         }
     }
     
@@ -127,7 +128,7 @@ class Database {
             return $stmt->rowCount();
         } catch (PDOException $e) {
             error_log("Error en UPDATE: " . $e->getMessage());
-            throw new Exception("Error actualizando datos");
+            throw new Exception("Error actualizando datos: " . $e->getMessage());
         }
     }
     
@@ -141,7 +142,7 @@ class Database {
             return $stmt->rowCount();
         } catch (PDOException $e) {
             error_log("Error en DELETE: " . $e->getMessage());
-            throw new Exception("Error eliminando datos");
+            throw new Exception("Error eliminando datos: " . $e->getMessage());
         }
     }
     
@@ -171,12 +172,13 @@ class Database {
      */
     public function healthCheck() {
         try {
-            $result = $this->selectOne("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'");
+            $result = $this->selectOne("SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public'");
             return [
                 'status' => 'ok',
                 'tables' => $result['count'],
-                'database_size' => filesize($this->dbPath),
-                'writable' => is_writable($this->dbPath)
+                'database' => $this->config['dbname'],
+                'host' => $this->config['host'],
+                'port' => $this->config['port']
             ];
         } catch (Exception $e) {
             return [
@@ -191,7 +193,7 @@ class Database {
      */
     public function backup($backupPath = null) {
         if ($backupPath === null) {
-            $backupPath = __DIR__ . '/backups/clinica_beleza_' . date('Y-m-d_H-i-s') . '.db';
+            $backupPath = __DIR__ . '/backups/clinica_beleza_' . date('Y-m-d_H-i-s') . '.sql';
         }
         
         $backupDir = dirname($backupPath);
@@ -199,7 +201,18 @@ class Database {
             mkdir($backupDir, 0755, true);
         }
         
-        return copy($this->dbPath, $backupPath);
+        $command = sprintf(
+            'PGPASSWORD=%s pg_dump -h %s -p %s -U %s %s > %s',
+            escapeshellarg($this->config['password']),
+            escapeshellarg($this->config['host']),
+            escapeshellarg($this->config['port']),
+            escapeshellarg($this->config['username']),
+            escapeshellarg($this->config['dbname']),
+            escapeshellarg($backupPath)
+        );
+        
+        exec($command, $output, $returnCode);
+        return $returnCode === 0;
     }
     
     /**
@@ -207,8 +220,7 @@ class Database {
      */
     public function optimize() {
         try {
-            $this->pdo->exec('VACUUM');
-            $this->pdo->exec('ANALYZE');
+            $this->pdo->exec('VACUUM ANALYZE');
             return true;
         } catch (PDOException $e) {
             error_log("Error optimizando base de datos: " . $e->getMessage());
@@ -223,23 +235,48 @@ class Database {
         try {
             $stats = [];
             
-            // Contar registros por tabla
-            $tables = ['pacientes', 'ventas', 'pagos', 'sesiones', 'ofertas'];
+            // Contar registros por tabla según el modelo proporcionado
+            $tables = [
+                'ficha', 'tipo_ficha_especifica', 'ficha_especifica',
+                'tratamiento', 'pack', 'evaluacion',
+                'oferta', 'oferta_pack', 'oferta_combo', 'oferta_combo_pack',
+                'sucursal', 'venta', 'venta_oferta',
+                'box', 'profesional', 'sesion'
+            ];
             
             foreach ($tables as $table) {
-                $result = $this->selectOne("SELECT COUNT(*) as count FROM $table");
-                $stats[$table] = $result['count'];
+                try {
+                    $result = $this->selectOne("SELECT COUNT(*) as count FROM $table");
+                    $stats[$table] = $result['count'];
+                } catch (Exception $e) {
+                    $stats[$table] = 0; // Tabla no existe aún
+                }
             }
             
-            // Información del archivo
-            $stats['database_size'] = filesize($this->dbPath);
-            $stats['last_modified'] = filemtime($this->dbPath);
+            // Información de la base de datos
+            $stats['database'] = $this->config['dbname'];
+            $stats['host'] = $this->config['host'];
+            $stats['port'] = $this->config['port'];
             
             return $stats;
             
         } catch (Exception $e) {
             error_log("Error obteniendo estadísticas: " . $e->getMessage());
             return [];
+        }
+    }
+    
+    /**
+     * Ejecuta una consulta raw (para reportes y vistas)
+     */
+    public function executeRaw($sql, $params = []) {
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            error_log("Error en EXECUTE RAW: " . $e->getMessage());
+            throw new Exception("Error ejecutando consulta: " . $e->getMessage());
         }
     }
 }

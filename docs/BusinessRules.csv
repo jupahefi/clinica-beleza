@@ -1,0 +1,7 @@
+ReglaID,Área,Descripción,SoporteTecnico
+BR-001,Venta,Tratamientos con 'requiere_ficha_especifica' bloquean ventas sin evaluación/ficha específica válida,Trigger trg_venta_requiere_ficha_especifica()
+BR-002,Sesión,numero_sesion debe estar entre 1 y cantidad_sesiones de la venta,"Trigger trg_sesion_numero_en_rango() y índice único (venta_id, numero_sesion)"
+BR-003,Oferta,Descuentos se aplican en orden de prioridad y pueden ser combinables,Tabla venta_oferta con campo secuencia
+BR-004,Pack,Cada pack define duracion_sesion_min para sugerir slots,Campo pack.duracion_sesion_min
+BR-005,Agenda,"Una sesión requiere sucursal, box y profesional",FK obligatorias en sesion
+BR-006,Infraestructura,No existe modo offline ni fallback local; todo en servidor,Arquitectura server-based; operaciones transaccionales en PostgreSQL

@@ -1,22 +1,22 @@
 /**
  * Módulo de gestión de pagos
  * Maneja todas las operaciones relacionadas con pagos de ventas
+ * Server-based architecture - Sin modo offline
  */
 
 import { generarId, formatearPrecio, formatearFecha, fechaActualInput, mostrarNotificacion } from '../utils.js';
-import { obtenerVentasPendientesPago, obtenerPacientePorId, obtenerVentaPorId, guardarPago, obtenerPagos, calcularEstadoPago } from '../storage-api.js';
-import { METODOS_PAGO } from '../config.js';
+import { ventasAPI, fichasAPI, pagosAPI } from '../api-client.js';
 
 let ventaSeleccionadaPago = null;
 
 /**
  * Inicializa el módulo de pagos
  */
-export function inicializarPagos() {
-  cargarVentasPendientes();
+export async function inicializarPagos() {
+  await cargarVentasPendientes();
   cargarMetodosPago();
   configurarEventosPagos();
-  renderHistorialPagos();
+  await renderHistorialPagos();
 }
 
 /**
@@ -39,31 +39,36 @@ function configurarEventosPagos() {
 /**
  * Carga las ventas pendientes de pago
  */
-function cargarVentasPendientes() {
+async function cargarVentasPendientes() {
   const select = document.getElementById('ventaPago');
   if (!select) return;
   
-  select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
-  
-  const ventasPendientes = obtenerVentasPendientesPago();
-  
-  ventasPendientes.forEach(venta => {
-    const paciente = obtenerPacientePorId(venta.clienteId);
-    const estadoPago = calcularEstadoPago(venta.id);
+  try {
+    const ventasPendientes = await ventasAPI.search('estado:pendiente');
     
-    if (estadoPago.pendiente > 0) {
+    select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
+    
+    for (const venta of ventasPendientes) {
+      const paciente = await fichasAPI.getById(venta.ficha_id);
+      const pendiente = venta.total_pagado - venta.precio_total;
+      
+      if (pendiente > 0) {
+        const option = document.createElement('option');
+        option.value = venta.id.toString();
+        option.textContent = `${paciente?.nombres || 'Cliente'} - ${venta.tratamiento?.nombre || 'Tratamiento'} (${formatearPrecio(pendiente)} pendiente)`;
+        select.appendChild(option);
+      }
+    }
+    
+    if (ventasPendientes.length === 0) {
       const option = document.createElement('option');
-      option.value = venta.id.toString();
-      option.textContent = `${paciente?.nombre || 'Cliente'} - ${venta.tratamiento} (${formatearPrecio(estadoPago.pendiente)} pendiente)`;
+      option.textContent = 'No hay ventas pendientes de pago';
+      option.disabled = true;
       select.appendChild(option);
     }
-  });
-  
-  if (ventasPendientes.length === 0) {
-    const option = document.createElement('option');
-    option.textContent = 'No hay ventas pendientes de pago';
-    option.disabled = true;
-    select.appendChild(option);
+  } catch (error) {
+    console.error('Error cargando ventas pendientes:', error);
+    mostrarNotificacion('Error cargando ventas pendientes', 'error');
   }
 }
 
@@ -73,6 +78,15 @@ function cargarVentasPendientes() {
 function cargarMetodosPago() {
   const select = document.getElementById('metodoPago');
   if (!select || select.children.length > 0) return;
+  
+  const METODOS_PAGO = [
+    { value: 'efectivo', label: 'Efectivo' },
+    { value: 'tarjeta_debito', label: 'Tarjeta Débito' },
+    { value: 'tarjeta_credito', label: 'Tarjeta Crédito' },
+    { value: 'transferencia', label: 'Transferencia' },
+    { value: 'cheque', label: 'Cheque' },
+    { value: 'otro', label: 'Otro' }
+  ];
   
   METODOS_PAGO.forEach(metodo => {
     const option = document.createElement('option');
@@ -85,7 +99,7 @@ function cargarMetodosPago() {
 /**
  * Selecciona una venta para registrar pago
  */
-function seleccionarVentaPago() {
+async function seleccionarVentaPago() {
   const select = document.getElementById('ventaPago');
   const ventaId = parseInt(select.value);
   const detalleCard = document.getElementById('detallePagoCard');
@@ -96,44 +110,49 @@ function seleccionarVentaPago() {
     return;
   }
   
-  const venta = obtenerVentaPorId(ventaId);
-  if (!venta) return;
-  
-  ventaSeleccionadaPago = venta;
-  const paciente = obtenerPacientePorId(venta.clienteId);
-  const estadoPago = calcularEstadoPago(ventaId);
-  
-  mostrarDetallePago(venta, paciente, estadoPago);
-  detalleCard.classList.remove('hidden');
+  try {
+    const venta = await ventasAPI.getById(ventaId);
+    if (!venta) return;
+    
+    ventaSeleccionadaPago = venta;
+    const paciente = await fichasAPI.getById(venta.ficha_id);
+    const pendiente = venta.precio_total - venta.total_pagado;
+    
+    mostrarDetallePago(venta, paciente, pendiente);
+    detalleCard.classList.remove('hidden');
+  } catch (error) {
+    console.error('Error seleccionando venta:', error);
+    mostrarNotificacion('Error cargando datos de la venta', 'error');
+  }
 }
 
 /**
  * Muestra el detalle de la venta seleccionada
  */
-function mostrarDetallePago(venta, paciente, estadoPago) {
+function mostrarDetallePago(venta, paciente, pendiente) {
   const detalleDiv = document.getElementById('detalleVentaPago');
   
-  const porcentajePagado = ((estadoPago.pagado / venta.precioFinal) * 100).toFixed(1);
+  const porcentajePagado = ((venta.total_pagado / venta.precio_total) * 100).toFixed(1);
   
   detalleDiv.innerHTML = `
     <div class="item">
       <div class="item-header">
-        <span class="item-title">${venta.tratamiento}</span>
-        <span class="status ${estadoPago.clase}">${estadoPago.texto}</span>
+        <span class="item-title">${venta.tratamiento?.nombre || 'Tratamiento'}</span>
+        <span class="status ${venta.estado === 'pagado' ? 'success' : 'pending'}">${venta.estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span>
       </div>
       <div class="item-subtitle">
-        <strong>Cliente:</strong> ${paciente?.nombre || 'N/A'} (${paciente?.rut || 'N/A'})<br>
-        <strong>Fecha venta:</strong> ${formatearFecha(venta.fecha)}<br>
-        <strong>Total venta:</strong> ${formatearPrecio(venta.precioFinal)}<br>
-        <strong>Ya pagado:</strong> ${formatearPrecio(estadoPago.pagado)} (${porcentajePagado}%)<br>
-        <strong>Pendiente:</strong> ${formatearPrecio(estadoPago.pendiente)}<br>
+        <strong>Cliente:</strong> ${paciente?.nombres || 'N/A'} ${paciente?.apellidos || ''} (${paciente?.rut || 'N/A'})<br>
+        <strong>Fecha venta:</strong> ${formatearFecha(venta.fecha_venta)}<br>
+        <strong>Total venta:</strong> ${formatearPrecio(venta.precio_total)}<br>
+        <strong>Ya pagado:</strong> ${formatearPrecio(venta.total_pagado)} (${porcentajePagado}%)<br>
+        <strong>Pendiente:</strong> ${formatearPrecio(pendiente)}<br>
         ${venta.observaciones ? `<strong>Observaciones:</strong> ${venta.observaciones}<br>` : ''}
       </div>
     </div>
   `;
   
   // Configurar monto sugerido (pendiente completo)
-  document.getElementById('montoPago').value = estadoPago.pendiente.toString();
+  document.getElementById('montoPago').value = pendiente.toString();
   
   // Mostrar historial de pagos de esta venta
   mostrarHistorialPagosVenta(venta.id);
@@ -142,7 +161,7 @@ function mostrarDetallePago(venta, paciente, estadoPago) {
 /**
  * Muestra el historial de pagos de una venta específica
  */
-function mostrarHistorialPagosVenta(ventaId) {
+async function mostrarHistorialPagosVenta(ventaId) {
   // Crear o encontrar el contenedor del historial
   let historialContainer = document.getElementById('historialPagosVenta');
   
@@ -153,32 +172,37 @@ function mostrarHistorialPagosVenta(ventaId) {
     document.getElementById('detalleVentaPago').appendChild(historialContainer);
   }
   
-  const pagosVenta = obtenerPagos().filter(p => p.ventaId === ventaId);
-  
-  if (pagosVenta.length === 0) {
-    historialContainer.innerHTML = '<p><strong>Historial de pagos:</strong> Sin pagos registrados</p>';
-    return;
+  try {
+    const pagosVenta = await pagosAPI.search(`venta_id:${ventaId}`);
+    
+    if (pagosVenta.length === 0) {
+      historialContainer.innerHTML = '<p><strong>Historial de pagos:</strong> Sin pagos registrados</p>';
+      return;
+    }
+    
+    let html = '<div class="mt-2"><strong>Historial de pagos:</strong><div class="item-list" style="max-height: 200px;">';
+    
+    pagosVenta.forEach(pago => {
+      html += `
+        <div class="item" style="margin-bottom: 0.5rem; padding: 0.5rem;">
+          <div class="item-header">
+            <span class="item-title">${formatearPrecio(pago.monto)}</span>
+            <span class="item-subtitle">${formatearFecha(pago.fecha_pago)}</span>
+          </div>
+          <div class="item-subtitle">
+            Método: ${pago.metodo_pago}<br>
+            ${pago.observaciones ? `Obs: ${pago.observaciones}` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div></div>';
+    historialContainer.innerHTML = html;
+  } catch (error) {
+    console.error('Error cargando historial de pagos:', error);
+    historialContainer.innerHTML = '<p><strong>Historial de pagos:</strong> Error cargando datos</p>';
   }
-  
-  let html = '<div class="mt-2"><strong>Historial de pagos:</strong><div class="item-list" style="max-height: 200px;">';
-  
-  pagosVenta.forEach(pago => {
-    html += `
-      <div class="item" style="margin-bottom: 0.5rem; padding: 0.5rem;">
-        <div class="item-header">
-          <span class="item-title">${formatearPrecio(pago.monto)}</span>
-          <span class="item-subtitle">${formatearFecha(pago.fecha)}</span>
-        </div>
-        <div class="item-subtitle">
-          Método: ${pago.metodo}<br>
-          ${pago.observaciones ? `Obs: ${pago.observaciones}` : ''}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += '</div></div>';
-  historialContainer.innerHTML = html;
 }
 
 /**
@@ -197,9 +221,9 @@ function validarPago() {
   }
   
   if (ventaSeleccionadaPago) {
-    const estadoPago = calcularEstadoPago(ventaSeleccionadaPago.id);
-    if (monto > estadoPago.pendiente) {
-      errores.push(`El monto no puede ser mayor al pendiente (${formatearPrecio(estadoPago.pendiente)})`);
+    const pendiente = ventaSeleccionadaPago.precio_total - ventaSeleccionadaPago.total_pagado;
+    if (monto > pendiente) {
+      errores.push(`El monto no puede ser mayor al pendiente (${formatearPrecio(pendiente)})`);
     }
   }
   
@@ -219,7 +243,7 @@ function validarPago() {
 /**
  * Registra un nuevo pago
  */
-export function registrarPago() {
+export async function registrarPago() {
   const errores = validarPago();
   
   if (errores.length > 0) {
@@ -232,18 +256,26 @@ export function registrarPago() {
   const fecha = document.getElementById('fechaPago').value;
   const observaciones = document.getElementById('observacionesPago').value.trim();
   
-  const pago = {
-    id: generarId(),
-    ventaId: ventaSeleccionadaPago.id,
+  const pagoData = {
+    venta_id: ventaSeleccionadaPago.id,
     monto,
-    metodo,
-    fecha,
+    metodo_pago: metodo,
+    fecha_pago: fecha,
     observaciones,
-    fechaRegistro: new Date().toISOString()
+    fecha_registro: new Date().toISOString()
   };
   
   try {
-    guardarPago(pago);
+    await pagosAPI.create(pagoData);
+    
+    // Actualizar el total pagado en la venta
+    const nuevoTotalPagado = ventaSeleccionadaPago.total_pagado + monto;
+    const nuevoEstado = nuevoTotalPagado >= ventaSeleccionadaPago.precio_total ? 'pagado' : 'pendiente';
+    
+    await ventasAPI.update(ventaSeleccionadaPago.id, {
+      total_pagado: nuevoTotalPagado,
+      estado: nuevoEstado
+    });
     
     // Limpiar campos (mantener venta seleccionada)
     document.getElementById('montoPago').value = '';
@@ -251,21 +283,22 @@ export function registrarPago() {
     document.getElementById('fechaPago').value = fechaActualInput();
     
     // Actualizar vistas
-    const estadoPago = calcularEstadoPago(ventaSeleccionadaPago.id);
-    const paciente = obtenerPacientePorId(ventaSeleccionadaPago.clienteId);
+    const pendiente = ventaSeleccionadaPago.precio_total - nuevoTotalPagado;
+    const paciente = await fichasAPI.getById(ventaSeleccionadaPago.ficha_id);
     
-    mostrarDetallePago(ventaSeleccionadaPago, paciente, estadoPago);
-    cargarVentasPendientes();
-    renderHistorialPagos();
+    mostrarDetallePago(ventaSeleccionadaPago, paciente, pendiente);
+    await cargarVentasPendientes();
+    await renderHistorialPagos();
     
-    const mensaje = estadoPago.pendiente === 0 
+    const mensaje = pendiente <= 0 
       ? 'Pago registrado. ¡Venta completamente pagada!' 
-      : `Pago registrado. Pendiente: ${formatearPrecio(estadoPago.pendiente)}`;
+      : `Pago registrado. Pendiente: ${formatearPrecio(pendiente)}`;
     
     mostrarNotificacion(mensaje, 'success');
     
     return true;
   } catch (error) {
+    console.error('Error al registrar pago:', error);
     mostrarNotificacion(`Error al registrar pago: ${error.message}`, 'error');
     return false;
   }
@@ -274,97 +307,117 @@ export function registrarPago() {
 /**
  * Renderiza el historial completo de pagos
  */
-function renderHistorialPagos() {
+async function renderHistorialPagos() {
   const lista = document.getElementById('listaPagos');
   if (!lista) return;
   
-  const pagos = obtenerPagos().slice().reverse(); // Más recientes primero
-  
-  if (pagos.length === 0) {
-    lista.innerHTML = '<p>No hay pagos registrados</p>';
-    return;
-  }
-  
-  let html = '';
-  
-  pagos.forEach(pago => {
-    const venta = obtenerVentaPorId(pago.ventaId);
-    const paciente = obtenerPacientePorId(venta?.clienteId);
+  try {
+    const pagos = await pagosAPI.getAll();
+    const pagosOrdenados = pagos.slice().reverse(); // Más recientes primero
     
-    html += `
-      <div class="item">
-        <div class="item-header">
-          <span class="item-title">${formatearPrecio(pago.monto)} - ${pago.metodo}</span>
-          <span class="item-subtitle">${formatearFecha(pago.fecha)}</span>
+    if (pagosOrdenados.length === 0) {
+      lista.innerHTML = '<p>No hay pagos registrados</p>';
+      return;
+    }
+    
+    let html = '';
+    
+    for (const pago of pagosOrdenados) {
+      const venta = await ventasAPI.getById(pago.venta_id);
+      const paciente = await fichasAPI.getById(venta?.ficha_id);
+      
+      html += `
+        <div class="item">
+          <div class="item-header">
+            <span class="item-title">${formatearPrecio(pago.monto)} - ${pago.metodo_pago}</span>
+            <span class="item-subtitle">${formatearFecha(pago.fecha_pago)}</span>
+          </div>
+          <div class="item-subtitle">
+            <strong>Cliente:</strong> ${paciente?.nombres || 'N/A'} ${paciente?.apellidos || ''}<br>
+            <strong>Tratamiento:</strong> ${venta?.tratamiento?.nombre || 'N/A'}<br>
+            <strong>Registrado:</strong> ${formatearFecha(pago.fecha_registro)}<br>
+            ${pago.observaciones ? `<strong>Obs:</strong> ${pago.observaciones}` : ''}
+          </div>
         </div>
-        <div class="item-subtitle">
-          <strong>Cliente:</strong> ${paciente?.nombre || 'N/A'}<br>
-          <strong>Tratamiento:</strong> ${venta?.tratamiento || 'N/A'}<br>
-          <strong>Registrado:</strong> ${formatearFecha(pago.fechaRegistro)}<br>
-          ${pago.observaciones ? `<strong>Obs:</strong> ${pago.observaciones}` : ''}
-        </div>
-      </div>
-    `;
-  });
-  
-  lista.innerHTML = html;
+      `;
+    }
+    
+    lista.innerHTML = html;
+  } catch (error) {
+    console.error('Error renderizando historial de pagos:', error);
+    lista.innerHTML = '<p>Error cargando historial de pagos</p>';
+  }
 }
 
 /**
  * Obtiene un resumen de pagos por período
  */
-export function obtenerResumenPagos(fechaInicio, fechaFin) {
-  const pagos = obtenerPagos().filter(pago => {
-    const fechaPago = pago.fecha;
-    return fechaPago >= fechaInicio && fechaPago <= fechaFin;
-  });
-  
-  const resumen = {
-    totalPagos: pagos.length,
-    montoTotal: pagos.reduce((sum, pago) => sum + pago.monto, 0),
-    porMetodo: {}
-  };
-  
-  // Agrupar por método de pago
-  METODOS_PAGO.forEach(metodo => {
-    const pagosPorMetodo = pagos.filter(p => p.metodo === metodo.value);
-    resumen.porMetodo[metodo.value] = {
-      cantidad: pagosPorMetodo.length,
-      monto: pagosPorMetodo.reduce((sum, p) => sum + p.monto, 0)
+export async function obtenerResumenPagos(fechaInicio, fechaFin) {
+  try {
+    const pagos = await pagosAPI.getAll();
+    const pagosFiltrados = pagos.filter(pago => {
+      const fechaPago = pago.fecha_pago;
+      return fechaPago >= fechaInicio && fechaPago <= fechaFin;
+    });
+    
+    const resumen = {
+      totalPagos: pagosFiltrados.length,
+      montoTotal: pagosFiltrados.reduce((sum, pago) => sum + pago.monto, 0),
+      porMetodo: {}
     };
-  });
-  
-  return resumen;
+    
+    // Agrupar por método de pago
+    const METODOS_PAGO = ['efectivo', 'tarjeta_debito', 'tarjeta_credito', 'transferencia', 'cheque', 'otro'];
+    METODOS_PAGO.forEach(metodo => {
+      const pagosPorMetodo = pagosFiltrados.filter(p => p.metodo_pago === metodo);
+      resumen.porMetodo[metodo] = {
+        cantidad: pagosPorMetodo.length,
+        monto: pagosPorMetodo.reduce((sum, p) => sum + p.monto, 0)
+      };
+    });
+    
+    return resumen;
+  } catch (error) {
+    console.error('Error obteniendo resumen de pagos:', error);
+    return null;
+  }
 }
 
 /**
  * Exporta los pagos a formato CSV
  */
-export function exportarPagos(fechaInicio = null, fechaFin = null) {
-  let pagos = obtenerPagos();
-  
-  if (fechaInicio && fechaFin) {
-    pagos = pagos.filter(pago => {
-      return pago.fecha >= fechaInicio && pago.fecha <= fechaFin;
-    });
-  }
-  
-  const datosCSV = pagos.map(pago => {
-    const venta = obtenerVentaPorId(pago.ventaId);
-    const paciente = obtenerPacientePorId(venta?.clienteId);
+export async function exportarPagos(fechaInicio = null, fechaFin = null) {
+  try {
+    let pagos = await pagosAPI.getAll();
     
-    return {
-      fecha: pago.fecha,
-      cliente: paciente?.nombre || 'N/A',
-      rut: paciente?.rut || 'N/A',
-      tratamiento: venta?.tratamiento || 'N/A',
-      monto: pago.monto,
-      metodo: pago.metodo,
-      observaciones: pago.observaciones || ''
-    };
-  });
-  
-  return datosCSV;
+    if (fechaInicio && fechaFin) {
+      pagos = pagos.filter(pago => {
+        return pago.fecha_pago >= fechaInicio && pago.fecha_pago <= fechaFin;
+      });
+    }
+    
+    const datosCSV = [];
+    
+    for (const pago of pagos) {
+      const venta = await ventasAPI.getById(pago.venta_id);
+      const paciente = await fichasAPI.getById(venta?.ficha_id);
+      
+      datosCSV.push({
+        fecha: pago.fecha_pago,
+        cliente: `${paciente?.nombres || ''} ${paciente?.apellidos || ''}`.trim() || 'N/A',
+        rut: paciente?.rut || 'N/A',
+        tratamiento: venta?.tratamiento?.nombre || 'N/A',
+        monto: pago.monto,
+        metodo: pago.metodo_pago,
+        observaciones: pago.observaciones || ''
+      });
+    }
+    
+    return datosCSV;
+  } catch (error) {
+    console.error('Error exportando pagos:', error);
+    return [];
+  }
 }
 
 /**

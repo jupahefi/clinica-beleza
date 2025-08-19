@@ -1,0 +1,176 @@
+erDiagram
+  FICHA ||--o{ FICHA_ESPECIFICA : tiene
+  TIPO_FICHA_ESPECIFICA ||--o{ FICHA_ESPECIFICA : clasifica
+
+  TRATAMIENTO ||--o{ PACK : tiene
+  FICHA ||--o{ EVALUACION : recibe
+  TRATAMIENTO ||--o{ EVALUACION : evalua
+  PACK ||--o{ EVALUACION : "(opcional)"
+
+  FICHA ||--o{ VENTA : compra
+  EVALUACION ||--o{ VENTA : "(requerida si tratamiento lo exige)"
+  TRATAMIENTO ||--o{ VENTA : incluye
+  PACK ||--o{ VENTA : "(opcional)"
+
+  VENTA ||--o{ SESION : agenda
+  SUCURSAL ||--o{ SESION : se_realiza_en
+  BOX ||--o{ SESION : ocupa
+  PROFESIONAL ||--o{ SESION : atiende
+  SUCURSAL ||--o{ BOX : tiene
+
+  OFERTA ||--o{ OFERTA_PACK : aplica_a
+  PACK ||--o{ OFERTA_PACK : afectado
+  OFERTA ||--o{ OFERTA_COMBO : define
+  OFERTA_COMBO ||--o{ OFERTA_COMBO_PACK : incluye
+  PACK ||--o{ OFERTA_COMBO_PACK : parte
+
+  VENTA ||--o{ VENTA_OFERTA : "descuento sobre descuento"
+  OFERTA ||--o{ VENTA_OFERTA : aplicado
+
+  FICHA {
+    bigserial id PK
+    varchar codigo
+    varchar nombres
+    varchar apellidos
+    varchar rut
+    varchar telefono
+    varchar email
+    timestamptz fecha_creacion
+  }
+
+  TIPO_FICHA_ESPECIFICA {
+    bigserial id PK
+    varchar nombre
+    text descripcion
+  }
+
+  FICHA_ESPECIFICA {
+    bigserial id PK
+    bigint ficha_id FK
+    bigint tipo_id FK
+    jsonb datos
+    timestamptz fecha_creacion
+  }
+
+  TRATAMIENTO {
+    bigserial id PK
+    varchar nombre
+    text descripcion
+    boolean requiere_ficha_especifica
+  }
+
+  PACK {
+    bigserial id PK
+    bigint tratamiento_id FK
+    varchar nombre
+    text descripcion
+    int duracion_sesion_min
+    boolean activo
+  }
+
+  EVALUACION {
+    bigserial id PK
+    bigint ficha_id FK
+    bigint tratamiento_id FK
+    bigint pack_id FK
+    bigint profesional_id FK
+    numeric precio_sugerido
+    int sesiones_sugeridas
+    text observaciones
+    timestamptz fecha
+  }
+
+  OFERTA {
+    bigserial id PK
+    varchar nombre
+    varchar tipo
+    numeric porc_descuento
+    date fecha_inicio
+    date fecha_fin
+    boolean combinable
+    boolean activo
+    int prioridad
+  }
+
+  OFERTA_PACK {
+    bigserial id PK
+    bigint oferta_id FK
+    bigint pack_id FK
+    numeric porc_descuento
+  }
+
+  OFERTA_COMBO {
+    bigserial id PK
+    bigint oferta_id FK
+    int min_packs
+  }
+
+  OFERTA_COMBO_PACK {
+    bigserial id PK
+    bigint oferta_combo_id FK
+    bigint pack_id FK
+  }
+
+  VENTA {
+    bigserial id PK
+    bigint ficha_id FK
+    bigint evaluacion_id FK
+    bigint tratamiento_id FK
+    bigint pack_id FK
+    int cantidad_sesiones
+    numeric precio_lista
+    numeric descuento_manual_pct
+    numeric descuento_aplicado_total
+    numeric total_pagado
+    varchar estado
+    timestamptz fecha_creacion
+  }
+
+  VENTA_OFERTA {
+    bigserial id PK
+    bigint venta_id FK
+    bigint oferta_id FK
+    int secuencia
+    numeric porc_descuento
+    numeric monto_descuento
+  }
+
+  SUCURSAL {
+    bigserial id PK
+    varchar nombre
+    varchar direccion
+    varchar telefono
+    boolean activo
+  }
+
+  BOX {
+    bigserial id PK
+    bigint sucursal_id FK
+    varchar nombre
+    boolean activo
+  }
+
+  PROFESIONAL {
+    bigserial id PK
+    varchar nombre
+    varchar tipo_profesional
+    text bio
+    text foto_url
+    boolean activo
+  }
+
+  SESION {
+    bigserial id PK
+    bigint venta_id FK
+    int numero_sesion
+    bigint sucursal_id FK
+    bigint box_id FK
+    bigint profesional_id FK
+    timestamptz fecha_planificada
+    timestamptz fecha_ejecucion
+    varchar estado
+    boolean paciente_confirmado
+    timestamptz abierta_en
+    timestamptz cerrada_en
+    text observaciones
+  }

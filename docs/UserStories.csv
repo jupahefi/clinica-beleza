@@ -1,0 +1,27 @@
+ID,Epic,Como,Quiero,Para,Prioridad,Status,DependeDe,Notas
+FIC-001,Fichas,Recepcionista,"crear una ficha de paciente con código único, contacto y correo",poder identificar y contactar fácilmente al paciente,Alta,Backlog,,Sin modos offline; validaciones en servidor
+FIC-002,Fichas,Recepcionista,"buscar fichas por código, nombre, RUT o email",encontrar rápido al paciente,Alta,Backlog,,Buscar tolerante a mayúsculas y espacios
+FIC-003,Fichas,Profesional,agregar 1..n fichas específicas a una ficha,registrar información clínica detallada,Alta,Backlog,,El tipo de ficha específica viene de catálogo
+FIC-004,Fichas,Profesional,visualizar historial de fichas específicas por fecha,revisar evolución del paciente,Alta,Backlog,,
+EVA-001,Evaluación/Venta,Profesional,registrar una evaluación con precio sugerido=0 y sesiones sugeridas,proponer plan terapéutico inicial,Alta,Backlog,,
+EVA-002,Evaluación/Venta,Profesional,vincular evaluación a tratamiento y opcionalmente a un pack,definir correctamente el plan según subtratamiento (pack),Alta,Backlog,,
+VEN-001,Evaluación/Venta,Vendedor,crear una venta desde una evaluación,formalizar la compra con cantidad de sesiones objetivo,Alta,Backlog,EVA-001,
+VEN-002,Evaluación/Venta,Vendedor,aplicar descuento manual en % a la venta,ajustar precio caso a caso,Alta,Backlog,,Se audita en la venta
+VEN-003,Evaluación/Venta,Sistema,calcular total con descuentos apilados (descuento sobre descuento),obtener precio final correcto,Alta,Backlog,"OFE-001,OFE-002,OFE-003",
+VEN-004,Evaluación/Venta,Vendedor,ver 'x de y' sesiones en la venta,saber cuántas faltan por agendar/ejecutar,Alta,Backlog,,
+VEN-005,Evaluación/Venta,Sistema,bloquear venta si tratamiento requiere ficha específica y no existe,cumplir regla clínica,Alta,Backlog,,Trigger a nivel BD
+AGE-001,Agenda,Recepcionista,"agendar una sesión para una venta seleccionando sucursal, box y profesional",coordinar la atención,Alta,Backlog,VEN-001,
+AGE-002,Agenda,Recepcionista,generar plan de sesiones pendiente automáticamente,reducir esfuerzo y evitar errores,Alta,Backlog,,Respeta numero_sesion único
+AGE-003,Agenda,Recepcionista,confirmar al paciente y la venta cuando la hora existe,asegurar asistencia,Alta,Backlog,,Flag paciente_confirmado en sesión
+AGE-004,Agenda,Profesional,abrir una sesión al iniciar y cerrarla al terminar,medir tiempo real de atención,Alta,Backlog,,Registra abierta_en/cerrada_en
+AGE-005,Agenda,Sistema,impedir agendar sesiones fuera del rango 1..y,evitar sobre-agendamiento,Alta,Backlog,,Trigger numero_sesion en BD
+AGE-006,Agenda,Recepcionista,reprogramar una sesión manteniendo su número,ajustarse a disponibilidad,Alta,Backlog,,Comparar planificada vs ejecución
+OFE-001,Ofertas,Administración,crear ofertas para packs con % por pack,configurar promociones temporales,Alta,Backlog,,
+OFE-002,Ofertas,Administración,definir combos de packs con descuento si el cliente lleva ciertos packs,incentivar venta cruzada,Alta,Backlog,,
+OFE-003,Ofertas,Administración,marcar ofertas combinables y su prioridad de aplicación,controlar el orden del stacking,Alta,Backlog,,
+OFE-004,Ofertas,Vendedor,ver las ofertas aplicadas a una venta en orden de aplicación,auditar el descuento sobre descuento,Alta,Backlog,,
+PRO-001,Profesionales,Administración,"gestionar profesionales con tipo (kinesiólogo, etc.), bio y foto",mostrar información al cliente y asignar agenda,Alta,Backlog,,
+PRO-002,Profesionales,Recepcionista,filtrar disponibilidad por profesional/sucursal/box,agendar eficientemente,Alta,Backlog,,
+INF-001,Infraestructura,Administrador,ejecutar script SQL idempotente en PostgreSQL,migrar/crear el esquema completo sin dependencias locales,Alta,Backlog,,Solo servidor; sin fallback offline
+REP-001,Reportes,Gerencia,ver progreso de ventas (realizadas vs pendientes),medir cumplimiento de planes,Alta,Backlog,,Usa vista v_venta_progreso
+REP-002,Reportes,Gerencia,ver planificación vs ejecución por sesión con desfase en minutos,mejorar puntualidad y utilización de recursos,Alta,Backlog,,Usa vista v_plan_vs_ejecucion

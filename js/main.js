@@ -3,13 +3,16 @@
  * Orquesta todos los módulos y maneja la navegación
  */
 
-import { inicializarStorage } from './storage-api.js';
 import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
 import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
 import { inicializarPagos, registrarPago } from './modules/pagos.js';
 import { inicializarSesiones, iniciarSesion, terminarSesion, editarSesion, cancelarSesion, reagendarSesion } from './modules/sesiones.js';
+import { inicializarBoxes } from './modules/boxes.js';
+import { inicializarOfertas } from './modules/ofertas.js';
+import { inicializarReportes } from './modules/reportes.js';
 import { loadEnvironment, isEnvironmentLoaded } from './env.js';
 import { initializeConfig, validateConfig } from './config.js';
+import { initializeApiClient, checkConnection } from './api-client.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -20,9 +23,9 @@ const AppState = {
 
 // Función principal de inicialización
 async function inicializarApp() {
-    if (AppState.inicializado) return;
-    
-    try {
+  if (AppState.inicializado) return;
+  
+  try {
         console.log('🚀 Iniciando aplicación...');
         
         // Cargar configuración del entorno
@@ -40,28 +43,41 @@ async function inicializarApp() {
             console.warn('⚠️ Advertencias de configuración:', validation.warnings);
         }
 
-        // Inicializar almacenamiento
-        await inicializarStorage();
+        // Inicializar cliente API (server-based)
+        initializeApiClient();
         
-        // Inicializar módulos
-        inicializarPacientes();
-        inicializarVentas();
-        inicializarPagos();
-        inicializarSesiones();
+        // Verificar conexión a la API
+        const connection = await checkConnection();
+        if (!connection.connected) {
+            console.error('❌ No se puede conectar a la API:', connection.error);
+            mostrarMensaje('Error de conexión a la API: ' + connection.error, 'error');
+            return;
+        }
         
+        console.log('✅ Conexión a API establecida');
+    
+    // Inicializar módulos
+    await inicializarPacientes();
+    await inicializarVentas();
+    await inicializarPagos();
+    await inicializarSesiones();
+    await inicializarBoxes();
+    await inicializarOfertas();
+    await inicializarReportes();
+    
         // Inicializar navegación
         inicializarNavegacion();
-        
+    
         // Inicializar funcionalidades móviles
         inicializarMobileMenu();
-        
+    
         // Cargar datos iniciales
         await cargarDatosIniciales();
+    
+    AppState.inicializado = true;
+    console.log('✅ Aplicación inicializada correctamente');
         
-        AppState.inicializado = true;
-        console.log('✅ Aplicación inicializada correctamente');
-        
-    } catch (error) {
+  } catch (error) {
         console.error('❌ Error al inicializar la aplicación:', error);
         mostrarMensaje('Error al inicializar la aplicación: ' + error.message, 'error');
     }
@@ -166,14 +182,14 @@ async function cargarDatosIniciales() {
 
 // Cargar datos específicos de cada vista
 function cargarDatosVista(vista) {
-    switch (vista) {
+  switch (vista) {
         case 'fichas':
             // Los datos se cargan automáticamente en el módulo de pacientes
-            break;
+      break;
         case 'ventas':
             // Los datos se cargan automáticamente en el módulo de ventas
-            break;
-        case 'pagos':
+      break;
+    case 'pagos':
             // Los datos se cargan automáticamente en el módulo de pagos
             break;
         case 'sesiones':
@@ -187,8 +203,8 @@ function cargarDatosVista(vista) {
             break;
         case 'historial':
             cargarHistorial();
-            break;
-    }
+      break;
+  }
 }
 
 // Funciones para cargar datos específicos
@@ -282,12 +298,12 @@ function exponerFuncionesGlobales() {
     window.limpiarFormularioOferta = limpiarFormularioOferta;
     
     // Funciones de módulos
-    window.toggleFichasEspecificas = toggleFichasEspecificas;
+  window.toggleFichasEspecificas = toggleFichasEspecificas;
     window.guardarPacienteFormulario = guardarPacienteFormulario;
-    window.confirmarVenta = confirmarVenta;
-    window.registrarPago = registrarPago;
-    window.iniciarSesion = iniciarSesion;
-    window.terminarSesion = terminarSesion;
+  window.confirmarVenta = confirmarVenta;
+  window.registrarPago = registrarPago;
+  window.iniciarSesion = iniciarSesion;
+  window.terminarSesion = terminarSesion;
     window.editarSesion = editarSesion;
     window.cancelarSesion = cancelarSesion;
     window.reagendarSesion = reagendarSesion;
@@ -295,7 +311,7 @@ function exponerFuncionesGlobales() {
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
-    exponerFuncionesGlobales();
+  exponerFuncionesGlobales();
     await inicializarApp();
 });
 

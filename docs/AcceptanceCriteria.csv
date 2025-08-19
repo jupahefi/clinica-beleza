@@ -1,0 +1,25 @@
+StoryID,CriteriaID,Given,When,Then
+FIC-001,C1,que estoy en 'Nueva Ficha',"ingreso código, nombres, apellidos y guardo",se crea la ficha con fecha_creacion y código único
+FIC-002,C1,que existen fichas registradas,busco por 'Juan',veo resultados que contienen 'Juan' en nombres/apellidos/código/email
+FIC-003,C1,que existe una ficha y tipos de ficha específica,agrego ficha específica con datos JSON válidos,queda asociada y visible en el historial de la ficha
+EVA-001,C1,que tengo una ficha abierta,registro evaluación con precio_sugerido=0 y sesiones_sugeridas>0,la evaluación queda guardada con fecha actual
+EVA-002,C1,que existen tratamiento y (opcional) pack,vinculo ambos en la evaluación,la evaluación guarda las llaves foráneas correctamente
+VEN-001,C1,que existe una evaluación,creo la venta indicando cantidad_sesiones,se crea con precio_lista y estado 'pendiente'
+VEN-002,C1,que tengo una venta,aplico descuento_manual_pct=10,total_pagado refleja el descuento manual
+VEN-003,C1,que hay ofertas combinables configuradas,las aplico a la venta en orden de prioridad,los importes en venta_oferta muestran el 'descuento sobre descuento' y total_pagado es correcto
+VEN-005,C1,que el tratamiento requiere ficha específica,intento crear venta sin evaluación/ficha_específica,la BD rechaza la operación con mensaje descriptivo
+AGE-001,C1,que tengo una venta pagada o vigente,"agendo sesión con sucursal, box y profesional",la sesión queda en estado 'planificada' con numero_sesion válido
+AGE-002,C1,que una venta tiene sesiones pendientes,ejecuto 'generar plan',se crean sesiones restantes 1..y sin duplicar números
+AGE-003,C1,que la sesión ya existe,activo 'confirmar paciente',paciente_confirmado cambia a TRUE
+AGE-004,C1,que el paciente llegó,presiono 'Abrir sesión' y luego 'Cerrar sesión',se rellenan abierta_en y cerrada_en y el estado pasa a 'realizada'
+AGE-005,C1,que una venta tiene y sesiones,intento crear sesion numero_sesion>y,la BD rechaza la inserción por trigger de rango
+AGE-006,C1,que una sesión está planificada,cambio fecha_planificada,puedo comparar desfase en el reporte de planificación vs ejecución
+OFE-001,C1,que existe un pack,creo oferta pack_temporal 15% válida entre dos fechas,la oferta queda activa y aplicable a ventas dentro del rango
+OFE-002,C1,que existen dos packs A y B,configuro combo con min_packs=2,"al comprar A y B, el descuento se aplica"
+OFE-003,C1,que hay múltiples ofertas,las marco combinables y seteo prioridad,la aplicación sigue el orden de prioridad y registra secuencia en venta_oferta
+OFE-004,C1,que una venta tiene ofertas aplicadas,abro el detalle de descuentos,veo cada paso con % y monto y el acumulado final
+PRO-001,C1,que administro profesionales,"cargo tipo_profesional, bio y foto",el profesional queda disponible para agenda
+PRO-002,C1,que necesito agendar,"filtro por profesional, sucursal o box",el sistema muestra slots posibles
+INF-001,C1,que tengo acceso a PostgreSQL,ejecuto el script idempotente,"todas las tablas, índices, FKs, triggers y vistas quedan creadas una sola vez"
+REP-001,C1,que hay ventas y sesiones,abro reporte de progreso,"veo total de sesiones, realizadas y pendientes por venta"
+REP-002,C1,que hay sesiones con ejecución registrada,abro reporte plan vs ejecución,veo desfase en minutos por sesión
