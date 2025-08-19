@@ -1,540 +1,576 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clínica Beleza - Sistema de Gestión</title>
-  
-  <!-- Cache Control para desarrollo -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="description" content="Sistema integral de gestión para clínica estética. Maneja pacientes, ventas, pagos y sesiones de tratamientos de belleza.">
-  <meta name="keywords" content="clínica estética, gestión, tratamientos, depilación, facial, corporal">
-  <meta name="author" content="Clínica Beleza">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://clinica-beleza.equalitech.xyz/">
-  <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
-  <meta property="og:description" content="Sistema integral de gestión para clínica estética. Maneja pacientes, ventas, pagos y sesiones de tratamientos de belleza.">
-  <meta property="og:image" content="https://clinica-beleza.equalitech.xyz/logo.png?v=2">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:locale" content="es_ES">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://clinica-beleza.equalitech.xyz/">
-  <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
-  <meta property="twitter:description" content="Sistema integral de gestión para clínica estética. Maneja pacientes, ventas, pagos y sesiones de tratamientos de belleza.">
-  <meta property="twitter:image" content="https://clinica-beleza.equalitech.xyz/logo.png?v=2">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="logo.png">
-  <link rel="apple-touch-icon" href="logo.png">
-  
-  <link rel="stylesheet" href="styles.css?v=3.1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Beleza - Sistema de Gestión</title>
+    
+    <!-- Meta tags para SEO y redes sociales -->
+    <meta name="description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta name="keywords" content="clínica belleza, sistema gestión, administración, pacientes, ventas, medicina estética">
+    <meta name="author" content="Clínica Beleza">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://clinicabeleza.cl/">
+    <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="og:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="og:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name" content="Clínica Beleza">
+    <meta property="og:locale" content="es_CL">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://clinicabeleza.cl/">
+    <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="twitter:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="twitter:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    
+    <!-- WhatsApp -->
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Clínica Beleza - Logo">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#7FB3D3">
+    <meta name="msapplication-TileColor" content="#7FB3D3">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <header class="header">
-    <nav class="nav">
-      <a href="#" class="logo" onclick="showView('ficha')">
-        <img src="logo.png?v=3.1" alt="Clínica Beleza Logo">
-        <span class="logo-text">Clínica Beleza</span>
-      </a>
-      <button class="nav-btn active" onclick="showView('ficha')">Fichas</button>
-      <button class="nav-btn" onclick="showView('venta')">Ventas</button>
-      <button class="nav-btn" onclick="showView('pagos')">Pagos</button>
-      <button class="nav-btn" onclick="showView('sesiones')">Sesiones</button>
-      <button class="nav-btn" onclick="showView('boxes')">Boxes</button>
-      <button class="nav-btn" onclick="showView('ofertas')">Ofertas</button>
-      <button class="nav-btn" onclick="showView('historial')">Historial</button>
-    </nav>
-  </header>
-
-  <div class="container">
-    <!-- Vista de Fichas -->
-    <div id="ficha" class="view active">
-      <div class="card">
-        <h1>Gestión de Fichas de Pacientes</h1>
-        
-        <div class="form-group">
-          <label>Seleccionar Paciente Existente</label>
-          <select id="pacienteSelect">
-            <option value="">-- Crear nuevo paciente --</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre Completo</label>
-            <input type="text" id="nombrePaciente" placeholder="Ej: Ana María Pérez">
-          </div>
-          <div class="form-group">
-            <label>RUT <small>(se autocompleta al escribir 7 dígitos)</small></label>
-            <input type="text" id="rutPaciente" placeholder="Ej: 18364827 (sin puntos ni guión)" maxlength="13">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Edad</label>
-            <input type="number" id="edadPaciente" min="0" max="120">
-          </div>
-          <div class="form-group">
-            <label>Teléfono <small>(se formatea automáticamente)</small></label>
-            <div class="phone-input-container">
-              <select id="codigoPais" class="country-select">
-                <option value="+56" data-flag="🇨🇱">🇨🇱 +56</option>
-                <option value="+54" data-flag="🇦🇷">🇦🇷 +54</option>
-                <option value="+55" data-flag="🇧🇷">🇧🇷 +55</option>
-                <option value="+57" data-flag="🇨🇴">🇨🇴 +57</option>
-                <option value="+51" data-flag="🇵🇪">🇵🇪 +51</option>
-                <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
-                <option value="+34" data-flag="🇪🇸">🇪🇸 +34</option>
-              </select>
-              <input type="tel" id="telefonoPaciente" placeholder="Ej: 9 2847 8472" maxlength="15">
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="logo">
+                    <img src="logo.png" alt="Clínica Beleza" class="logo-img">
+                    <span class="logo-text">Clínica Beleza</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#fichas" class="nav-link" data-view="fichas">Fichas</a></li>
+                    <li><a href="#ventas" class="nav-link" data-view="ventas">Ventas</a></li>
+                    <li><a href="#pagos" class="nav-link" data-view="pagos">Pagos</a></li>
+                    <li><a href="#sesiones" class="nav-link" data-view="sesiones">Sesiones</a></li>
+                    <li><a href="#boxes" class="nav-link" data-view="boxes">Boxes</a></li>
+                    <li><a href="#ofertas" class="nav-link" data-view="ofertas">Ofertas</a></li>
+                    <li><a href="#historial" class="nav-link" data-view="historial">Historial</a></li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
             </div>
-          </div>
-        </div>
+        </nav>
+    </header>
 
-        <div class="form-group">
-          <label>Email <small>(detecta errores comunes)</small></label>
-          <input type="email" id="emailPaciente" placeholder="Ej: nombre@gmail.com" maxlength="254">
-        </div>
-
-        <div class="form-group">
-          <label>Observaciones Generales</label>
-          <textarea id="observacionesPaciente" rows="3" placeholder="Alergias, condiciones médicas, etc."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Fichas Específicas (puedes seleccionar múltiples)</label>
-          <div class="checkbox-group">
-            <div class="checkbox-item">
-              <input type="checkbox" id="fichaDepilacion" value="depilacion">
-              <label for="fichaDepilacion">Depilación</label>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Fichas Section -->
+        <section id="fichas" class="view-section active">
+            <div class="container">
+                <h2 class="section-title">Gestión de Pacientes</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Ficha de Paciente</h3>
+                        <form id="pacienteForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nombrePaciente">Nombre Completo</label>
+                                    <input type="text" id="nombrePaciente" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="telefonoPaciente">Teléfono</label>
+                                    <input type="tel" id="telefonoPaciente" placeholder="Ej: 9 2847 8472" maxlength="15">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="emailPaciente">Email</label>
+                                    <input type="email" id="emailPaciente">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                                    <input type="date" id="fechaNacimiento">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="direccionPaciente">Dirección</label>
+                                <input type="text" id="direccionPaciente">
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesPaciente">Observaciones</label>
+                                <textarea id="observacionesPaciente" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Paciente
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioPaciente()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Pacientes Registrados</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarPaciente" placeholder="Buscar paciente...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="toggle-container">
+                            <label class="toggle">
+                                <input type="checkbox" id="toggleFichasEspecificas">
+                                <span class="slider"></span>
+                                Mostrar solo fichas específicas
+                            </label>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaPacientes" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
+                                        <th>Fecha Nac.</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaPacientes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="fichaCorporal" value="corporal">
-              <label for="fichaCorporal">Corporal/Facial</label>
+        </section>
+
+        <!-- Ventas Section -->
+        <section id="ventas" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Ventas</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Venta</h3>
+                        <form id="ventaForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pacienteVenta">Paciente</label>
+                                    <select id="pacienteVenta" required>
+                                        <option value="">Seleccionar paciente...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="servicioVenta">Servicio</label>
+                                    <input type="text" id="servicioVenta" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="precioVenta">Precio</label>
+                                    <input type="number" id="precioVenta" min="0" step="1000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fechaVenta">Fecha</label>
+                                    <input type="date" id="fechaVenta" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesVenta">Observaciones</label>
+                                <textarea id="observacionesVenta" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-cash-register"></i> Registrar Venta
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioVenta()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Ventas Registradas</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarVenta" placeholder="Buscar venta...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaVentas" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Servicio</th>
+                                        <th>Precio</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaVentas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
+        </section>
 
-        <button class="btn" onclick="guardarPaciente()">Guardar Ficha</button>
-      </div>
-
-      <!-- Ficha Específica de Depilación -->
-      <div class="card hidden" id="fichaDepilacionCard">
-        <h3>Ficha Específica - Depilación</h3>
-        <div class="form-group">
-          <label>Zonas a Tratar</label>
-          <textarea id="zonasDepilacion" rows="3" placeholder="Ej: Piernas completas, axilas, bikini"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Tipo de Piel</label>
-          <select id="tipoPiel">
-            <option value="">Seleccionar tipo de piel</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Medicamentos/Fotosensibilizantes</label>
-          <textarea id="medicamentos" rows="2" placeholder="Medicamentos que puedan afectar el tratamiento"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Observaciones Médicas</label>
-          <textarea id="observacionesMedicas" rows="3" placeholder="Contraindicaciones, cuidados especiales"></textarea>
-        </div>
-      </div>
-
-      <!-- Ficha Específica Corporal/Facial -->
-      <div class="card hidden" id="fichaCorporalCard">
-        <h3>Ficha Específica - Corporal/Facial</h3>
-        <div class="form-group">
-          <label>Tratamientos Estéticos Previos</label>
-          <textarea id="tratamientosPrevios" rows="3" placeholder="Describe tratamientos anteriores"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Objetivo Estético Principal</label>
-          <textarea id="objetivoEstetico" rows="2" placeholder="Reducir celulitis, reafirmar piel, etc."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Zona de Tratamiento</label>
-          <select id="zonaTratamiento">
-            <option value="">Seleccionar zona</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Expectativas del Paciente</label>
-          <textarea id="expectativas" rows="2" placeholder="Qué espera lograr con el tratamiento"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <!-- Vista de Ventas -->
-    <div id="venta" class="view">
-      <div class="card">
-        <h1>Sistema de Ventas</h1>
-        
-        <div class="form-group">
-          <label>Seleccionar Paciente</label>
-          <select id="clienteVenta">
-            <option value="">-- Seleccionar paciente --</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Tratamiento</label>
-          <select id="tratamientoVenta">
-            <option value="">-- Seleccionar tratamiento --</option>
-          </select>
-        </div>
-
-        <div class="form-group hidden" id="packsDiv">
-          <label>Pack Disponible</label>
-          <select id="packVenta">
-            <option value="">-- Modalidad por sesiones --</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Cantidad de Sesiones</label>
-            <input type="number" id="sesionesVenta" min="1" value="1">
-          </div>
-          <div class="form-group">
-            <label>Oferta Adicional (%)</label>
-            <input type="number" id="ofertaVenta" min="0" max="100" value="0">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Observaciones de la Venta</label>
-          <textarea id="observacionesVenta" rows="2" placeholder="Notas especiales sobre esta venta"></textarea>
-        </div>
-
-        <div class="result-box hidden" id="resultadoVenta">
-          <div class="result-price" id="precioFinal">$0</div>
-          <div id="detalleVenta">Selecciona un tratamiento</div>
-        </div>
-
-        <button class="btn" onclick="confirmarVenta()">Confirmar Venta</button>
-      </div>
-
-      <div class="card" id="historialClienteCard">
-        <h3>Historial del Cliente</h3>
-        <div id="historialCliente">Selecciona un cliente para ver su historial</div>
-      </div>
-    </div>
-
-    <!-- Vista de Pagos -->
-    <div id="pagos" class="view">
-      <div class="card">
-        <h1>Gestión de Pagos</h1>
-        
-        <div class="form-group">
-          <label>Seleccionar Venta Pendiente</label>
-          <select id="ventaPago">
-            <option value="">-- Seleccionar venta --</option>
-          </select>
-        </div>
-
-        <div class="card hidden" id="detallePagoCard">
-          <h3>Detalle de la Venta</h3>
-          <div id="detalleVentaPago"></div>
-          
-          <div class="form-row mt-2">
-            <div class="form-group">
-              <label>Monto a Pagar</label>
-              <input type="number" id="montoPago" min="0">
+        <!-- Pagos Section -->
+        <section id="pagos" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Pagos</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nuevo Pago</h3>
+                        <form id="pagoForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pacientePago">Paciente</label>
+                                    <select id="pacientePago" required>
+                                        <option value="">Seleccionar paciente...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="montoPago">Monto</label>
+                                    <input type="number" id="montoPago" min="0" step="1000" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="metodoPago">Método de Pago</label>
+                                    <select id="metodoPago" required>
+                                        <option value="">Seleccionar método...</option>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta</option>
+                                        <option value="transferencia">Transferencia</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fechaPago">Fecha</label>
+                                    <input type="date" id="fechaPago" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesPago">Observaciones</label>
+                                <textarea id="observacionesPago" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-credit-card"></i> Registrar Pago
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioPago()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Pagos Registrados</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarPago" placeholder="Buscar pago...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaPagos" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaPagos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-              <label>Método de Pago</label>
-              <select id="metodoPago">
-              </select>
+        </section>
+
+        <!-- Sesiones Section -->
+        <section id="sesiones" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Sesiones</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Sesión</h3>
+                        <form id="sesionForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pacienteSesion">Paciente</label>
+                                    <select id="pacienteSesion" required>
+                                        <option value="">Seleccionar paciente...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="tipoSesion">Tipo de Sesión</label>
+                                    <input type="text" id="tipoSesion" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaSesion">Fecha</label>
+                                    <input type="date" id="fechaSesion" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="horaSesion">Hora</label>
+                                    <input type="time" id="horaSesion" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesSesion">Observaciones</label>
+                                <textarea id="observacionesSesion" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calendar-plus"></i> Agendar Sesión
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioSesion()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Sesiones Programadas</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarSesion" placeholder="Buscar sesión...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaSesiones" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Tipo</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaSesiones"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+        </section>
 
-          <div class="form-group">
-            <label>Fecha de Pago</label>
-            <input type="date" id="fechaPago">
-          </div>
-
-          <div class="form-group">
-            <label>Observaciones del Pago</label>
-            <textarea id="observacionesPago" rows="2" placeholder="Notas sobre este pago"></textarea>
-          </div>
-
-          <button class="btn" onclick="registrarPago()">Registrar Pago</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Historial de Pagos</h3>
-        <div class="item-list" id="listaPagos">
-          No hay pagos registrados
-        </div>
-      </div>
-    </div>
-
-    <!-- Vista de Sesiones -->
-    <div id="sesiones" class="view">
-      <!-- Calendario del Día -->
-      <div class="card">
-        <h1>📅 Gestión de Sesiones</h1>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>📅 Fecha del Calendario</label>
-            <input type="date" id="fechaSelector">
-          </div>
-          <div class="form-group">
-            <button class="btn btn-secondary" onclick="cargarSesionesHoy()">Hoy</button>
-            <button class="btn btn-primary" id="btnAutorizarCalendar" style="display: none;">🔗 Autorizar Google Calendar</button>
-          </div>
-        </div>
-
-        <div id="sesionesHoy">
-          <!-- Se cargan automáticamente las sesiones del día -->
-        </div>
-      </div>
-
-      <!-- Sesión Activa -->
-      <div class="card hidden" id="sesionActualCard">
-        <h3>⏱️ Sesión en Curso</h3>
-        <div id="detallesSesionActual"></div>
-        <div class="form-group mt-2">
-          <label>📝 Observaciones de la Sesión</label>
-          <textarea id="observacionesSesion" rows="3" placeholder="Notas sobre cómo transcurrió la sesión"></textarea>
-        </div>
-        <button class="btn btn-danger" onclick="terminarSesion()">✅ Terminar Sesión</button>
-      </div>
-
-      <!-- Agendar Nueva Sesión -->
-      <div class="card">
-        <h3>➕ Agendar Nueva Sesión</h3>
-        <p>Busca un cliente para agendar una nueva sesión</p>
-        
-        <div class="form-group buscador-container">
-          <label>🔍 Buscar Cliente</label>
-          <input type="text" id="buscadorCliente" placeholder="Escribe nombre o RUT del cliente">
-          <div id="resultadosBusqueda" class="resultado-busqueda hidden"></div>
-        </div>
-
-        <div id="ventasDisponibles" class="hidden">
-          <!-- Se cargan las ventas con sesiones disponibles -->
-        </div>
-
-        <div id="accionesSesion" class="hidden">
-          <div class="form-row">
-            <div class="form-group">
-              <label>📅 Fecha y Hora</label>
-              <input type="datetime-local" id="fechaAgendaUnica">
+        <!-- Boxes Section -->
+        <section id="boxes" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Boxes</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nuevo Box</h3>
+                        <form id="boxForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="numeroBox">Número de Box</label>
+                                    <input type="number" id="numeroBox" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="estadoBox">Estado</label>
+                                    <select id="estadoBox" required>
+                                        <option value="">Seleccionar estado...</option>
+                                        <option value="disponible">Disponible</option>
+                                        <option value="ocupado">Ocupado</option>
+                                        <option value="mantenimiento">Mantenimiento</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesBox">Observaciones</label>
+                                <textarea id="observacionesBox" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Crear Box
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioBox()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Boxes Disponibles</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaBoxes" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Estado</th>
+                                        <th>Observaciones</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaBoxes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-              <label>🏢 Box/Sala</label>
-              <select id="boxSeleccionado">
-                <option value="1">Box 1</option>
-                <option value="2">Box 2</option>
-                <option value="3">Box 3</option>
-              </select>
+        </section>
+
+        <!-- Ofertas Section -->
+        <section id="ofertas" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Ofertas</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Oferta</h3>
+                        <form id="ofertaForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tituloOferta">Título</label>
+                                    <input type="text" id="tituloOferta" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="descuentoOferta">Descuento (%)</label>
+                                    <input type="number" id="descuentoOferta" min="0" max="100" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaInicioOferta">Fecha Inicio</label>
+                                    <input type="date" id="fechaInicioOferta" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fechaFinOferta">Fecha Fin</label>
+                                    <input type="date" id="fechaFinOferta" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcionOferta">Descripción</label>
+                                <textarea id="descripcionOferta" rows="3" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-tag"></i> Crear Oferta
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioOferta()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Ofertas Activas</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaOfertas" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Descuento</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaOfertas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          
-          <div class="form-actions">
-            <button class="btn" onclick="agendarSesionUnica()">📅 Agendar Una Sesión</button>
-            <button class="btn btn-primary" onclick="generarPlanSesiones()" id="btnPlanSesiones">🗓️ Generar Plan Completo</button>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- Plan de Sesiones -->
-      <div class="card hidden" id="planSesiones">
-        <!-- Se genera dinámicamente -->
-      </div>
-
-
-
-      <!-- Sesiones Agendadas (Vista Clásica) -->
-      <div class="card">
-        <h3>📋 Agenda General</h3>
-        <div class="item-list" id="sesionesAgendadas">
-          No hay sesiones agendadas
-        </div>
-      </div>
-    </div>
-
-    <!-- Modales para Sesiones -->
-    <div id="modalConfirmacionSesion" class="modal hidden">
-      <div class="modal-content">
-        <div id="detallesSesionConfirmar">
-          <!-- Contenido dinámico -->
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" id="btnConfirmarSesion">✅ Confirmar e Iniciar</button>
-          <button class="btn btn-secondary" id="btnCancelarConfirmacion">❌ Cancelar</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="modalEditarSesion" class="modal hidden">
-      <div class="modal-content">
-        <div id="formularioEditarSesion">
-          <!-- Contenido dinámico -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Vista de Boxes -->
-    <div id="boxes" class="view">
-      <div class="card">
-        <h1>🏢 Gestión de Boxes/Salas</h1>
-        <p>Administra las salas y boxes disponibles para los tratamientos.</p>
-        
-        <div class="form-actions mb-2">
-          <button class="btn btn-primary" onclick="añadirBox()">➕ Añadir Nuevo Box</button>
-        </div>
-        
-        <div id="boxesDisponibles">
-          <!-- Se cargan automáticamente -->
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>📊 Estado de Boxes</h3>
-        <div id="estadoBoxes">
-          <!-- Estadísticas de uso -->
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>⚙️ Configuración de Boxes</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Capacidad Total de Boxes</label>
-            <input type="number" id="capacidadTotal" min="1" max="20" value="3" readonly>
-          </div>
-          <div class="form-group">
-            <label>Boxes Activos</label>
-            <input type="number" id="boxesActivos" readonly>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label>Horario de Atención</label>
-          <div class="form-row">
-            <input type="time" id="horarioInicio" value="09:00">
-            <span>hasta</span>
-            <input type="time" id="horarioFin" value="18:00">
-          </div>
-        </div>
-        
-        <button class="btn btn-secondary" onclick="guardarConfiguracionBoxes()">💾 Guardar Configuración</button>
-      </div>
-    </div>
-
-    <!-- Vista de Ofertas -->
-    <div id="ofertas" class="view">
-      <div class="card">
-        <h1>Gestión de Ofertas</h1>
-        
-        <div id="listaTratamientosOfertas">
-          <!-- Se carga dinámicamente -->
-        </div>
-
-        <div class="card hidden" id="crearOfertaCard">
-          <h3>Crear Oferta</h3>
-          <div class="form-group">
-            <label>Tratamiento Seleccionado</label>
-            <input type="text" id="tratamientoOferta" readonly>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>Descuento (%)</label>
-              <input type="number" id="descuentoOferta" min="0" max="100">
+        <!-- Historial Section -->
+        <section id="historial" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Historial de Actividad</h2>
+                <div class="section-content">
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Actividad Reciente</h3>
+                            <div class="filter-container">
+                                <select id="filtroHistorial">
+                                    <option value="todos">Todos</option>
+                                    <option value="pacientes">Pacientes</option>
+                                    <option value="ventas">Ventas</option>
+                                    <option value="pagos">Pagos</option>
+                                    <option value="sesiones">Sesiones</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaHistorial" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Acción</th>
+                                        <th>Detalle</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaHistorial"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-              <label>Precio Fijo (opcional)</label>
-              <input type="number" id="precioFijoOferta" min="0">
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="logo.png" alt="Clínica Beleza" class="footer-logo-img">
+                    <span>Sistema de Gestión</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#fichas">Fichas</a>
+                    <a href="#ventas">Ventas</a>
+                    <a href="#pagos">Pagos</a>
+                    <a href="#sesiones">Sesiones</a>
+                    <a href="#boxes">Boxes</a>
+                    <a href="#ofertas">Ofertas</a>
+                    <a href="#historial">Historial</a>
+                </div>
             </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Fecha Inicio</label>
-              <input type="date" id="fechaInicioOferta">
+            <div class="footer-bottom">
+                <p>&copy; 2025 Clínica Beleza. Sistema de Gestión Integral.</p>
             </div>
-            <div class="form-group">
-              <label>Fecha Fin</label>
-              <input type="date" id="fechaFinOferta">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Descripción de la Oferta</label>
-            <textarea id="descripcionOferta" rows="2" placeholder="Describe los términos de la oferta"></textarea>
-          </div>
-
-          <button class="btn" onclick="guardarOferta()">Guardar Oferta</button>
-          <button class="btn btn-secondary" onclick="cancelarOferta()">Cancelar</button>
         </div>
-      </div>
+    </footer>
 
-      <div class="card">
-        <h3>Ofertas Activas</h3>
-        <div class="item-list" id="ofertasActivas">
-          No hay ofertas activas
-        </div>
-      </div>
-    </div>
-
-    <!-- Vista de Historial -->
-    <div id="historial" class="view">
-      <div class="card">
-        <h1>Historial General de Compras</h1>
-        
-        <div class="form-group">
-          <label>Filtrar por Cliente</label>
-          <select id="filtroCliente">
-            <option value="">-- Todos los clientes --</option>
-          </select>
-        </div>
-
-        <div class="item-list" id="historialCompleto">
-          No hay ventas registradas
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="js/main.js?v=3.1"></script>
-  
-  <!-- Herramientas de desarrollo (solo en desarrollo) -->
-  <script>
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('dev=1')) {
-      const script = document.createElement('script');
-      script.src = 'dev-tools.js';
-      document.head.appendChild(script);
-    }
-  </script>
-  
-  <!-- Service Worker para gestión de cache -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registrado: ', registration);
-          })
-          .catch((registrationError) => {
-            console.log('SW registro falló: ', registrationError);
-          });
-      });
-    }
-  </script>
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

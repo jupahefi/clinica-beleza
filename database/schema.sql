@@ -188,3 +188,4 @@ INSERT OR IGNORE INTO configuraciones (clave, valor, descripcion) VALUES
 ('duracion_sesion_default', '60', 'Duración por defecto de sesiones en minutos'),
 ('capacidad_boxes', '3', 'Número total de boxes disponibles'),
 ('version_db', '1.0', 'Versión del esquema de base de datos');
+

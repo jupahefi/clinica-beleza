@@ -390,3 +390,4 @@ export async function checkConnection() {
         return false;
     }
 }
+

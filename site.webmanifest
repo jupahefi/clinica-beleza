@@ -1,0 +1,23 @@
+{
+    "name": "Clínica Beleza - Sistema de Gestión",
+    "short_name": "Clínica Beleza",
+    "description": "Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.",
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#7FB3D3",
+    "background_color": "#F8F9FA",
+    "display": "standalone",
+    "start_url": "/",
+    "scope": "/",
+    "orientation": "portrait-primary"
+}

@@ -11,331 +11,293 @@ import { inicializarSesiones, iniciarSesion, terminarSesion, confirmarAgenda, ca
 import { loadEnvironment, isEnvironmentLoaded } from './env.js';
 import { initializeConfig, validateConfig } from './config.js';
 
-/**
- * Estado de la aplicación
- */
+// Estado global de la aplicación
 const AppState = {
-  vistaActual: 'ficha',
-  inicializado: false
+    inicializado: false,
+    vistaActual: 'fichas',
+    datosCargados: false
 };
 
-/**
- * Inicializa la aplicación
- */
+// Función principal de inicialización
 async function inicializarApp() {
-  if (AppState.inicializado) return;
-  
-  try {
-    console.log('🚀 Iniciando aplicación...');
+    if (AppState.inicializado) return;
     
-    // Cargar variables de entorno primero
-    const envConfig = await loadEnvironment();
-    
-    // Inicializar configuración con variables de entorno
-    initializeConfig(envConfig);
-    
-    // Validar configuración
-    const validation = validateConfig();
-    if (!validation.isValid) {
-      console.error('❌ Errores de configuración:', validation.errors);
-      alert('Error en la configuración de la aplicación: ' + validation.errors.join(', '));
-      return;
-    }
-    
-    if (validation.warnings.length > 0) {
-      console.warn('⚠️ Advertencias de configuración:', validation.warnings);
-    }
-    
-    // Inicializar almacenamiento
-    await inicializarStorage();
-    
-    // Inicializar módulos
-    inicializarPacientes();
-    inicializarVentas();
-    inicializarPagos();
-    inicializarSesiones();
-    
-    // Configurar navegación
-    configurarNavegacion();
-    
-    // Configurar eventos globales
-    configurarEventosGlobales();
-    
-    // Mostrar vista inicial
-    showView('ficha');
-    
-    AppState.inicializado = true;
-    console.log('✅ Aplicación inicializada correctamente');
-    
-  } catch (error) {
-    console.error('❌ Error al inicializar aplicación:', error);
-    alert('Error al inicializar la aplicación. Por favor, recarga la página.');
-  }
-}
-
-/**
- * Configura la navegación entre vistas
- */
-function configurarNavegacion() {
-  // Los botones ya tienen onclick en el HTML, no necesitamos listeners adicionales
-  console.log('✅ Navegación configurada');
-}
-
-/**
- * Mapea nombres de botones a IDs de vista
- */
-function mapearNombreVista(nombre) {
-  const mapeo = {
-    'fichas': 'ficha',
-    'ventas': 'ventas',
-    'pagos': 'pagos',
-    'sesiones': 'sesiones',
-    'boxes': 'boxes',
-    'ofertas': 'ofertas',
-    'historial': 'historial'
-  };
-  
-  return mapeo[nombre] || nombre;
-}
-
-/**
- * Configura eventos globales de la aplicación
- */
-function configurarEventosGlobales() {
-  // Eventos de teclado
-  document.addEventListener('keydown', (e) => {
-    // Escapar para cancelar operaciones
-    if (e.key === 'Escape') {
-      cancelarOperacionActual();
-    }
-    
-    // Ctrl+S para guardar
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      guardarSegunVista();
-    }
-  });
-  
-  // Prevenir pérdida de datos al cerrar
-  window.addEventListener('beforeunload', (e) => {
-    if (hayDatosSinGuardar()) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
-  
-  // Manejo de errores globales
-  window.addEventListener('error', (e) => {
-    console.error('Error global:', e.error);
-  });
-}
-
-/**
- * Cancela la operación actual según la vista
- */
-function cancelarOperacionActual() {
-  const vista = AppState.vistaActual;
-  
-  switch (vista) {
-    case 'sesiones':
-      const sesionCard = document.getElementById('sesionActualCard');
-      if (sesionCard && !sesionCard.classList.contains('hidden')) {
-        if (confirm('¿Desea terminar la sesión actual?')) {
-          terminarSesion();
+    try {
+        console.log('🚀 Iniciando aplicación...');
+        
+        // Cargar configuración del entorno
+        const envConfig = await loadEnvironment();
+        initializeConfig(envConfig);
+        
+        const validation = validateConfig();
+        if (!validation.isValid) {
+            console.error('❌ Error de configuración:', validation.errors);
+            mostrarMensaje('Error de configuración: ' + validation.errors.join(', '), 'error');
+            return;
         }
-      }
-      break;
-      
-    case 'ofertas':
-      const ofertaCard = document.getElementById('crearOfertaCard');
-      if (ofertaCard && !ofertaCard.classList.contains('hidden')) {
-        cancelarOferta();
-      }
-      break;
-  }
+        
+        if (validation.warnings.length > 0) {
+            console.warn('⚠️ Advertencias de configuración:', validation.warnings);
+        }
+
+        // Inicializar almacenamiento
+        await inicializarStorage();
+        
+        // Inicializar módulos
+        inicializarPacientes();
+        inicializarVentas();
+        inicializarPagos();
+        inicializarSesiones();
+        
+        // Inicializar navegación
+        inicializarNavegacion();
+        
+        // Inicializar funcionalidades móviles
+        inicializarMobileMenu();
+        
+        // Cargar datos iniciales
+        await cargarDatosIniciales();
+        
+        AppState.inicializado = true;
+        console.log('✅ Aplicación inicializada correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error al inicializar la aplicación:', error);
+        mostrarMensaje('Error al inicializar la aplicación: ' + error.message, 'error');
+    }
 }
 
-/**
- * Guarda según la vista actual
- */
-function guardarSegunVista() {
-  const vista = AppState.vistaActual;
-  
-  switch (vista) {
-    case 'ficha':
-      guardarPacienteFormulario();
-      break;
-      
-    case 'venta':
-      confirmarVenta();
-      break;
-      
-    case 'pagos':
-      const pagoCard = document.getElementById('detallePagoCard');
-      if (pagoCard && !pagoCard.classList.contains('hidden')) {
-        registrarPago();
-      }
-      break;
-  }
+// Inicializar navegación moderna
+function inicializarNavegacion() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const view = link.getAttribute('data-view');
+            if (view) {
+                cambiarVista(view);
+            }
+        });
+    });
+    
+    // Navegación por hash
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.slice(1);
+        if (hash && ['fichas', 'ventas', 'pagos', 'sesiones', 'boxes', 'ofertas', 'historial'].includes(hash)) {
+            cambiarVista(hash);
+        }
+    });
+    
+    // Establecer vista inicial
+    const hash = window.location.hash.slice(1);
+    if (hash && ['fichas', 'ventas', 'pagos', 'sesiones', 'boxes', 'ofertas', 'historial'].includes(hash)) {
+        cambiarVista(hash);
+    } else {
+        cambiarVista('fichas');
+    }
 }
 
-/**
- * Verifica si hay datos sin guardar
- */
-function hayDatosSinGuardar() {
-  const vista = AppState.vistaActual;
-  
-  switch (vista) {
-    case 'ficha':
-      const nombre = document.getElementById('nombrePaciente')?.value;
-      return nombre && nombre.trim().length > 0;
-      
-    case 'sesiones':
-      const sesionCard = document.getElementById('sesionActualCard');
-      return sesionCard && !sesionCard.classList.contains('hidden');
-      
-    default:
-      return false;
-  }
-}
-
-/**
- * Cambia entre vistas de la aplicación
- */
-export function showView(viewId) {
-  try {
+// Cambiar vista
+function cambiarVista(vista) {
+    // Ocultar todas las secciones
+    document.querySelectorAll('.view-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Remover clase active de todos los enlaces
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Mostrar sección seleccionada
+    const seccion = document.getElementById(vista);
+    if (seccion) {
+        seccion.classList.add('active');
+    }
+    
+    // Activar enlace correspondiente
+    const link = document.querySelector(`[data-view="${vista}"]`);
+    if (link) {
+        link.classList.add('active');
+    }
+    
+    // Actualizar hash
+    window.location.hash = vista;
+    
     // Actualizar estado
-    AppState.vistaActual = viewId;
+    AppState.vistaActual = vista;
     
-    // Actualizar navegación visual
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
+    // Cargar datos específicos de la vista
+    cargarDatosVista(vista);
+}
+
+// Inicializar menú móvil
+function inicializarMobileMenu() {
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
     
-    const btnActivo = Array.from(document.querySelectorAll('.nav-btn')).find(btn => {
-      const nombre = btn.textContent.toLowerCase();
-      const vista = mapearNombreVista(nombre);
-      return vista === viewId;
-    });
-    
-    if (btnActivo) {
-      btnActivo.classList.add('active');
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+        
+        // Cerrar menú al hacer clic en un enlace
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            });
+        });
     }
-    
-    // Mostrar vista correspondiente
-    document.querySelectorAll('.view').forEach(view => {
-      view.classList.remove('active');
-    });
-    
-    const vistaElement = document.getElementById(viewId);
-    if (vistaElement) {
-      vistaElement.classList.add('active');
+}
+
+// Cargar datos iniciales
+async function cargarDatosIniciales() {
+    try {
+        // Aquí se cargarían los datos iniciales si es necesario
+        console.log('📊 Datos iniciales cargados');
+        AppState.datosCargados = true;
+    } catch (error) {
+        console.error('❌ Error al cargar datos iniciales:', error);
     }
+}
+
+// Cargar datos específicos de cada vista
+function cargarDatosVista(vista) {
+    switch (vista) {
+        case 'fichas':
+            // Los datos se cargan automáticamente en el módulo de pacientes
+            break;
+        case 'ventas':
+            // Los datos se cargan automáticamente en el módulo de ventas
+            break;
+        case 'pagos':
+            // Los datos se cargan automáticamente en el módulo de pagos
+            break;
+        case 'sesiones':
+            // Los datos se cargan automáticamente en el módulo de sesiones
+            break;
+        case 'boxes':
+            cargarBoxes();
+            break;
+        case 'ofertas':
+            cargarOfertas();
+            break;
+        case 'historial':
+            cargarHistorial();
+            break;
+    }
+}
+
+// Funciones para cargar datos específicos
+function cargarBoxes() {
+    // Implementar carga de boxes
+    console.log('🏢 Cargando boxes...');
+}
+
+function cargarOfertas() {
+    // Implementar carga de ofertas
+    console.log('🏷️ Cargando ofertas...');
+}
+
+function cargarHistorial() {
+    // Implementar carga de historial
+    console.log('📋 Cargando historial...');
+}
+
+// Función para mostrar mensajes
+function mostrarMensaje(mensaje, tipo = 'info') {
+    // Crear elemento de mensaje
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message message-${tipo}`;
+    messageDiv.textContent = mensaje;
     
-    // Ejecutar lógica específica de la vista
-    ejecutarLogicaVista(viewId);
-    
-  } catch (error) {
-    console.error('Error al cambiar vista:', error);
-  }
+    // Insertar al inicio del contenedor principal
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.insertBefore(messageDiv, mainContent.firstChild);
+        
+        // Remover mensaje después de 5 segundos
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
 }
 
-/**
- * Ejecuta lógica específica al cambiar de vista
- */
-function ejecutarLogicaVista(viewId) {
-  switch (viewId) {
-    case 'ficha':
-      // La lógica ya está en el módulo de pacientes
-      break;
-      
-    case 'venta':
-      // La lógica ya está en el módulo de ventas
-      break;
-      
-    case 'pagos':
-      // Solo actualizar si ya está inicializado
-      break;
-      
-    case 'sesiones':
-      // Solo cargar sesiones del día actual si ya está inicializado
-      if (window.cargarSesionesHoy) {
-        window.cargarSesionesHoy();
-      }
-      break;
-      
-    case 'boxes':
-      // Lógica para boxes
-      break;
-      
-    case 'ofertas':
-      inicializarOfertas();
-      break;
-      
-    case 'historial':
-      inicializarHistorial();
-      break;
-  }
+// Función para mostrar loading
+function mostrarLoading(elemento) {
+    elemento.classList.add('loading');
 }
 
-/**
- * Inicializa la vista de ofertas
- */
-function inicializarOfertas() {
-  // Implementación pendiente - se puede expandir
-  console.log('Vista de ofertas cargada');
+function ocultarLoading(elemento) {
+    elemento.classList.remove('loading');
 }
 
-/**
- * Inicializa la vista de historial
- */
-function inicializarHistorial() {
-  // Implementación pendiente - se puede expandir
-  console.log('Vista de historial cargada');
+// Funciones globales para formularios
+function limpiarFormularioPaciente() {
+    document.getElementById('pacienteForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
 }
 
-/**
- * Expone funciones necesarias al contexto global para compatibilidad con HTML
- */
+function limpiarFormularioVenta() {
+    document.getElementById('ventaForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
+}
+
+function limpiarFormularioPago() {
+    document.getElementById('pagoForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
+}
+
+function limpiarFormularioSesion() {
+    document.getElementById('sesionForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
+}
+
+function limpiarFormularioBox() {
+    document.getElementById('boxForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
+}
+
+function limpiarFormularioOferta() {
+    document.getElementById('ofertaForm').reset();
+    mostrarMensaje('Formulario limpiado', 'info');
+}
+
+// Exponer funciones globales
 function exponerFuncionesGlobales() {
-  // Navegación
-  window.showView = showView;
-  
-  // Pacientes
-  window.toggleFichaEspecifica = toggleFichasEspecificas; // Mantener compatibilidad
-  window.toggleFichasEspecificas = toggleFichasEspecificas;
-  window.guardarPaciente = guardarPacienteFormulario;
-  
-  // Ventas
-  window.confirmarVenta = confirmarVenta;
-  
-  // Pagos
-  window.registrarPago = registrarPago;
-  
-  // Sesiones
-  window.iniciarSesion = iniciarSesion;
-  window.terminarSesion = terminarSesion;
-  window.confirmarAgenda = confirmarAgenda;
-  window.cancelarAgenda = cancelarAgenda;
-  window.reprogramarAgenda = reprogramarAgenda;
-  
-  console.log('✅ Funciones globales expuestas');
-  console.log('showView disponible:', typeof window.showView);
+    window.cambiarVista = cambiarVista;
+    window.mostrarMensaje = mostrarMensaje;
+    window.mostrarLoading = mostrarLoading;
+    window.ocultarLoading = ocultarLoading;
+    window.limpiarFormularioPaciente = limpiarFormularioPaciente;
+    window.limpiarFormularioVenta = limpiarFormularioVenta;
+    window.limpiarFormularioPago = limpiarFormularioPago;
+    window.limpiarFormularioSesion = limpiarFormularioSesion;
+    window.limpiarFormularioBox = limpiarFormularioBox;
+    window.limpiarFormularioOferta = limpiarFormularioOferta;
+    
+    // Funciones de módulos
+    window.toggleFichasEspecificas = toggleFichasEspecificas;
+    window.guardarPacienteFormulario = guardarPacienteFormulario;
+    window.confirmarVenta = confirmarVenta;
+    window.registrarPago = registrarPago;
+    window.iniciarSesion = iniciarSesion;
+    window.terminarSesion = terminarSesion;
+    window.confirmarAgenda = confirmarAgenda;
+    window.cancelarAgenda = cancelarAgenda;
+    window.reprogramarAgenda = reprogramarAgenda;
 }
 
-/**
- * Punto de entrada principal
- */
+// Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
-  exponerFuncionesGlobales();
-  await inicializarApp();
+    exponerFuncionesGlobales();
+    await inicializarApp();
 });
 
-// Para desarrollo y debugging
-if (import.meta.env?.DEV) {
-  window.AppState = AppState;
-  window.reiniciarApp = () => {
-    AppState.inicializado = false;
-    inicializarApp();
-  };
-}
+// Exportar para uso en otros módulos
+export { cambiarVista, mostrarMensaje, mostrarLoading, ocultarLoading };

@@ -529,3 +529,4 @@ export function guardarTodos() {
     respaldarVentas();
     console.log('💾 Datos respaldados en localStorage');
 }
+
