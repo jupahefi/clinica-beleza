@@ -98,6 +98,10 @@ try {
             handleReportes($db, $method, $id, $data);
             break;
             
+        case 'config':
+            handleConfig($db, $method, $id, $data);
+            break;
+            
         case 'stats':
             handleStats($db, $method);
             break;
@@ -1726,6 +1730,75 @@ function handleBackup($db, $method) {
         }
     } catch (Exception $e) {
         respondWithError('Error creando backup: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Maneja configuración de variables de entorno
+ */
+function handleConfig($db, $method, $id, $data) {
+    if ($method !== 'GET') {
+        respondWithError('Método no permitido', 405);
+        return;
+    }
+    
+    try {
+        // Cargar variables de entorno desde .env si existe
+        $envConfig = [];
+        
+        // Intentar cargar archivo .env
+        $envFile = __DIR__ . '/.env';
+        if (file_exists($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos($line, '#') === 0) continue; // Comentarios
+                if (strpos($line, '=') !== false) {
+                    list($key, $value) = explode('=', $line, 2);
+                    $key = trim($key);
+                    $value = trim($value);
+                    
+                    // Remover comillas si existen
+                    if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
+                        (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
+                        $value = substr($value, 1, -1);
+                    }
+                    
+                    $envConfig[$key] = $value;
+                }
+            }
+        }
+        
+        // Configuración por defecto
+        $defaultConfig = [
+            'API_URL' => $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'],
+            'API_TIMEOUT' => 10000,
+            'API_RETRIES' => 3,
+            'APP_NAME' => 'Clínica Beleza',
+            'APP_VERSION' => '2.0.0',
+            'APP_ENV' => 'development',
+            'CACHE_TTL' => 300,
+            'CACHE_ENABLED' => true
+        ];
+        
+        // Combinar configuración por defecto con variables de entorno
+        $config = array_merge($defaultConfig, $envConfig);
+        
+        // Solo devolver variables seguras para el frontend
+        $safeConfig = [
+            'API_URL' => $config['API_URL'],
+            'API_TIMEOUT' => (int)$config['API_TIMEOUT'],
+            'API_RETRIES' => (int)$config['API_RETRIES'],
+            'APP_NAME' => $config['APP_NAME'],
+            'APP_VERSION' => $config['APP_VERSION'],
+            'APP_ENV' => $config['APP_ENV'],
+            'CACHE_TTL' => (int)$config['CACHE_TTL'],
+            'CACHE_ENABLED' => filter_var($config['CACHE_ENABLED'], FILTER_VALIDATE_BOOLEAN)
+        ];
+        
+        respondWithSuccess($safeConfig);
+        
+    } catch (Exception $e) {
+        respondWithError('Error cargando configuración: ' . $e->getMessage());
     }
 }
 

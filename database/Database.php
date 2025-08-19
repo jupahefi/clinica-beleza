@@ -6,6 +6,35 @@
  * Server-based architecture (sin modo offline)
  */
 
+// Cargar variables de entorno desde .env si existe
+function loadEnvFile($path) {
+    if (!file_exists($path)) {
+        return;
+    }
+    
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos($line, '#') === 0) continue; // Comentarios
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            
+            // Remover comillas si existen
+            if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
+                (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
+                $value = substr($value, 1, -1);
+            }
+            
+            $_ENV[$key] = $value;
+            putenv("$key=$value");
+        }
+    }
+}
+
+// Cargar archivo .env
+loadEnvFile(__DIR__ . '/../.env');
+
 class Database {
     private static $instance = null;
     private $pdo = null;

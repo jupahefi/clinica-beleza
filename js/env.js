@@ -1,114 +1,126 @@
 /**
  * Módulo de gestión de variables de entorno
- * Carga las configuraciones desde el endpoint env.php
+ * Carga las variables de entorno desde el servidor o usa valores por defecto
  */
 
-let ENV_CONFIG = null;
-let ENV_LOADING = false;
+// Configuración por defecto
+const DEFAULT_CONFIG = {
+    API_URL: window.location.origin,
+    API_TIMEOUT: 10000,
+    API_RETRIES: 3,
+    APP_NAME: 'Clínica Beleza',
+    APP_VERSION: '2.0.0',
+    APP_ENV: 'development',
+    CACHE_TTL: 300,
+    CACHE_ENABLED: true
+};
+
+// Variable global para almacenar la configuración
+window.ENV_CONFIG = { ...DEFAULT_CONFIG };
 
 /**
  * Carga las variables de entorno desde el servidor
- * @returns {Promise<Object>} Configuración de entorno
  */
 export async function loadEnvironment() {
-    if (ENV_CONFIG) {
-        return ENV_CONFIG;
-    }
-    
-    if (ENV_LOADING) {
-        // Si ya está cargando, esperar hasta que termine
-        while (ENV_LOADING) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return ENV_CONFIG;
-    }
-    
-    ENV_LOADING = true;
-    
     try {
-        // Por ahora, usar valores por defecto ya que env.php fue eliminado
-        // En el futuro, se puede implementar un endpoint para variables de entorno
-        console.log('ℹ️ Usando configuración por defecto (env.php no disponible)');
-        
-        ENV_CONFIG = {
-            GOOGLE_CALENDAR_API_KEY: '',
-            GOOGLE_CLIENT_ID: '',
-            APP_ENV: 'production',
-            APP_URL: window.location.origin,
-            API_URL: window.location.origin,
-            TIMEZONE: 'America/Santiago',
-            CLINIC_NAME: 'Clínica Beleza',
-            CLINIC_EMAIL: '',
-            CLINIC_PHONE: '',
-            ENABLE_CACHE: 'true',
-            CACHE_DURATION: '3600'
-        };
-        
-        return ENV_CONFIG;
-        
+        // Intentar cargar configuración desde el servidor
+        const response = await fetch('/api.php/config');
+        if (response.ok) {
+            const config = await response.json();
+            if (config.success && config.data) {
+                window.ENV_CONFIG = { ...DEFAULT_CONFIG, ...config.data };
+                console.log('✅ Variables de entorno cargadas desde servidor');
+                return true;
+            }
+        }
     } catch (error) {
-        console.warn('⚠️ Error cargando variables de entorno, usando valores por defecto:', error);
-        
-        // Valores por defecto como fallback
-        ENV_CONFIG = {
-            GOOGLE_CALENDAR_API_KEY: '',
-            GOOGLE_CLIENT_ID: '',
-            APP_ENV: 'production',
-            APP_URL: window.location.origin,
-            API_URL: window.location.origin + '/api',
-            TIMEZONE: 'America/Santiago',
-            CLINIC_NAME: 'Clínica Beleza',
-            CLINIC_EMAIL: '',
-            CLINIC_PHONE: '',
-            ENABLE_CACHE: 'true',
-            CACHE_DURATION: '3600'
-        };
-        
-        return ENV_CONFIG;
-        
-    } finally {
-        ENV_LOADING = false;
-    }
-}
-
-/**
- * Obtiene una variable de entorno específica
- * @param {string} key - Clave de la variable
- * @param {*} defaultValue - Valor por defecto si no existe
- * @returns {*} Valor de la variable
- */
-export function getEnv(key, defaultValue = null) {
-    if (!ENV_CONFIG) {
-        console.warn(`⚠️ Intentando acceder a ENV.${key} antes de cargar las variables de entorno`);
-        return defaultValue;
+        console.warn('⚠️ No se pudo cargar configuración del servidor, usando valores por defecto:', error.message);
     }
     
-    return ENV_CONFIG[key] ?? defaultValue;
+    // Usar configuración por defecto
+    window.ENV_CONFIG = { ...DEFAULT_CONFIG };
+    console.log('ℹ️ Usando configuración por defecto');
+    return false;
 }
 
 /**
  * Verifica si las variables de entorno están cargadas
- * @returns {boolean}
  */
 export function isEnvironmentLoaded() {
-    return ENV_CONFIG !== null;
+    return !!window.ENV_CONFIG;
 }
 
 /**
- * Obtiene toda la configuración de entorno (solo lectura)
- * @returns {Object|null}
+ * Obtiene una variable de entorno
  */
-export function getAllEnv() {
-    return ENV_CONFIG ? { ...ENV_CONFIG } : null;
+export function getEnv(key, defaultValue = '') {
+    if (!isEnvironmentLoaded()) {
+        console.warn('⚠️ Variables de entorno no cargadas, cargando...');
+        loadEnvironment();
+    }
+    
+    return window.ENV_CONFIG?.[key] || defaultValue;
 }
 
 /**
- * Recarga las variables de entorno
- * @returns {Promise<Object>}
+ * Obtiene toda la configuración
  */
-export async function reloadEnvironment() {
-    ENV_CONFIG = null;
-    ENV_LOADING = false;
-    return await loadEnvironment();
+export function getConfig() {
+    if (!isEnvironmentLoaded()) {
+        loadEnvironment();
+    }
+    
+    return { ...window.ENV_CONFIG };
+}
+
+/**
+ * Actualiza una variable de entorno
+ */
+export function setEnv(key, value) {
+    if (!isEnvironmentLoaded()) {
+        loadEnvironment();
+    }
+    
+    window.ENV_CONFIG[key] = value;
+    console.log(`🔧 Variable de entorno actualizada: ${key} = ${value}`);
+}
+
+/**
+ * Reinicia la configuración a los valores por defecto
+ */
+export function resetConfig() {
+    window.ENV_CONFIG = { ...DEFAULT_CONFIG };
+    console.log('🔄 Configuración reiniciada a valores por defecto');
+}
+
+/**
+ * Valida la configuración requerida
+ */
+export function validateConfig() {
+    const required = ['API_URL'];
+    const missing = [];
+    
+    for (const key of required) {
+        if (!getEnv(key)) {
+            missing.push(key);
+        }
+    }
+    
+    if (missing.length > 0) {
+        console.error('❌ Variables de entorno faltantes:', missing);
+        return false;
+    }
+    
+    console.log('✅ Configuración validada correctamente');
+    return true;
+}
+
+/**
+ * Muestra información de la configuración actual
+ */
+export function showConfig() {
+    const config = getConfig();
+    console.log('📋 Configuración actual:', config);
+    return config;
 }
 

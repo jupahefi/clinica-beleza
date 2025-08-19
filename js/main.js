@@ -10,8 +10,7 @@ import { inicializarSesiones, iniciarSesion, terminarSesion, editarSesion, cance
 import { inicializarBoxes } from './modules/boxes.js';
 import { inicializarOfertas } from './modules/ofertas.js';
 import { inicializarReportes } from './modules/reportes.js';
-import { loadEnvironment, isEnvironmentLoaded } from './env.js';
-import { initializeConfig, validateConfig } from './config.js';
+import { loadEnvironment, validateConfig } from './env.js';
 import { initializeApiClient, checkConnection } from './api-client.js';
 
 // Estado global de la aplicación
@@ -29,18 +28,13 @@ async function inicializarApp() {
         console.log('🚀 Iniciando aplicación...');
         
         // Cargar configuración del entorno
-        const envConfig = await loadEnvironment();
-        initializeConfig(envConfig);
+        await loadEnvironment();
         
-        const validation = validateConfig();
-        if (!validation.isValid) {
-            console.error('❌ Error de configuración:', validation.errors);
-            mostrarMensaje('Error de configuración: ' + validation.errors.join(', '), 'error');
+        const isValid = validateConfig();
+        if (!isValid) {
+            console.error('❌ Error de configuración: Variables de entorno requeridas no encontradas');
+            mostrarMensaje('Error de configuración: Variables de entorno requeridas no encontradas', 'error');
             return;
-        }
-        
-        if (validation.warnings.length > 0) {
-            console.warn('⚠️ Advertencias de configuración:', validation.warnings);
         }
 
         // Inicializar cliente API (server-based)
