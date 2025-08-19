@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS ficha (
 );
 
 CREATE UNIQUE INDEX ux_ficha_codigo ON ficha (LOWER(codigo));
-CREATE UNIQUE INDEX ux_ficha_email ON ficha (LOWER(email)) WHERE email IS NOT NULL;
+CREATE UNIQUE INDEX ux_ficha_email ON ficha (LOWER(email));
 
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
