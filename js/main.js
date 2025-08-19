@@ -7,7 +7,7 @@ import { inicializarStorage } from './storage-api.js';
 import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
 import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
 import { inicializarPagos, registrarPago } from './modules/pagos.js';
-import { inicializarSesiones, iniciarSesion, terminarSesion, confirmarAgenda, cancelarAgenda, reprogramarAgenda } from './modules/sesiones.js';
+import { inicializarSesiones, iniciarSesion, terminarSesion, editarSesion, cancelarSesion, reagendarSesion } from './modules/sesiones.js';
 import { loadEnvironment, isEnvironmentLoaded } from './env.js';
 import { initializeConfig, validateConfig } from './config.js';
 
@@ -288,9 +288,9 @@ function exponerFuncionesGlobales() {
     window.registrarPago = registrarPago;
     window.iniciarSesion = iniciarSesion;
     window.terminarSesion = terminarSesion;
-    window.confirmarAgenda = confirmarAgenda;
-    window.cancelarAgenda = cancelarAgenda;
-    window.reprogramarAgenda = reprogramarAgenda;
+    window.editarSesion = editarSesion;
+    window.cancelarSesion = cancelarSesion;
+    window.reagendarSesion = reagendarSesion;
 }
 
 // Inicializar cuando el DOM esté listo
