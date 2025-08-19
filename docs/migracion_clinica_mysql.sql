@@ -28,6 +28,30 @@ DROP TRIGGER IF EXISTS trg_sesion_profesional_activo;
 DROP TRIGGER IF EXISTS trg_sesion_box_activo;
 DROP TRIGGER IF EXISTS trg_sesion_sucursal_activa;
 
+-- Drop existing stored procedures
+DROP PROCEDURE IF EXISTS sp_crear_ficha;
+DROP PROCEDURE IF EXISTS sp_buscar_fichas;
+DROP PROCEDURE IF EXISTS sp_agregar_ficha_especifica;
+DROP PROCEDURE IF EXISTS sp_crear_evaluacion;
+DROP PROCEDURE IF EXISTS sp_crear_venta;
+DROP PROCEDURE IF EXISTS sp_aplicar_descuento_manual;
+DROP PROCEDURE IF EXISTS sp_aplicar_ofertas;
+DROP PROCEDURE IF EXISTS sp_agendar_sesion;
+DROP PROCEDURE IF EXISTS sp_generar_plan_sesiones;
+DROP PROCEDURE IF EXISTS sp_confirmar_paciente;
+DROP PROCEDURE IF EXISTS sp_abrir_sesion;
+DROP PROCEDURE IF EXISTS sp_cerrar_sesion;
+DROP PROCEDURE IF EXISTS sp_reprogramar_sesion;
+DROP PROCEDURE IF EXISTS sp_crear_oferta_pack;
+DROP PROCEDURE IF EXISTS sp_crear_oferta_combo;
+DROP PROCEDURE IF EXISTS sp_crear_profesional;
+DROP PROCEDURE IF EXISTS sp_obtener_disponibilidad;
+DROP PROCEDURE IF EXISTS sp_reporte_progreso_ventas;
+DROP PROCEDURE IF EXISTS sp_reporte_plan_vs_ejecucion;
+DROP PROCEDURE IF EXISTS sp_ofertas_aplicables_venta;
+DROP PROCEDURE IF EXISTS sp_sesiones_venta;
+DROP PROCEDURE IF EXISTS sp_venta_completa;
+
 DELIMITER $$
 
 CREATE PROCEDURE AddIndexIfNotExists(
