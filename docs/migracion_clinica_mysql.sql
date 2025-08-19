@@ -7,35 +7,84 @@
 CREATE DATABASE IF NOT EXISTS clinica_estetica;
 USE clinica_estetica;
 
--- ---------- Drop existing indexes and constraints ----------
+-- ---------- Helper functions ----------
 
--- Drop unique indexes
-DROP INDEX ux_sucursal_nombre ON sucursal;
-DROP INDEX ux_ficha_codigo ON ficha;
-DROP INDEX ux_ficha_email ON ficha;
-DROP INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica;
-DROP INDEX ux_tratamiento_nombre ON tratamiento;
-DROP INDEX ux_pack_tratamiento_nombre ON pack;
-DROP INDEX ux_oferta_nombre ON oferta;
-DROP INDEX ux_oferta_pack ON oferta_pack;
-DROP INDEX ux_oferta_combo_pack ON oferta_combo_pack;
-DROP INDEX ux_venta_oferta_seq ON venta_oferta;
-DROP INDEX ux_sesion_venta_num ON sesion;
+DELIMITER $$
 
--- Drop regular indexes
-DROP INDEX ix_box_sucursal ON box;
-DROP INDEX ix_ficha_especifica_ficha ON ficha_especifica;
-DROP INDEX ix_ficha_especifica_tipo ON ficha_especifica;
-DROP INDEX ix_eval_ficha ON evaluacion;
-DROP INDEX ix_eval_tratamiento ON evaluacion;
-DROP INDEX ix_eval_pack ON evaluacion;
-DROP INDEX ix_venta_ficha ON venta;
-DROP INDEX ix_venta_tratamiento ON venta;
-DROP INDEX ix_venta_pack ON venta;
-DROP INDEX ix_sesion_profesional ON sesion;
-DROP INDEX ix_sesion_box ON sesion;
-DROP INDEX ix_sesion_sucursal ON sesion;
-DROP INDEX ix_sesion_estado ON sesion;
+CREATE PROCEDURE AddIndexIfNotExists(
+    IN indexName VARCHAR(64),
+    IN tableName VARCHAR(64),
+    IN columnList VARCHAR(200),
+    IN isUnique BOOLEAN
+)
+BEGIN
+    DECLARE indexExists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO indexExists
+    FROM information_schema.statistics 
+    WHERE table_schema = DATABASE()
+    AND table_name = tableName
+    AND index_name = indexName;
+    
+    IF indexExists = 0 THEN
+        IF isUnique THEN
+            SET @sql = CONCAT('CREATE UNIQUE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ')');
+        ELSE
+            SET @sql = CONCAT('CREATE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ')');
+        END IF;
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+
+CREATE PROCEDURE AddForeignKeyIfNotExists(
+    IN tableName VARCHAR(64),
+    IN constraintName VARCHAR(64),
+    IN columnName VARCHAR(64),
+    IN refTable VARCHAR(64),
+    IN refColumn VARCHAR(64)
+)
+BEGIN
+    DECLARE constraintExists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO constraintExists
+    FROM information_schema.table_constraints 
+    WHERE table_schema = DATABASE()
+    AND table_name = tableName
+    AND constraint_name = constraintName;
+    
+    IF constraintExists = 0 THEN
+        SET @sql = CONCAT('ALTER TABLE ', tableName, ' ADD CONSTRAINT ', constraintName, ' FOREIGN KEY (', columnName, ') REFERENCES ', refTable, '(', refColumn, ')');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+
+CREATE PROCEDURE AddCheckConstraintIfNotExists(
+    IN tableName VARCHAR(64),
+    IN constraintName VARCHAR(64),
+    IN checkCondition VARCHAR(500)
+)
+BEGIN
+    DECLARE constraintExists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO constraintExists
+    FROM information_schema.table_constraints 
+    WHERE table_schema = DATABASE()
+    AND table_name = tableName
+    AND constraint_name = constraintName;
+    
+    IF constraintExists = 0 THEN
+        SET @sql = CONCAT('ALTER TABLE ', tableName, ' ADD CONSTRAINT ', constraintName, ' CHECK (', checkCondition, ')');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+
+DELIMITER ;
 
 -- ---------- Tables ----------
 
@@ -47,7 +96,7 @@ CREATE TABLE IF NOT EXISTS sucursal (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_sucursal_nombre ON sucursal (nombre);
+CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -56,7 +105,7 @@ CREATE TABLE IF NOT EXISTS box (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE INDEX ix_box_sucursal ON box (sucursal_id);
+CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS profesional (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -78,8 +127,8 @@ CREATE TABLE IF NOT EXISTS ficha (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX ux_ficha_codigo ON ficha (codigo);
-CREATE UNIQUE INDEX ux_ficha_email ON ficha (email);
+CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
+CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -87,7 +136,7 @@ CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   descripcion TEXT
 );
 
-CREATE UNIQUE INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica (nombre);
+CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -97,8 +146,8 @@ CREATE TABLE IF NOT EXISTS ficha_especifica (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_ficha_especifica_ficha ON ficha_especifica (ficha_id);
-CREATE INDEX ix_ficha_especifica_tipo ON ficha_especifica (tipo_id);
+CALL AddIndexIfNotExists('ix_ficha_especifica_ficha', 'ficha_especifica', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_ficha_especifica_tipo', 'ficha_especifica', 'tipo_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -107,7 +156,7 @@ CREATE TABLE IF NOT EXISTS tratamiento (
   requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE UNIQUE INDEX ux_tratamiento_nombre ON tratamiento (nombre);
+CALL AddIndexIfNotExists('ux_tratamiento_nombre', 'tratamiento', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -118,7 +167,7 @@ CREATE TABLE IF NOT EXISTS pack (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_pack_tratamiento_nombre ON pack (tratamiento_id, nombre);
+CALL AddIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -132,9 +181,9 @@ CREATE TABLE IF NOT EXISTS evaluacion (
   fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_eval_ficha ON evaluacion (ficha_id);
-CREATE INDEX ix_eval_tratamiento ON evaluacion (tratamiento_id);
-CREATE INDEX ix_eval_pack ON evaluacion (pack_id);
+CALL AddIndexIfNotExists('ix_eval_ficha', 'evaluacion', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_eval_tratamiento', 'evaluacion', 'tratamiento_id', FALSE);
+CALL AddIndexIfNotExists('ix_eval_pack', 'evaluacion', 'pack_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -148,7 +197,7 @@ CREATE TABLE IF NOT EXISTS oferta (
   prioridad INT NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX ux_oferta_nombre ON oferta (nombre);
+CALL AddIndexIfNotExists('ux_oferta_nombre', 'oferta', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS oferta_pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -157,7 +206,7 @@ CREATE TABLE IF NOT EXISTS oferta_pack (
   porc_descuento DECIMAL(5,2) NOT NULL DEFAULT 0.00
 );
 
-CREATE UNIQUE INDEX ux_oferta_pack ON oferta_pack (oferta_id, pack_id);
+CALL AddIndexIfNotExists('ux_oferta_pack', 'oferta_pack', 'oferta_id, pack_id', TRUE);
 
 CREATE TABLE IF NOT EXISTS oferta_combo (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -171,7 +220,7 @@ CREATE TABLE IF NOT EXISTS oferta_combo_pack (
   pack_id BIGINT NOT NULL
 );
 
-CREATE UNIQUE INDEX ux_oferta_combo_pack ON oferta_combo_pack (oferta_combo_id, pack_id);
+CALL AddIndexIfNotExists('ux_oferta_combo_pack', 'oferta_combo_pack', 'oferta_combo_id, pack_id', TRUE);
 
 CREATE TABLE IF NOT EXISTS venta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -188,9 +237,9 @@ CREATE TABLE IF NOT EXISTS venta (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_venta_ficha ON venta (ficha_id);
-CREATE INDEX ix_venta_tratamiento ON venta (tratamiento_id);
-CREATE INDEX ix_venta_pack ON venta (pack_id);
+CALL AddIndexIfNotExists('ix_venta_ficha', 'venta', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_tratamiento', 'venta', 'tratamiento_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_pack', 'venta', 'pack_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS venta_oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -201,7 +250,7 @@ CREATE TABLE IF NOT EXISTS venta_oferta (
   monto_descuento DECIMAL(12,2) NOT NULL DEFAULT 0.00
 );
 
-CREATE UNIQUE INDEX ux_venta_oferta_seq ON venta_oferta (venta_id, secuencia);
+CALL AddIndexIfNotExists('ux_venta_oferta_seq', 'venta_oferta', 'venta_id, secuencia', TRUE);
 
 CREATE TABLE IF NOT EXISTS sesion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -219,154 +268,68 @@ CREATE TABLE IF NOT EXISTS sesion (
   observaciones TEXT
 );
 
-CREATE UNIQUE INDEX ux_sesion_venta_num ON sesion (venta_id, numero_sesion);
-CREATE INDEX ix_sesion_profesional ON sesion (profesional_id);
-CREATE INDEX ix_sesion_box ON sesion (box_id);
-CREATE INDEX ix_sesion_sucursal ON sesion (sucursal_id);
-CREATE INDEX ix_sesion_estado ON sesion (estado);
+CALL AddIndexIfNotExists('ux_sesion_venta_num', 'sesion', 'venta_id, numero_sesion', TRUE);
+CALL AddIndexIfNotExists('ix_sesion_profesional', 'sesion', 'profesional_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_box', 'sesion', 'box_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_sucursal', 'sesion', 'sucursal_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_estado', 'sesion', 'estado', FALSE);
 
 -- ---------- Drop existing constraints ----------
-
--- Drop check constraints
-ALTER TABLE sesion DROP CONSTRAINT ck_sesion_numero_pos;
-ALTER TABLE venta DROP CONSTRAINT ck_venta_cantidad_pos;
-ALTER TABLE venta DROP CONSTRAINT ck_venta_estado;
-ALTER TABLE sesion DROP CONSTRAINT ck_sesion_estado;
-ALTER TABLE evaluacion DROP CONSTRAINT ck_eval_precio_pos;
-ALTER TABLE evaluacion DROP CONSTRAINT ck_eval_sesiones_pos;
-ALTER TABLE venta DROP CONSTRAINT ck_venta_precio_pos;
-ALTER TABLE venta DROP CONSTRAINT ck_venta_descuento_rango;
-ALTER TABLE venta DROP CONSTRAINT ck_venta_total_pos;
-ALTER TABLE oferta DROP CONSTRAINT ck_oferta_descuento_rango;
-ALTER TABLE oferta_pack DROP CONSTRAINT ck_oferta_pack_descuento_rango;
-ALTER TABLE venta_oferta DROP CONSTRAINT ck_venta_oferta_monto_pos;
-ALTER TABLE venta_oferta DROP CONSTRAINT ck_venta_oferta_descuento_rango;
-ALTER TABLE oferta_combo DROP CONSTRAINT ck_oferta_combo_min_packs;
-ALTER TABLE pack DROP CONSTRAINT ck_pack_duracion_pos;
-ALTER TABLE oferta DROP CONSTRAINT ck_oferta_prioridad_pos;
-
--- Drop foreign keys
-ALTER TABLE box DROP FOREIGN KEY fk_box_sucursal;
-ALTER TABLE ficha_especifica DROP FOREIGN KEY fk_ficha_especifica_ficha;
-ALTER TABLE ficha_especifica DROP FOREIGN KEY fk_ficha_especifica_tipo;
-ALTER TABLE pack DROP FOREIGN KEY fk_pack_tratamiento;
-ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_ficha;
-ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_tratamiento;
-ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_pack;
-ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_profesional;
-ALTER TABLE oferta_pack DROP FOREIGN KEY fk_oferta_pack_oferta;
-ALTER TABLE oferta_pack DROP FOREIGN KEY fk_oferta_pack_pack;
-ALTER TABLE oferta_combo DROP FOREIGN KEY fk_oferta_combo_oferta;
-ALTER TABLE oferta_combo_pack DROP FOREIGN KEY fk_oferta_combo_pack_combo;
-ALTER TABLE oferta_combo_pack DROP FOREIGN KEY fk_oferta_combo_pack_pack;
-ALTER TABLE venta DROP FOREIGN KEY fk_venta_ficha;
-ALTER TABLE venta DROP FOREIGN KEY fk_venta_eval;
-ALTER TABLE venta DROP FOREIGN KEY fk_venta_tratamiento;
-ALTER TABLE venta DROP FOREIGN KEY fk_venta_pack;
-ALTER TABLE venta_oferta DROP FOREIGN KEY fk_venta_oferta_venta;
-ALTER TABLE venta_oferta DROP FOREIGN KEY fk_venta_oferta_oferta;
-ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_venta;
-ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_sucursal;
-ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_box;
-ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_profesional;
 
 -- ---------- Add foreign keys ----------
 
 -- Add foreign keys
-ALTER TABLE box ADD CONSTRAINT fk_box_sucursal FOREIGN KEY (sucursal_id) REFERENCES sucursal(id);
+CALL AddForeignKeyIfNotExists('box', 'fk_box_sucursal', 'sucursal_id', 'sucursal', 'id');
 
-ALTER TABLE ficha_especifica ADD CONSTRAINT fk_ficha_especifica_ficha FOREIGN KEY (ficha_id) REFERENCES ficha(id);
-ALTER TABLE ficha_especifica ADD CONSTRAINT fk_ficha_especifica_tipo FOREIGN KEY (tipo_id) REFERENCES tipo_ficha_especifica(id);
+CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_tipo', 'tipo_id', 'tipo_ficha_especifica', 'id');
 
-ALTER TABLE pack ADD CONSTRAINT fk_pack_tratamiento FOREIGN KEY (tratamiento_id) REFERENCES tratamiento(id);
+CALL AddForeignKeyIfNotExists('pack', 'fk_pack_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 
-ALTER TABLE evaluacion ADD CONSTRAINT fk_eval_ficha FOREIGN KEY (ficha_id) REFERENCES ficha(id);
-ALTER TABLE evaluacion ADD CONSTRAINT fk_eval_tratamiento FOREIGN KEY (tratamiento_id) REFERENCES tratamiento(id);
-ALTER TABLE evaluacion ADD CONSTRAINT fk_eval_pack FOREIGN KEY (pack_id) REFERENCES pack(id);
-ALTER TABLE evaluacion ADD CONSTRAINT fk_eval_profesional FOREIGN KEY (profesional_id) REFERENCES profesional(id);
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_pack', 'pack_id', 'pack', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_profesional', 'profesional_id', 'profesional', 'id');
 
-ALTER TABLE oferta_pack ADD CONSTRAINT fk_oferta_pack_oferta FOREIGN KEY (oferta_id) REFERENCES oferta(id);
-ALTER TABLE oferta_pack ADD CONSTRAINT fk_oferta_pack_pack FOREIGN KEY (pack_id) REFERENCES pack(id);
+CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_oferta', 'oferta_id', 'oferta', 'id');
+CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_pack', 'pack_id', 'pack', 'id');
 
-ALTER TABLE oferta_combo ADD CONSTRAINT fk_oferta_combo_oferta FOREIGN KEY (oferta_id) REFERENCES oferta(id);
+CALL AddForeignKeyIfNotExists('oferta_combo', 'fk_oferta_combo_oferta', 'oferta_id', 'oferta', 'id');
 
-ALTER TABLE oferta_combo_pack ADD CONSTRAINT fk_oferta_combo_pack_combo FOREIGN KEY (oferta_combo_id) REFERENCES oferta_combo(id);
-ALTER TABLE oferta_combo_pack ADD CONSTRAINT fk_oferta_combo_pack_pack FOREIGN KEY (pack_id) REFERENCES pack(id);
+CALL AddForeignKeyIfNotExists('oferta_combo_pack', 'fk_oferta_combo_pack_combo', 'oferta_combo_id', 'oferta_combo', 'id');
+CALL AddForeignKeyIfNotExists('oferta_combo_pack', 'fk_oferta_combo_pack_pack', 'pack_id', 'pack', 'id');
 
-ALTER TABLE venta ADD CONSTRAINT fk_venta_ficha FOREIGN KEY (ficha_id) REFERENCES ficha(id);
-ALTER TABLE venta ADD CONSTRAINT fk_venta_eval FOREIGN KEY (evaluacion_id) REFERENCES evaluacion(id);
-ALTER TABLE venta ADD CONSTRAINT fk_venta_tratamiento FOREIGN KEY (tratamiento_id) REFERENCES tratamiento(id);
-ALTER TABLE venta ADD CONSTRAINT fk_venta_pack FOREIGN KEY (pack_id) REFERENCES pack(id);
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_eval', 'evaluacion_id', 'evaluacion', 'id');
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_pack', 'pack_id', 'pack', 'id');
 
-ALTER TABLE venta_oferta ADD CONSTRAINT fk_venta_oferta_venta FOREIGN KEY (venta_id) REFERENCES venta(id);
-ALTER TABLE venta_oferta ADD CONSTRAINT fk_venta_oferta_oferta FOREIGN KEY (oferta_id) REFERENCES oferta(id);
+CALL AddForeignKeyIfNotExists('venta_oferta', 'fk_venta_oferta_venta', 'venta_id', 'venta', 'id');
+CALL AddForeignKeyIfNotExists('venta_oferta', 'fk_venta_oferta_oferta', 'oferta_id', 'oferta', 'id');
 
-ALTER TABLE sesion ADD CONSTRAINT fk_sesion_venta FOREIGN KEY (venta_id) REFERENCES venta(id);
-ALTER TABLE sesion ADD CONSTRAINT fk_sesion_sucursal FOREIGN KEY (sucursal_id) REFERENCES sucursal(id);
-ALTER TABLE sesion ADD CONSTRAINT fk_sesion_box FOREIGN KEY (box_id) REFERENCES box(id);
-ALTER TABLE sesion ADD CONSTRAINT fk_sesion_profesional FOREIGN KEY (profesional_id) REFERENCES profesional(id);
+CALL AddForeignKeyIfNotExists('sesion', 'fk_sesion_venta', 'venta_id', 'venta', 'id');
+CALL AddForeignKeyIfNotExists('sesion', 'fk_sesion_sucursal', 'sucursal_id', 'sucursal', 'id');
+CALL AddForeignKeyIfNotExists('sesion', 'fk_sesion_box', 'box_id', 'box', 'id');
+CALL AddForeignKeyIfNotExists('sesion', 'fk_sesion_profesional', 'profesional_id', 'profesional', 'id');
 
 -- ---------- Business rules & checks ----------
 
-ALTER TABLE sesion
-  ADD CONSTRAINT ck_sesion_numero_pos CHECK (numero_sesion >= 1);
-
-ALTER TABLE venta
-  ADD CONSTRAINT ck_venta_cantidad_pos CHECK (cantidad_sesiones >= 1);
-
-ALTER TABLE venta
-  ADD CONSTRAINT ck_venta_estado CHECK (estado IN ('pendiente','pagado','anulado'));
-
-ALTER TABLE sesion
-  ADD CONSTRAINT ck_sesion_estado CHECK (estado IN ('planificada','confirmada','realizada','no_show','cancelada'));
-
--- Validar que precio_sugerido no sea negativo
-ALTER TABLE evaluacion
-  ADD CONSTRAINT ck_eval_precio_pos CHECK (precio_sugerido >= 0);
-
--- Validar que sesiones_sugeridas sea positivo
-ALTER TABLE evaluacion
-  ADD CONSTRAINT ck_eval_sesiones_pos CHECK (sesiones_sugeridas >= 1);
-
--- Validar que precio_lista no sea negativo
-ALTER TABLE venta
-  ADD CONSTRAINT ck_venta_precio_pos CHECK (precio_lista >= 0);
-
--- Validar que descuento_manual_pct esté en rango válido
-ALTER TABLE venta
-  ADD CONSTRAINT ck_venta_descuento_rango CHECK (descuento_manual_pct IS NULL OR (descuento_manual_pct >= 0 AND descuento_manual_pct <= 100));
-
--- Validar que total_pagado no sea negativo
-ALTER TABLE venta
-  ADD CONSTRAINT ck_venta_total_pos CHECK (total_pagado >= 0);
-
--- Validar que porc_descuento en oferta esté en rango válido
-ALTER TABLE oferta
-  ADD CONSTRAINT ck_oferta_descuento_rango CHECK (porc_descuento IS NULL OR (porc_descuento >= 0 AND porc_descuento <= 100));
-
--- Validar que porc_descuento en oferta_pack esté en rango válido
-ALTER TABLE oferta_pack
-  ADD CONSTRAINT ck_oferta_pack_descuento_rango CHECK (porc_descuento >= 0 AND porc_descuento <= 100);
-
--- Validar que monto_descuento en venta_oferta no sea negativo
-ALTER TABLE venta_oferta
-  ADD CONSTRAINT ck_venta_oferta_monto_pos CHECK (monto_descuento >= 0);
-
--- Validar que porc_descuento en venta_oferta esté en rango válido
-ALTER TABLE venta_oferta
-  ADD CONSTRAINT ck_venta_oferta_descuento_rango CHECK (porc_descuento >= 0 AND porc_descuento <= 100);
-
--- Validar que min_packs en oferta_combo sea al menos 2
-ALTER TABLE oferta_combo
-  ADD CONSTRAINT ck_oferta_combo_min_packs CHECK (min_packs >= 2);
-
--- Validar que duracion_sesion_min no sea negativo
-ALTER TABLE pack
-  ADD CONSTRAINT ck_pack_duracion_pos CHECK (duracion_sesion_min >= 0);
-
--- Validar que prioridad en oferta no sea negativo
-ALTER TABLE oferta
-  ADD CONSTRAINT ck_oferta_prioridad_pos CHECK (prioridad >= 0);
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_numero_pos', 'numero_sesion >= 1');
+CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_cantidad_pos', 'cantidad_sesiones >= 1');
+CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_estado', 'estado IN (''pendiente'',''pagado'',''anulado'')');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_estado', 'estado IN (''planificada'',''confirmada'',''realizada'',''no_show'',''cancelada'')');
+CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_precio_pos', 'precio_sugerido >= 0');
+CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_sesiones_pos', 'sesiones_sugeridas >= 1');
+CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_precio_pos', 'precio_lista >= 0');
+CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_descuento_rango', 'descuento_manual_pct IS NULL OR (descuento_manual_pct >= 0 AND descuento_manual_pct <= 100)');
+CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_total_pos', 'total_pagado >= 0');
+CALL AddCheckConstraintIfNotExists('oferta', 'ck_oferta_descuento_rango', 'porc_descuento IS NULL OR (porc_descuento >= 0 AND porc_descuento <= 100)');
+CALL AddCheckConstraintIfNotExists('oferta_pack', 'ck_oferta_pack_descuento_rango', 'porc_descuento >= 0 AND porc_descuento <= 100');
+CALL AddCheckConstraintIfNotExists('venta_oferta', 'ck_venta_oferta_monto_pos', 'monto_descuento >= 0');
+CALL AddCheckConstraintIfNotExists('venta_oferta', 'ck_venta_oferta_descuento_rango', 'porc_descuento >= 0 AND porc_descuento <= 100');
+CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_min_packs', 'min_packs >= 2');
+CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_duracion_pos', 'duracion_sesion_min >= 0');
+CALL AddCheckConstraintIfNotExists('oferta', 'ck_oferta_prioridad_pos', 'prioridad >= 0');
 
 -- ---------- Triggers ----------
 
