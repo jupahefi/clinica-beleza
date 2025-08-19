@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Clase para manejo de la base de datos PostgreSQL
+ * Clase para manejo de la base de datos MySQL
  * Clínica Beleza - Sistema de Gestión
  * Server-based architecture (sin modo offline)
  */
@@ -41,12 +41,12 @@ class Database {
     private $config;
     
     private function __construct() {
-        // Configuración de PostgreSQL
+        // Configuración de MySQL
         $this->config = [
             'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'port' => $_ENV['DB_PORT'] ?? '5432',
+            'port' => $_ENV['DB_PORT'] ?? '3306',
             'dbname' => $_ENV['DB_NAME'] ?? 'clinica_beleza',
-            'username' => $_ENV['DB_USER'] ?? 'postgres',
+            'username' => $_ENV['DB_USER'] ?? 'root',
             'password' => $_ENV['DB_PASS'] ?? ''
         ];
         
@@ -64,11 +64,11 @@ class Database {
     }
     
     /**
-     * Conecta a la base de datos PostgreSQL
+     * Conecta a la base de datos MySQL
      */
     private function connect() {
         try {
-            $dsn = "pgsql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']}";
+            $dsn = "mysql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['dbname']};charset=utf8mb4";
             
             $this->pdo = new PDO($dsn, $this->config['username'], $this->config['password'], [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -77,7 +77,7 @@ class Database {
             ]);
             
         } catch (PDOException $e) {
-            error_log("Error conectando a PostgreSQL: " . $e->getMessage());
+            error_log("Error conectando a MySQL: " . $e->getMessage());
             throw new Exception("Error de conexión a la base de datos");
         }
     }
@@ -133,14 +133,13 @@ class Database {
     }
     
     /**
-     * Ejecuta una consulta INSERT con RETURNING
+     * Ejecuta una consulta INSERT con RETURNING (MySQL usa LAST_INSERT_ID)
      */
     public function insertReturning($sql, $params = [], $returnColumn = 'id') {
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
-            $result = $stmt->fetch();
-            return $result[$returnColumn] ?? null;
+            return $this->pdo->lastInsertId();
         } catch (PDOException $e) {
             error_log("Error en INSERT RETURNING: " . $e->getMessage());
             throw new Exception("Error insertando datos: " . $e->getMessage());
@@ -201,7 +200,7 @@ class Database {
      */
     public function healthCheck() {
         try {
-            $result = $this->selectOne("SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public'");
+            $result = $this->selectOne("SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ?", [$this->config['dbname']]);
             return [
                 'status' => 'ok',
                 'tables' => $result['count'],
@@ -231,11 +230,11 @@ class Database {
         }
         
         $command = sprintf(
-            'PGPASSWORD=%s pg_dump -h %s -p %s -U %s %s > %s',
-            escapeshellarg($this->config['password']),
+            'mysqldump -h %s -P %s -u %s -p%s %s > %s',
             escapeshellarg($this->config['host']),
             escapeshellarg($this->config['port']),
             escapeshellarg($this->config['username']),
+            escapeshellarg($this->config['password']),
             escapeshellarg($this->config['dbname']),
             escapeshellarg($backupPath)
         );
@@ -249,7 +248,11 @@ class Database {
      */
     public function optimize() {
         try {
-            $this->pdo->exec('VACUUM ANALYZE');
+            $this->pdo->exec('OPTIMIZE TABLE ' . implode(', ', [
+                'sucursal', 'box', 'profesional', 'ficha', 'tipo_ficha_especifica', 'ficha_especifica',
+                'tratamiento', 'pack', 'evaluacion', 'oferta', 'oferta_pack', 'oferta_combo', 'oferta_combo_pack',
+                'venta', 'venta_oferta', 'sesion'
+            ]));
             return true;
         } catch (PDOException $e) {
             error_log("Error optimizando base de datos: " . $e->getMessage());

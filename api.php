@@ -2,8 +2,8 @@
 
 /**
  * API REST para Clínica Beleza
- * Server-based architecture - Sin modo offline
- * Cobertura completa de User Stories y Business Rules
+ * PASSTHROUGH A STORED PROCEDURES - Sin lógica de negocio
+ * Toda la lógica está en la base de datos
  */
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -40,8 +40,22 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
     $data = json_decode(file_get_contents('php://input'), true);
     
-    // Router principal
+    // Router principal - SOLO PASSTHROUGH
     switch ($endpoint) {
+        case '':
+        case 'root':
+            handleRoot($db);
+            break;
+            
+        case 'config':
+            handleConfig($db);
+            break;
+            
+        case 'health':
+            handleHealth($db);
+            break;
+            
+        // ---------- FICHAS ----------
         case 'fichas':
             handleFichas($db, $method, $id, $data);
             break;
@@ -54,18 +68,12 @@ try {
             handleFichasEspecificas($db, $method, $id, $data);
             break;
             
-        case 'tratamientos':
-            handleTratamientos($db, $method, $id, $data);
-            break;
-            
-        case 'packs':
-            handlePacks($db, $method, $id, $data);
-            break;
-            
+        // ---------- EVALUACIONES ----------
         case 'evaluaciones':
             handleEvaluaciones($db, $method, $id, $data);
             break;
             
+        // ---------- VENTAS ----------
         case 'ventas':
             handleVentas($db, $method, $id, $data);
             break;
@@ -74,16 +82,31 @@ try {
             handlePagos($db, $method, $id, $data);
             break;
             
+        // ---------- AGENDA ----------
         case 'sesiones':
             handleSesiones($db, $method, $id, $data);
             break;
             
+        case 'agenda':
+            handleAgenda($db, $method, $id, $data);
+            break;
+            
+        // ---------- OFERTAS ----------
         case 'ofertas':
             handleOfertas($db, $method, $id, $data);
             break;
             
         case 'ofertas-combo':
             handleOfertasCombo($db, $method, $id, $data);
+            break;
+            
+        // ---------- CATÁLOGOS ----------
+        case 'tratamientos':
+            handleTratamientos($db, $method, $id, $data);
+            break;
+            
+        case 'packs':
+            handlePacks($db, $method, $id, $data);
             break;
             
         case 'sucursales':
@@ -98,1916 +121,548 @@ try {
             handleProfesionales($db, $method, $id, $data);
             break;
             
+        // ---------- REPORTES ----------
         case 'reportes':
             handleReportes($db, $method, $id, $data);
             break;
             
-        case 'config':
-            handleConfig($db, $method, $id, $data);
-            break;
-            
-        case 'stats':
-            handleStats($db, $method);
-            break;
-            
-        case 'health':
-            handleHealth($db);
-            break;
-            
-        case 'backup':
-            handleBackup($db, $method);
-            break;
-            
         default:
-            respondWithError('Endpoint no encontrado', 404);
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Endpoint no encontrado']);
+            break;
     }
     
 } catch (Exception $e) {
-    error_log('API Error: ' . $e->getMessage());
-    respondWithError('Error interno del servidor: ' . $e->getMessage(), 500);
+    error_log("Error en API: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Error interno del servidor: ' . $e->getMessage()]);
 }
 
-/**
- * Maneja operaciones de fichas (pacientes)
- */
+// =============================================================================
+// HANDLERS - SOLO PASSTHROUGH A STORED PROCEDURES
+// =============================================================================
+
+function handleRoot($db) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'API Clínica Beleza - Passthrough a Stored Procedures',
+        'version' => '2.0.0',
+        'architecture' => 'Server-based (sin modo offline)',
+        'endpoints' => [
+            'fichas', 'evaluaciones', 'ventas', 'sesiones', 'agenda',
+            'ofertas', 'tratamientos', 'packs', 'sucursales', 'boxes', 'profesionales', 'reportes'
+        ]
+    ]);
+}
+
+function handleConfig($db) {
+    // Solo variables seguras para el frontend
+    echo json_encode([
+        'success' => true,
+        'config' => [
+            'API_URL' => $_ENV['API_URL'] ?? 'https://clinica-beleza.equalitech.xyz',
+            'API_TIMEOUT' => $_ENV['API_TIMEOUT'] ?? 10000,
+            'API_RETRIES' => $_ENV['API_RETRIES'] ?? 3,
+            'APP_NAME' => $_ENV['APP_NAME'] ?? 'Clínica Beleza',
+            'APP_VERSION' => $_ENV['APP_VERSION'] ?? '2.0.0',
+            'CACHE_TTL' => $_ENV['CACHE_TTL'] ?? 300,
+            'CACHE_ENABLED' => $_ENV['CACHE_ENABLED'] ?? true
+        ]
+    ]);
+}
+
+function handleHealth($db) {
+    try {
+        $health = $db->healthCheck();
+        echo json_encode([
+            'success' => true,
+            'health' => $health,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Error de salud: ' . $e->getMessage()]);
+    }
+}
+
+// ---------- FICHAS ----------
+
 function handleFichas($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                // Obtener ficha específica con sus datos relacionados
-                $ficha = $db->selectOne(
-                    "SELECT * FROM ficha WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$ficha) {
-                    respondWithError('Ficha no encontrada', 404);
-                    return;
-                }
-                
-                // Obtener fichas específicas relacionadas
-                $fichasEspecificas = $db->select(
-                    "SELECT fe.*, tf.nombre as tipo_nombre, t.nombre as tratamiento_nombre, p.nombre as pack_nombre
-                     FROM ficha_especifica fe
-                     LEFT JOIN tipo_ficha_especifica tf ON fe.tipo_id = tf.id
-                     LEFT JOIN tratamiento t ON fe.tratamiento_id = t.id
-                     LEFT JOIN pack p ON fe.pack_id = p.id
-                     WHERE fe.ficha_id = ?",
-                    [$id]
-                );
-                
-                $ficha['fichas_especificas'] = $fichasEspecificas;
-                respondWithSuccess($ficha);
-                
+                // Obtener ficha específica
+                $result = $db->selectOne("SELECT * FROM ficha WHERE id = ?", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
             } else {
-                // Listar todas las fichas con paginación
-                $page = $_GET['page'] ?? 1;
-                $limit = $_GET['limit'] ?? 50;
-                $offset = ($page - 1) * $limit;
-                $search = $_GET['search'] ?? '';
-                
-                $whereClause = '';
-                $params = [];
-                
-                if ($search) {
-                    $whereClause = "WHERE nombres ILIKE ? OR apellidos ILIKE ? OR rut ILIKE ? OR email ILIKE ?";
-                    $searchTerm = "%$search%";
-                    $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm];
-                }
-                
-                $fichas = $db->select(
-                    "SELECT * FROM ficha $whereClause ORDER BY fecha_creacion DESC LIMIT ? OFFSET ?",
-                    array_merge($params, [$limit, $offset])
-                );
-                
-                $total = $db->selectOne(
-                    "SELECT COUNT(*) as count FROM ficha $whereClause",
-                    $params
-                );
-                
-                respondWithSuccess([
-                    'data' => $fichas,
-                    'pagination' => [
-                        'page' => $page,
-                        'limit' => $limit,
-                        'total' => $total['count'],
-                        'pages' => ceil($total['count'] / $limit)
-                    ]
-                ]);
+                // Buscar fichas
+                $busqueda = $_GET['busqueda'] ?? '';
+                $result = $db->executeRaw("CALL sp_buscar_fichas(?)", [$busqueda]);
+                echo json_encode(['success' => true, 'data' => $result]);
             }
             break;
             
         case 'POST':
-            // Crear nueva ficha
-            $requiredFields = ['nombres', 'apellidos'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $fichaId = $db->insertReturning(
-                "INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email, fecha_creacion) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW()) RETURNING id",
-                [
-                    $data['codigo'] ?? null,
-                    $data['nombres'],
-                    $data['apellidos'],
-                    $data['rut'] ?? null,
-                    $data['telefono'] ?? null,
-                    $data['email'] ?? null
-                ]
-            );
-            
-            respondWithSuccess(['id' => $fichaId, 'message' => 'Ficha creada exitosamente']);
+            // Crear ficha
+            $result = $db->executeRaw("CALL sp_crear_ficha(?, ?, ?, ?, ?, ?, @ficha_id)", [
+                $data['codigo'], $data['nombres'], $data['apellidos'],
+                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null
+            ]);
+            $fichaId = $db->selectOne("SELECT @ficha_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $fichaId]]);
             break;
             
         case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE ficha SET 
-                 codigo = ?, nombres = ?, apellidos = ?, rut = ?, telefono = ?, email = ?
-                 WHERE id = ?",
-                [
-                    $data['codigo'] ?? null,
-                    $data['nombres'] ?? '',
-                    $data['apellidos'] ?? '',
-                    $data['rut'] ?? null,
-                    $data['telefono'] ?? null,
-                    $data['email'] ?? null,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Ficha actualizada exitosamente']);
-            } else {
-                respondWithError('Ficha no encontrada', 404);
-            }
+            // Actualizar ficha
+            $result = $db->update("UPDATE ficha SET codigo = ?, nombres = ?, apellidos = ?, rut = ?, telefono = ?, email = ? WHERE id = ?", [
+                $data['codigo'], $data['nombres'], $data['apellidos'],
+                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null, $id
+            ]);
+            echo json_encode(['success' => true, 'data' => ['updated' => $result]]);
             break;
             
         case 'DELETE':
-            if (!$id) {
-                respondWithError('ID requerido para eliminar', 400);
-                return;
-            }
-            
-            // Soft delete - cambiar estado en lugar de eliminar
-            $deleted = $db->update(
-                "UPDATE ficha SET activo = false WHERE id = ?",
-                [$id]
-            );
-            
-            if ($deleted > 0) {
-                respondWithSuccess(['message' => 'Ficha eliminada exitosamente']);
-            } else {
-                respondWithError('Ficha no encontrada', 404);
-            }
+            // Soft delete - cambiar estado
+            $result = $db->update("UPDATE ficha SET activo = FALSE WHERE id = ?", [$id]);
+            echo json_encode(['success' => true, 'data' => ['deleted' => $result]]);
             break;
     }
 }
 
-/**
- * Maneja operaciones de tratamientos
- */
-function handleTratamientos($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $tratamiento = $db->selectOne(
-                    "SELECT * FROM tratamiento WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$tratamiento) {
-                    respondWithError('Tratamiento no encontrado', 404);
-                    return;
-                }
-                
-                // Obtener packs relacionados
-                $packs = $db->select(
-                    "SELECT * FROM pack WHERE tratamiento_id = ? AND activo = true",
-                    [$id]
-                );
-                
-                $tratamiento['packs'] = $packs;
-                respondWithSuccess($tratamiento);
-                
-            } else {
-                $tratamientos = $db->select(
-                    "SELECT * FROM tratamiento ORDER BY nombre"
-                );
-                respondWithSuccess($tratamientos);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $tratamientoId = $db->insertReturning(
-                "INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica) 
-                 VALUES (?, ?, ?) RETURNING id",
-                [
-                    $data['nombre'],
-                    $data['descripcion'] ?? null,
-                    $data['requiere_ficha_especifica'] ?? false
-                ]
-            );
-            
-            respondWithSuccess(['id' => $tratamientoId, 'message' => 'Tratamiento creado exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE tratamiento SET 
-                 nombre = ?, descripcion = ?, requiere_ficha_especifica = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['descripcion'] ?? null,
-                    $data['requiere_ficha_especifica'] ?? false,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Tratamiento actualizado exitosamente']);
-            } else {
-                respondWithError('Tratamiento no encontrado', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de packs
- */
-function handlePacks($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $pack = $db->selectOne(
-                    "SELECT p.*, t.nombre as tratamiento_nombre 
-                     FROM pack p 
-                     LEFT JOIN tratamiento t ON p.tratamiento_id = t.id 
-                     WHERE p.id = ?", 
-                    [$id]
-                );
-                
-                if (!$pack) {
-                    respondWithError('Pack no encontrado', 404);
-                    return;
-                }
-                
-                respondWithSuccess($pack);
-                
-            } else {
-                $tratamientoId = $_GET['tratamiento_id'] ?? null;
-                
-                if ($tratamientoId) {
-                    $packs = $db->select(
-                        "SELECT * FROM pack WHERE tratamiento_id = ? AND activo = true ORDER BY nombre",
-                        [$tratamientoId]
-                    );
-                } else {
-                    $packs = $db->select(
-                        "SELECT p.*, t.nombre as tratamiento_nombre 
-                         FROM pack p 
-                         LEFT JOIN tratamiento t ON p.tratamiento_id = t.id 
-                         WHERE p.activo = true 
-                         ORDER BY t.nombre, p.nombre"
-                    );
-                }
-                
-                respondWithSuccess($packs);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre', 'tratamiento_id'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $packId = $db->insertReturning(
-                "INSERT INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, activo) 
-                 VALUES (?, ?, ?, ?, ?) RETURNING id",
-                [
-                    $data['tratamiento_id'],
-                    $data['nombre'],
-                    $data['descripcion'] ?? null,
-                    $data['duracion_sesion_min'] ?? 0,
-                    $data['activo'] ?? true
-                ]
-            );
-            
-            respondWithSuccess(['id' => $packId, 'message' => 'Pack creado exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE pack SET 
-                 nombre = ?, descripcion = ?, duracion_sesion_min = ?, activo = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['descripcion'] ?? null,
-                    $data['duracion_sesion_min'] ?? 0,
-                    $data['activo'] ?? true,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Pack actualizado exitosamente']);
-            } else {
-                respondWithError('Pack no encontrado', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de evaluaciones
- */
-function handleEvaluaciones($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $evaluacion = $db->selectOne(
-                    "SELECT e.*, f.nombres, f.apellidos, t.nombre as tratamiento_nombre, 
-                            p.nombre as pack_nombre, pr.nombre as profesional_nombre
-                     FROM evaluacion e
-                     LEFT JOIN ficha f ON e.ficha_id = f.id
-                     LEFT JOIN tratamiento t ON e.tratamiento_id = t.id
-                     LEFT JOIN pack p ON e.pack_id = p.id
-                     LEFT JOIN profesional pr ON e.profesional_id = pr.id
-                     WHERE e.id = ?", 
-                    [$id]
-                );
-                
-                if (!$evaluacion) {
-                    respondWithError('Evaluación no encontrada', 404);
-                    return;
-                }
-                
-                respondWithSuccess($evaluacion);
-                
-            } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                
-                if ($fichaId) {
-                    $evaluaciones = $db->select(
-                        "SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, pr.nombre as profesional_nombre
-                         FROM evaluacion e
-                         LEFT JOIN tratamiento t ON e.tratamiento_id = t.id
-                         LEFT JOIN pack p ON e.pack_id = p.id
-                         LEFT JOIN profesional pr ON e.profesional_id = pr.id
-                         WHERE e.ficha_id = ?
-                         ORDER BY e.fecha DESC",
-                        [$fichaId]
-                    );
-                } else {
-                    $evaluaciones = $db->select(
-                        "SELECT e.*, f.nombres, f.apellidos, t.nombre as tratamiento_nombre, 
-                                p.nombre as pack_nombre, pr.nombre as profesional_nombre
-                         FROM evaluacion e
-                         LEFT JOIN ficha f ON e.ficha_id = f.id
-                         LEFT JOIN tratamiento t ON e.tratamiento_id = t.id
-                         LEFT JOIN pack p ON e.pack_id = p.id
-                         LEFT JOIN profesional pr ON e.profesional_id = pr.id
-                         ORDER BY e.fecha DESC
-                         LIMIT 50"
-                    );
-                }
-                
-                respondWithSuccess($evaluaciones);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['ficha_id', 'tratamiento_id', 'profesional_id'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $evaluacionId = $db->insertReturning(
-                "INSERT INTO evaluacion (ficha_id, tratamiento_id, pack_id, profesional_id, precio_sugerido, sesiones_sugeridas, observaciones, fecha) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id",
-                [
-                    $data['ficha_id'],
-                    $data['tratamiento_id'],
-                    $data['pack_id'] ?? null,
-                    $data['profesional_id'],
-                    $data['precio_sugerido'] ?? 0,
-                    $data['sesiones_sugeridas'] ?? 1,
-                    $data['observaciones'] ?? null
-                ]
-            );
-            
-            respondWithSuccess(['id' => $evaluacionId, 'message' => 'Evaluación creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE evaluacion SET 
-                 precio_sugerido = ?, sesiones_sugeridas = ?, observaciones = ?
-                 WHERE id = ?",
-                [
-                    $data['precio_sugerido'] ?? 0,
-                    $data['sesiones_sugeridas'] ?? 1,
-                    $data['observaciones'] ?? null,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Evaluación actualizada exitosamente']);
-            } else {
-                respondWithError('Evaluación no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de ventas
- */
-function handleVentas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $venta = $db->selectOne(
-                    "SELECT v.*, f.nombres, f.apellidos, t.nombre as tratamiento_nombre, 
-                            p.nombre as pack_nombre, e.precio_sugerido, e.sesiones_sugeridas
-                     FROM venta v
-                     LEFT JOIN ficha f ON v.ficha_id = f.id
-                     LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
-                     LEFT JOIN pack p ON v.pack_id = p.id
-                     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
-                     WHERE v.id = ?", 
-                    [$id]
-                );
-                
-                if (!$venta) {
-                    respondWithError('Venta no encontrada', 404);
-                    return;
-                }
-                
-                // Obtener ofertas aplicadas
-                $ofertas = $db->select(
-                    "SELECT vo.*, o.nombre as oferta_nombre
-                     FROM venta_oferta vo
-                     LEFT JOIN oferta o ON vo.oferta_id = o.id
-                     WHERE vo.venta_id = ?
-                     ORDER BY vo.secuencia",
-                    [$id]
-                );
-                
-                $venta['ofertas_aplicadas'] = $ofertas;
-                respondWithSuccess($venta);
-                
-            } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                $estado = $_GET['estado'] ?? null;
-                
-                $whereClause = '';
-                $params = [];
-                
-                if ($fichaId) {
-                    $whereClause = "WHERE v.ficha_id = ?";
-                    $params[] = $fichaId;
-                }
-                
-                if ($estado) {
-                    $whereClause = $whereClause ? $whereClause . " AND v.estado = ?" : "WHERE v.estado = ?";
-                    $params[] = $estado;
-                }
-                
-                $ventas = $db->select(
-                    "SELECT v.*, f.nombres, f.apellidos, t.nombre as tratamiento_nombre, p.nombre as pack_nombre
-                     FROM venta v
-                     LEFT JOIN ficha f ON v.ficha_id = f.id
-                     LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
-                     LEFT JOIN pack p ON v.pack_id = p.id
-                     $whereClause
-                     ORDER BY v.fecha_creacion DESC
-                     LIMIT 50",
-                    $params
-                );
-                
-                respondWithSuccess($ventas);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['ficha_id', 'tratamiento_id'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $db->beginTransaction();
-            
-            try {
-                // BR-001: Validar que el tratamiento no requiera ficha específica o que exista
-                $tratamiento = $db->selectOne(
-                    "SELECT requiere_ficha_especifica FROM tratamiento WHERE id = ?",
-                    [$data['tratamiento_id']]
-                );
-                
-                if (!$tratamiento) {
-                    throw new Exception('Tratamiento no encontrado');
-                }
-                
-                if ($tratamiento['requiere_ficha_especifica']) {
-                    if (!$data['evaluacion_id']) {
-                        throw new Exception('Tratamiento requiere evaluación y ficha específica');
-                    }
-                    
-                    // Verificar que la evaluación pertenezca a la misma ficha
-                    $evaluacion = $db->selectOne(
-                        "SELECT ficha_id FROM evaluacion WHERE id = ?",
-                        [$data['evaluacion_id']]
-                    );
-                    
-                    if (!$evaluacion || $evaluacion['ficha_id'] != $data['ficha_id']) {
-                        throw new Exception('Evaluación debe pertenecer a la misma ficha');
-                    }
-                    
-                    // Verificar que exista al menos una ficha específica
-                    $fichasEspecificas = $db->selectOne(
-                        "SELECT COUNT(*) as count FROM ficha_especifica WHERE ficha_id = ?",
-                        [$data['ficha_id']]
-                    );
-                    
-                    if ($fichasEspecificas['count'] == 0) {
-                        throw new Exception('Ficha específica requerida no existe para la ficha');
-                    }
-                }
-                
-                // Calcular precio final con descuentos
-                $precioLista = $data['precio_lista'] ?? 0;
-                $descuentoManual = $data['descuento_manual_pct'] ?? 0;
-                $descuentoManualMonto = $precioLista * ($descuentoManual / 100);
-                $precioConDescuentoManual = $precioLista - $descuentoManualMonto;
-                
-                // Aplicar ofertas en orden de prioridad (BR-003)
-                $descuentoOfertas = 0;
-                $ofertasAplicadas = [];
-                
-                if (isset($data['ofertas']) && is_array($data['ofertas'])) {
-                    // Ordenar ofertas por prioridad
-                    usort($data['ofertas'], function($a, $b) {
-                        return ($a['prioridad'] ?? 0) - ($b['prioridad'] ?? 0);
-                    });
-                    
-                    $precioActual = $precioConDescuentoManual;
-                    
-                    foreach ($data['ofertas'] as $index => $oferta) {
-                        $porcDescuento = $oferta['porc_descuento'] ?? 0;
-                        $montoDescuento = $precioActual * ($porcDescuento / 100);
-                        
-                        $ofertasAplicadas[] = [
-                            'oferta_id' => $oferta['oferta_id'],
-                            'secuencia' => $index + 1,
-                            'porc_descuento' => $porcDescuento,
-                            'monto_descuento' => $montoDescuento
-                        ];
-                        
-                        $descuentoOfertas += $montoDescuento;
-                        $precioActual -= $montoDescuento;
-                    }
-                }
-                
-                $descuentoTotal = $descuentoManualMonto + $descuentoOfertas;
-                $totalPagado = $precioLista - $descuentoTotal;
-                
-                $ventaId = $db->insertReturning(
-                    "INSERT INTO venta (ficha_id, evaluacion_id, tratamiento_id, pack_id, cantidad_sesiones, 
-                                       precio_lista, descuento_manual_pct, descuento_aplicado_total, 
-                                       total_pagado, estado, fecha_creacion) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) RETURNING id",
-                    [
-                        $data['ficha_id'],
-                        $data['evaluacion_id'] ?? null,
-                        $data['tratamiento_id'],
-                        $data['pack_id'] ?? null,
-                        $data['cantidad_sesiones'] ?? 1,
-                        $precioLista,
-                        $descuentoManual,
-                        $descuentoTotal,
-                        $totalPagado,
-                        $data['estado'] ?? 'pendiente'
-                    ]
-                );
-                
-                // Registrar ofertas aplicadas
-                foreach ($ofertasAplicadas as $oferta) {
-                    $db->insert(
-                        "INSERT INTO venta_oferta (venta_id, oferta_id, secuencia, porc_descuento, monto_descuento) 
-                         VALUES (?, ?, ?, ?, ?)",
-                        [
-                            $ventaId,
-                            $oferta['oferta_id'],
-                            $oferta['secuencia'],
-                            $oferta['porc_descuento'],
-                            $oferta['monto_descuento']
-                        ]
-                    );
-                }
-                
-                $db->commit();
-                respondWithSuccess(['id' => $ventaId, 'message' => 'Venta creada exitosamente']);
-                
-            } catch (Exception $e) {
-                $db->rollback();
-                throw $e;
-            }
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE venta SET 
-                 cantidad_sesiones = ?, precio_lista = ?, descuento_manual_pct = ?, 
-                 descuento_aplicado_total = ?, total_pagado = ?, estado = ?
-                 WHERE id = ?",
-                [
-                    $data['cantidad_sesiones'] ?? 1,
-                    $data['precio_lista'] ?? 0,
-                    $data['descuento_manual_pct'] ?? 0,
-                    $data['descuento_aplicado_total'] ?? 0,
-                    $data['total_pagado'] ?? 0,
-                    $data['estado'] ?? 'pendiente',
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Venta actualizada exitosamente']);
-            } else {
-                respondWithError('Venta no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de sesiones
- */
-function handleSesiones($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $sesion = $db->selectOne(
-                    "SELECT s.*, v.cantidad_sesiones, f.nombres, f.apellidos, 
-                            t.nombre as tratamiento_nombre, b.nombre as box_nombre,
-                            pr.nombre as profesional_nombre, suc.nombre as sucursal_nombre
-                     FROM sesion s
-                     LEFT JOIN venta v ON s.venta_id = v.id
-                     LEFT JOIN ficha f ON v.ficha_id = f.id
-                     LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
-                     LEFT JOIN box b ON s.box_id = b.id
-                     LEFT JOIN profesional pr ON s.profesional_id = pr.id
-                     LEFT JOIN sucursal suc ON s.sucursal_id = suc.id
-                     WHERE s.id = ?", 
-                    [$id]
-                );
-                
-                if (!$sesion) {
-                    respondWithError('Sesión no encontrada', 404);
-                    return;
-                }
-                
-                respondWithSuccess($sesion);
-                
-            } else {
-                $fecha = $_GET['fecha'] ?? null;
-                $ventaId = $_GET['venta_id'] ?? null;
-                $estado = $_GET['estado'] ?? null;
-                
-                $whereClause = '';
-                $params = [];
-                
-                if ($fecha) {
-                    $whereClause = "WHERE DATE(s.fecha_planificada) = ?";
-                    $params[] = $fecha;
-                }
-                
-                if ($ventaId) {
-                    $whereClause = $whereClause ? $whereClause . " AND s.venta_id = ?" : "WHERE s.venta_id = ?";
-                    $params[] = $ventaId;
-                }
-                
-                if ($estado) {
-                    $whereClause = $whereClause ? $whereClause . " AND s.estado = ?" : "WHERE s.estado = ?";
-                    $params[] = $estado;
-                }
-                
-                $sesiones = $db->select(
-                    "SELECT s.*, v.cantidad_sesiones, f.nombres, f.apellidos, 
-                            t.nombre as tratamiento_nombre, b.nombre as box_nombre,
-                            pr.nombre as profesional_nombre, suc.nombre as sucursal_nombre
-                     FROM sesion s
-                     LEFT JOIN venta v ON s.venta_id = v.id
-                     LEFT JOIN ficha f ON v.ficha_id = f.id
-                     LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
-                     LEFT JOIN box b ON s.box_id = b.id
-                     LEFT JOIN profesional pr ON s.profesional_id = pr.id
-                     LEFT JOIN sucursal suc ON s.sucursal_id = suc.id
-                     $whereClause
-                     ORDER BY s.fecha_planificada DESC
-                     LIMIT 50",
-                    $params
-                );
-                
-                respondWithSuccess($sesiones);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['venta_id', 'numero_sesion', 'sucursal_id', 'box_id', 'profesional_id', 'fecha_planificada'];
-            validateRequiredFields($data, $requiredFields);
-            
-            // BR-002: Validar que numero_sesion esté en el rango válido
-            $venta = $db->selectOne(
-                "SELECT cantidad_sesiones FROM venta WHERE id = ?",
-                [$data['venta_id']]
-            );
-            
-            if (!$venta) {
-                respondWithError('Venta no encontrada', 404);
-                return;
-            }
-            
-            if ($data['numero_sesion'] < 1 || $data['numero_sesion'] > $venta['cantidad_sesiones']) {
-                respondWithError("Número de sesión debe estar entre 1 y {$venta['cantidad_sesiones']}", 400);
-                return;
-            }
-            
-            // Verificar que no exista ya una sesión con ese número para esa venta
-            $sesionExistente = $db->selectOne(
-                "SELECT id FROM sesion WHERE venta_id = ? AND numero_sesion = ?",
-                [$data['venta_id'], $data['numero_sesion']]
-            );
-            
-            if ($sesionExistente) {
-                respondWithError("Ya existe una sesión con el número {$data['numero_sesion']} para esta venta", 400);
-                return;
-            }
-            
-            $sesionId = $db->insertReturning(
-                "INSERT INTO sesion (venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
-                                   fecha_planificada, estado, paciente_confirmado) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                [
-                    $data['venta_id'],
-                    $data['numero_sesion'],
-                    $data['sucursal_id'],
-                    $data['box_id'],
-                    $data['profesional_id'],
-                    $data['fecha_planificada'],
-                    $data['estado'] ?? 'planificada',
-                    $data['paciente_confirmado'] ?? false
-                ]
-            );
-            
-            respondWithSuccess(['id' => $sesionId, 'message' => 'Sesión creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updateFields = [];
-            $params = [];
-            
-            $fields = ['numero_sesion', 'sucursal_id', 'box_id', 'profesional_id', 'fecha_planificada', 
-                      'fecha_ejecucion', 'estado', 'paciente_confirmado', 'abierta_en', 'cerrada_en', 'observaciones'];
-            
-            foreach ($fields as $field) {
-                if (isset($data[$field])) {
-                    $updateFields[] = "$field = ?";
-                    $params[] = $data[$field];
-                }
-            }
-            
-            if (empty($updateFields)) {
-                respondWithError('No hay campos para actualizar', 400);
-                return;
-            }
-            
-            $params[] = $id;
-            
-            $updated = $db->update(
-                "UPDATE sesion SET " . implode(', ', $updateFields) . " WHERE id = ?",
-                $params
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Sesión actualizada exitosamente']);
-            } else {
-                respondWithError('Sesión no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de ofertas combo
- */
-function handleOfertasCombo($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $ofertaCombo = $db->selectOne(
-                    "SELECT oc.*, o.nombre as oferta_nombre
-                     FROM oferta_combo oc
-                     LEFT JOIN oferta o ON oc.oferta_id = o.id
-                     WHERE oc.id = ?", 
-                    [$id]
-                );
-                
-                if (!$ofertaCombo) {
-                    respondWithError('Oferta combo no encontrada', 404);
-                    return;
-                }
-                
-                // Obtener packs del combo
-                $packs = $db->select(
-                    "SELECT ocp.*, p.nombre as pack_nombre, t.nombre as tratamiento_nombre
-                     FROM oferta_combo_pack ocp
-                     LEFT JOIN pack p ON ocp.pack_id = p.id
-                     LEFT JOIN tratamiento t ON p.tratamiento_id = t.id
-                     WHERE ocp.oferta_combo_id = ?",
-                    [$id]
-                );
-                
-                $ofertaCombo['packs'] = $packs;
-                respondWithSuccess($ofertaCombo);
-                
-            } else {
-                $ofertaId = $_GET['oferta_id'] ?? null;
-                
-                if ($ofertaId) {
-                    $ofertasCombo = $db->select(
-                        "SELECT oc.*, o.nombre as oferta_nombre
-                         FROM oferta_combo oc
-                         LEFT JOIN oferta o ON oc.oferta_id = o.id
-                         WHERE oc.oferta_id = ?
-                         ORDER BY oc.min_packs",
-                        [$ofertaId]
-                    );
-                } else {
-                    $ofertasCombo = $db->select(
-                        "SELECT oc.*, o.nombre as oferta_nombre
-                         FROM oferta_combo oc
-                         LEFT JOIN oferta o ON oc.oferta_id = o.id
-                         ORDER BY o.nombre, oc.min_packs"
-                    );
-                }
-                
-                respondWithSuccess($ofertasCombo);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['oferta_id', 'min_packs'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $ofertaComboId = $db->insertReturning(
-                "INSERT INTO oferta_combo (oferta_id, min_packs) 
-                 VALUES (?, ?) RETURNING id",
-                [
-                    $data['oferta_id'],
-                    $data['min_packs']
-                ]
-            );
-            
-            // Agregar packs al combo si se proporcionan
-            if (isset($data['packs']) && is_array($data['packs'])) {
-                foreach ($data['packs'] as $pack) {
-                    $db->insert(
-                        "INSERT INTO oferta_combo_pack (oferta_combo_id, pack_id) VALUES (?, ?)",
-                        [$ofertaComboId, $pack['pack_id']]
-                    );
-                }
-            }
-            
-            respondWithSuccess(['id' => $ofertaComboId, 'message' => 'Oferta combo creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE oferta_combo SET 
-                 min_packs = ?
-                 WHERE id = ?",
-                [
-                    $data['min_packs'] ?? 2,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Oferta combo actualizada exitosamente']);
-            } else {
-                respondWithError('Oferta combo no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de ofertas
- */
-function handleOfertas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $oferta = $db->selectOne(
-                    "SELECT * FROM oferta WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$oferta) {
-                    respondWithError('Oferta no encontrada', 404);
-                    return;
-                }
-                
-                // Obtener packs relacionados
-                $packs = $db->select(
-                    "SELECT op.*, p.nombre as pack_nombre, t.nombre as tratamiento_nombre
-                     FROM oferta_pack op
-                     LEFT JOIN pack p ON op.pack_id = p.id
-                     LEFT JOIN tratamiento t ON p.tratamiento_id = t.id
-                     WHERE op.oferta_id = ?",
-                    [$id]
-                );
-                
-                $oferta['packs'] = $packs;
-                respondWithSuccess($oferta);
-                
-            } else {
-                $activas = $_GET['activas'] ?? false;
-                
-                if ($activas) {
-                    $ofertas = $db->select(
-                        "SELECT * FROM oferta 
-                         WHERE activo = true 
-                         AND (fecha_inicio IS NULL OR fecha_inicio <= CURRENT_DATE)
-                         AND (fecha_fin IS NULL OR fecha_fin >= CURRENT_DATE)
-                         ORDER BY prioridad, nombre"
-                    );
-                } else {
-                    $ofertas = $db->select(
-                        "SELECT * FROM oferta ORDER BY prioridad, nombre"
-                    );
-                }
-                
-                respondWithSuccess($ofertas);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre', 'tipo'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $ofertaId = $db->insertReturning(
-                "INSERT INTO oferta (nombre, tipo, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                [
-                    $data['nombre'],
-                    $data['tipo'],
-                    $data['porc_descuento'] ?? 0,
-                    $data['fecha_inicio'] ?? null,
-                    $data['fecha_fin'] ?? null,
-                    $data['combinable'] ?? true,
-                    $data['activo'] ?? true,
-                    $data['prioridad'] ?? 0
-                ]
-            );
-            
-            // Agregar packs si se proporcionan
-            if (isset($data['packs']) && is_array($data['packs'])) {
-                foreach ($data['packs'] as $pack) {
-                    $db->insert(
-                        "INSERT INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES (?, ?, ?)",
-                        [$ofertaId, $pack['pack_id'], $pack['porc_descuento'] ?? 0]
-                    );
-                }
-            }
-            
-            respondWithSuccess(['id' => $ofertaId, 'message' => 'Oferta creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE oferta SET 
-                 nombre = ?, tipo = ?, porc_descuento = ?, fecha_inicio = ?, 
-                 fecha_fin = ?, combinable = ?, activo = ?, prioridad = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['tipo'] ?? '',
-                    $data['porc_descuento'] ?? 0,
-                    $data['fecha_inicio'] ?? null,
-                    $data['fecha_fin'] ?? null,
-                    $data['combinable'] ?? true,
-                    $data['activo'] ?? true,
-                    $data['prioridad'] ?? 0,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Oferta actualizada exitosamente']);
-            } else {
-                respondWithError('Oferta no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de sucursales
- */
-function handleSucursales($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $sucursal = $db->selectOne(
-                    "SELECT * FROM sucursal WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$sucursal) {
-                    respondWithError('Sucursal no encontrada', 404);
-                    return;
-                }
-                
-                // Obtener boxes de la sucursal
-                $boxes = $db->select(
-                    "SELECT * FROM box WHERE sucursal_id = ? AND activo = true",
-                    [$id]
-                );
-                
-                $sucursal['boxes'] = $boxes;
-                respondWithSuccess($sucursal);
-                
-            } else {
-                $sucursales = $db->select(
-                    "SELECT * FROM sucursal WHERE activo = true ORDER BY nombre"
-                );
-                respondWithSuccess($sucursales);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $sucursalId = $db->insertReturning(
-                "INSERT INTO sucursal (nombre, direccion, telefono, activo) 
-                 VALUES (?, ?, ?, ?) RETURNING id",
-                [
-                    $data['nombre'],
-                    $data['direccion'] ?? null,
-                    $data['telefono'] ?? null,
-                    $data['activo'] ?? true
-                ]
-            );
-            
-            respondWithSuccess(['id' => $sucursalId, 'message' => 'Sucursal creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE sucursal SET 
-                 nombre = ?, direccion = ?, telefono = ?, activo = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['direccion'] ?? null,
-                    $data['telefono'] ?? null,
-                    $data['activo'] ?? true,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Sucursal actualizada exitosamente']);
-            } else {
-                respondWithError('Sucursal no encontrada', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de boxes
- */
-function handleBoxes($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $box = $db->selectOne(
-                    "SELECT b.*, s.nombre as sucursal_nombre 
-                     FROM box b 
-                     LEFT JOIN sucursal s ON b.sucursal_id = s.id 
-                     WHERE b.id = ?", 
-                    [$id]
-                );
-                
-                if (!$box) {
-                    respondWithError('Box no encontrado', 404);
-                    return;
-                }
-                
-                respondWithSuccess($box);
-                
-            } else {
-                $sucursalId = $_GET['sucursal_id'] ?? null;
-                
-                if ($sucursalId) {
-                    $boxes = $db->select(
-                        "SELECT b.*, s.nombre as sucursal_nombre 
-                         FROM box b 
-                         LEFT JOIN sucursal s ON b.sucursal_id = s.id 
-                         WHERE b.sucursal_id = ? AND b.activo = true 
-                         ORDER BY b.nombre",
-                        [$sucursalId]
-                    );
-                } else {
-                    $boxes = $db->select(
-                        "SELECT b.*, s.nombre as sucursal_nombre 
-                         FROM box b 
-                         LEFT JOIN sucursal s ON b.sucursal_id = s.id 
-                         WHERE b.activo = true 
-                         ORDER BY s.nombre, b.nombre"
-                    );
-                }
-                
-                respondWithSuccess($boxes);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre', 'sucursal_id'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $boxId = $db->insertReturning(
-                "INSERT INTO box (sucursal_id, nombre, activo) 
-                 VALUES (?, ?, ?) RETURNING id",
-                [
-                    $data['sucursal_id'],
-                    $data['nombre'],
-                    $data['activo'] ?? true
-                ]
-            );
-            
-            respondWithSuccess(['id' => $boxId, 'message' => 'Box creado exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE box SET 
-                 nombre = ?, activo = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['activo'] ?? true,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Box actualizado exitosamente']);
-            } else {
-                respondWithError('Box no encontrado', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de tipos de ficha específica
- */
-function handleTiposFichaEspecifica($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $tipo = $db->selectOne(
-                    "SELECT * FROM tipo_ficha_especifica WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$tipo) {
-                    respondWithError('Tipo de ficha específica no encontrado', 404);
-                    return;
-                }
-                
-                respondWithSuccess($tipo);
-                
-            } else {
-                $tipos = $db->select(
-                    "SELECT * FROM tipo_ficha_especifica ORDER BY nombre"
-                );
-                respondWithSuccess($tipos);
-            }
-            break;
-            
-        case 'POST':
-            $requiredFields = ['nombre'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $tipoId = $db->insertReturning(
-                "INSERT INTO tipo_ficha_especifica (nombre, descripcion) 
-                 VALUES (?, ?) RETURNING id",
-                [
-                    $data['nombre'],
-                    $data['descripcion'] ?? null
-                ]
-            );
-            
-            respondWithSuccess(['id' => $tipoId, 'message' => 'Tipo de ficha específica creado exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE tipo_ficha_especifica SET 
-                 nombre = ?, descripcion = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['descripcion'] ?? null,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Tipo de ficha específica actualizado exitosamente']);
-            } else {
-                respondWithError('Tipo de ficha específica no encontrado', 404);
-            }
-            break;
-    }
-}
-
-/**
- * Maneja operaciones de fichas específicas
- */
 function handleFichasEspecificas($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $fichaEspecifica = $db->selectOne(
-                    "SELECT fe.*, tf.nombre as tipo_nombre, t.nombre as tratamiento_nombre, p.nombre as pack_nombre
-                     FROM ficha_especifica fe
-                     LEFT JOIN tipo_ficha_especifica tf ON fe.tipo_id = tf.id
-                     LEFT JOIN tratamiento t ON fe.tratamiento_id = t.id
-                     LEFT JOIN pack p ON fe.pack_id = p.id
-                     WHERE fe.id = ?", 
-                    [$id]
-                );
-                
-                if (!$fichaEspecifica) {
-                    respondWithError('Ficha específica no encontrada', 404);
-                    return;
-                }
-                
-                respondWithSuccess($fichaEspecifica);
-                
+                $result = $db->selectOne("SELECT * FROM ficha_especifica WHERE id = ?", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
             } else {
                 $fichaId = $_GET['ficha_id'] ?? null;
-                $tipoId = $_GET['tipo_id'] ?? null;
-                
-                $whereClause = '';
-                $params = [];
-                
                 if ($fichaId) {
-                    $whereClause = "WHERE fe.ficha_id = ?";
-                    $params[] = $fichaId;
+                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id WHERE fe.ficha_id = ?", [$fichaId]);
+                } else {
+                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id");
                 }
-                
-                if ($tipoId) {
-                    $whereClause = $whereClause ? $whereClause . " AND fe.tipo_id = ?" : "WHERE fe.tipo_id = ?";
-                    $params[] = $tipoId;
-                }
-                
-                $fichasEspecificas = $db->select(
-                    "SELECT fe.*, tf.nombre as tipo_nombre, t.nombre as tratamiento_nombre, p.nombre as pack_nombre
-                     FROM ficha_especifica fe
-                     LEFT JOIN tipo_ficha_especifica tf ON fe.tipo_id = tf.id
-                     LEFT JOIN tratamiento t ON fe.tratamiento_id = t.id
-                     LEFT JOIN pack p ON fe.pack_id = p.id
-                     $whereClause
-                     ORDER BY fe.fecha_creacion DESC",
-                    $params
-                );
-                
-                respondWithSuccess($fichasEspecificas);
+                echo json_encode(['success' => true, 'data' => $result]);
             }
             break;
             
         case 'POST':
-            $requiredFields = ['ficha_id', 'tipo_id'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $fichaEspecificaId = $db->insertReturning(
-                "INSERT INTO ficha_especifica (ficha_id, tipo_id, datos, fecha_creacion) 
-                 VALUES (?, ?, ?, NOW()) RETURNING id",
-                [
-                    $data['ficha_id'],
-                    $data['tipo_id'],
-                    $data['datos'] ?? '{}'
-                ]
-            );
-            
-            respondWithSuccess(['id' => $fichaEspecificaId, 'message' => 'Ficha específica creada exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE ficha_especifica SET 
-                 datos = ?
-                 WHERE id = ?",
-                [
-                    $data['datos'] ?? '{}',
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Ficha específica actualizada exitosamente']);
-            } else {
-                respondWithError('Ficha específica no encontrada', 404);
-            }
+            // Agregar ficha específica
+            $result = $db->executeRaw("CALL sp_agregar_ficha_especifica(?, ?, ?, @ficha_especifica_id)", [
+                $data['ficha_id'], $data['tipo_id'], json_encode($data['datos'])
+            ]);
+            $fichaEspecificaId = $db->selectOne("SELECT @ficha_especifica_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $fichaEspecificaId]]);
             break;
     }
 }
 
-/**
- * Maneja operaciones de pagos
- */
+function handleTiposFichaEspecifica($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM tipo_ficha_especifica WHERE id = ?", [$id]);
+            } else {
+                $result = $db->select("SELECT * FROM tipo_ficha_especifica ORDER BY nombre");
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            $result = $db->insert("INSERT INTO tipo_ficha_especifica (nombre, descripcion) VALUES (?, ?)", [
+                $data['nombre'], $data['descripcion'] ?? null
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+// ---------- EVALUACIONES ----------
+
+function handleEvaluaciones($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM evaluacion WHERE id = ?", [$id]);
+            } else {
+                $fichaId = $_GET['ficha_id'] ?? null;
+                if ($fichaId) {
+                    $result = $db->select("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id WHERE e.ficha_id = ?", [$fichaId]);
+                } else {
+                    $result = $db->select("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id");
+                }
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            // Crear evaluación
+            $result = $db->executeRaw("CALL sp_crear_evaluacion(?, ?, ?, ?, ?, ?, ?, @evaluacion_id)", [
+                $data['ficha_id'], $data['tratamiento_id'], $data['pack_id'] ?? null,
+                $data['profesional_id'], $data['precio_sugerido'], $data['sesiones_sugeridas'],
+                $data['observaciones'] ?? null
+            ]);
+            $evaluacionId = $db->selectOne("SELECT @evaluacion_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $evaluacionId]]);
+            break;
+    }
+}
+
+// ---------- VENTAS ----------
+
+function handleVentas($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                // Obtener venta completa
+                $result = $db->executeRaw("CALL sp_venta_completa(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result[0] ?? null]);
+            } else {
+                $fichaId = $_GET['ficha_id'] ?? null;
+                if ($fichaId) {
+                    $result = $db->select("SELECT * FROM v_ventas_completas WHERE ficha_id = ?", [$fichaId]);
+                } else {
+                    $result = $db->select("SELECT * FROM v_ventas_completas ORDER BY fecha_creacion DESC");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+            }
+            break;
+            
+        case 'POST':
+            // Crear venta
+            $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                $data['ficha_id'], $data['evaluacion_id'] ?? null, $data['tratamiento_id'],
+                $data['pack_id'] ?? null, $data['cantidad_sesiones'], $data['precio_lista'],
+                $data['descuento_manual_pct'] ?? null
+            ]);
+            $ventaId = $db->selectOne("SELECT @venta_id as id")['id'];
+            
+            // Aplicar ofertas automáticamente
+            $db->executeRaw("CALL sp_aplicar_ofertas(?)", [$ventaId]);
+            
+            echo json_encode(['success' => true, 'data' => ['id' => $ventaId]]);
+            break;
+            
+        case 'PUT':
+            if (isset($data['descuento_manual_pct'])) {
+                // Aplicar descuento manual
+                $db->executeRaw("CALL sp_aplicar_descuento_manual(?, ?)", [$id, $data['descuento_manual_pct']]);
+            }
+            echo json_encode(['success' => true, 'data' => ['updated' => true]]);
+            break;
+    }
+}
+
 function handlePagos($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $pago = $db->selectOne(
-                    "SELECT p.*, v.precio_total, v.total_pagado, f.nombres, f.apellidos
-                     FROM pago p
-                     LEFT JOIN venta v ON p.venta_id = v.id
-                     LEFT JOIN ficha f ON v.ficha_id = f.id
-                     WHERE p.id = ?", 
-                    [$id]
-                );
-                
-                if (!$pago) {
-                    respondWithError('Pago no encontrado', 404);
-                    return;
-                }
-                
-                respondWithSuccess($pago);
-                
+                $result = $db->selectOne("SELECT * FROM pago WHERE id = ?", [$id]);
             } else {
                 $ventaId = $_GET['venta_id'] ?? null;
-                $resumen = $_GET['resumen'] ?? false;
-                
-                if ($resumen && $ventaId) {
-                    // Resumen de pagos para una venta
-                    $pagos = $db->select(
-                        "SELECT 
-                            COUNT(*) as total_pagos,
-                            SUM(monto) as total_pagado,
-                            MAX(fecha_pago) as ultimo_pago
-                         FROM pago 
-                         WHERE venta_id = ?",
-                        [$ventaId]
-                    );
-                    
-                    $venta = $db->selectOne(
-                        "SELECT precio_total, total_pagado FROM venta WHERE id = ?",
-                        [$ventaId]
-                    );
-                    
-                    $resumen = [
-                        'venta_id' => $ventaId,
-                        'total_pagos' => $pagos[0]['total_pagos'] ?? 0,
-                        'total_pagado' => $pagos[0]['total_pagado'] ?? 0,
-                        'precio_total' => $venta['precio_total'] ?? 0,
-                        'pendiente' => ($venta['precio_total'] ?? 0) - ($pagos[0]['total_pagado'] ?? 0)
-                    ];
-                    
-                    respondWithSuccess($resumen);
-                    
-                } else if ($ventaId) {
-                    // Pagos de una venta específica
-                    $pagos = $db->select(
-                        "SELECT p.*, f.nombres, f.apellidos
-                         FROM pago p
-                         LEFT JOIN venta v ON p.venta_id = v.id
-                         LEFT JOIN ficha f ON v.ficha_id = f.id
-                         WHERE p.venta_id = ?
-                         ORDER BY p.fecha_pago DESC",
-                        [$ventaId]
-                    );
-                    
-                    respondWithSuccess($pagos);
-                    
+                if ($ventaId) {
+                    $result = $db->select("SELECT * FROM pago WHERE venta_id = ? ORDER BY fecha_pago DESC", [$ventaId]);
                 } else {
-                    // Todos los pagos
-                    $pagos = $db->select(
-                        "SELECT p.*, v.precio_total, f.nombres, f.apellidos
-                         FROM pago p
-                         LEFT JOIN venta v ON p.venta_id = v.id
-                         LEFT JOIN ficha f ON v.ficha_id = f.id
-                         ORDER BY p.fecha_pago DESC
-                         LIMIT 50"
-                    );
-                    
-                    respondWithSuccess($pagos);
+                    $result = $db->select("SELECT * FROM pago ORDER BY fecha_pago DESC");
                 }
             }
+            echo json_encode(['success' => true, 'data' => $result]);
             break;
             
         case 'POST':
-            $requiredFields = ['venta_id', 'monto', 'metodo_pago'];
-            validateRequiredFields($data, $requiredFields);
+            // Registrar pago
+            $result = $db->insert("INSERT INTO pago (venta_id, monto, metodo_pago, fecha_pago, observaciones) VALUES (?, ?, ?, NOW(), ?)", [
+                $data['venta_id'], $data['monto'], $data['metodo_pago'], $data['observaciones'] ?? null
+            ]);
             
-            $pagoId = $db->insertReturning(
-                "INSERT INTO pago (venta_id, monto, metodo_pago, fecha_pago, observaciones, fecha_registro) 
-                 VALUES (?, ?, ?, ?, ?, NOW()) RETURNING id",
-                [
-                    $data['venta_id'],
-                    $data['monto'],
-                    $data['metodo_pago'],
-                    $data['fecha_pago'] ?? date('Y-m-d'),
-                    $data['observaciones'] ?? null
-                ]
-            );
+            // Actualizar total_pagado en venta
+            $db->update("UPDATE venta SET total_pagado = total_pagado + ? WHERE id = ?", [
+                $data['monto'], $data['venta_id']
+            ]);
             
-            // Actualizar total pagado en la venta
-            $venta = $db->selectOne(
-                "SELECT precio_total, total_pagado FROM venta WHERE id = ?",
-                [$data['venta_id']]
-            );
-            
-            if ($venta) {
-                $nuevoTotalPagado = $venta['total_pagado'] + $data['monto'];
-                $nuevoEstado = $nuevoTotalPagado >= $venta['precio_total'] ? 'pagado' : 'pendiente';
-                
-                $db->update(
-                    "UPDATE venta SET total_pagado = ?, estado = ? WHERE id = ?",
-                    [$nuevoTotalPagado, $nuevoEstado, $data['venta_id']]
-                );
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+// ---------- AGENDA ----------
+
+function handleSesiones($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM v_sesiones_completas WHERE id = ?", [$id]);
+            } else {
+                $ventaId = $_GET['venta_id'] ?? null;
+                if ($ventaId) {
+                    $result = $db->executeRaw("CALL sp_sesiones_venta(?)", [$ventaId]);
+                } else {
+                    $result = $db->select("SELECT * FROM v_sesiones_completas ORDER BY fecha_planificada DESC");
+                }
             }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
             
-            respondWithSuccess(['id' => $pagoId, 'message' => 'Pago registrado exitosamente']);
+        case 'POST':
+            // Agendar sesión
+            $result = $db->executeRaw("CALL sp_agendar_sesion(?, ?, ?, ?, ?, ?, ?, @sesion_id)", [
+                $data['venta_id'], $data['numero_sesion'], $data['sucursal_id'],
+                $data['box_id'], $data['profesional_id'], $data['fecha_planificada'],
+                $data['observaciones'] ?? null
+            ]);
+            $sesionId = $db->selectOne("SELECT @sesion_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $sesionId]]);
             break;
             
         case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
+            if (isset($data['accion'])) {
+                switch ($data['accion']) {
+                    case 'confirmar':
+                        $db->executeRaw("CALL sp_confirmar_paciente(?)", [$id]);
+                        break;
+                    case 'abrir':
+                        $db->executeRaw("CALL sp_abrir_sesion(?)", [$id]);
+                        break;
+                    case 'cerrar':
+                        $db->executeRaw("CALL sp_cerrar_sesion(?, ?)", [$id, $data['observaciones'] ?? null]);
+                        break;
+                    case 'reprogramar':
+                        $db->executeRaw("CALL sp_reprogramar_sesion(?, ?)", [$id, $data['nueva_fecha']]);
+                        break;
+                }
             }
-            
-            $updated = $db->update(
-                "UPDATE pago SET 
-                 monto = ?, metodo_pago = ?, fecha_pago = ?, observaciones = ?
-                 WHERE id = ?",
-                [
-                    $data['monto'] ?? 0,
-                    $data['metodo_pago'] ?? '',
-                    $data['fecha_pago'] ?? date('Y-m-d'),
-                    $data['observaciones'] ?? null,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Pago actualizado exitosamente']);
-            } else {
-                respondWithError('Pago no encontrado', 404);
-            }
-            break;
-            
-        case 'DELETE':
-            if (!$id) {
-                respondWithError('ID requerido para eliminar', 400);
-                return;
-            }
-            
-            // Soft delete - cambiar estado en lugar de eliminar
-            $deleted = $db->update(
-                "UPDATE pago SET activo = false WHERE id = ?",
-                [$id]
-            );
-            
-            if ($deleted > 0) {
-                respondWithSuccess(['message' => 'Pago eliminado exitosamente']);
-            } else {
-                respondWithError('Pago no encontrado', 404);
-            }
+            echo json_encode(['success' => true, 'data' => ['updated' => true]]);
             break;
     }
 }
 
-/**
- * Maneja operaciones de reportes
- */
-function handleReportes($db, $method, $id, $data) {
+function handleAgenda($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
-            $tipo = $_GET['tipo'] ?? '';
+            // Obtener disponibilidad
+            $fechaInicio = $_GET['fecha_inicio'] ?? date('Y-m-d');
+            $fechaFin = $_GET['fecha_fin'] ?? date('Y-m-d', strtotime('+7 days'));
+            $profesionalId = $_GET['profesional_id'] ?? null;
+            $sucursalId = $_GET['sucursal_id'] ?? null;
+            $boxId = $_GET['box_id'] ?? null;
             
-            switch ($tipo) {
-                case 'progreso-ventas':
-                    // REP-001: Progreso de ventas (realizadas vs pendientes)
-                    $ventaId = $_GET['venta_id'] ?? null;
-                    
-                    if ($ventaId) {
-                        $progreso = $db->executeRaw(
-                            "SELECT * FROM v_venta_progreso WHERE venta_id = ?",
-                            [$ventaId]
-                        );
-                    } else {
-                        $progreso = $db->executeRaw(
-                            "SELECT * FROM v_venta_progreso ORDER BY venta_id"
-                        );
-                    }
-                    
-                    respondWithSuccess($progreso);
-                    break;
-                    
-                case 'plan-vs-ejecucion':
-                    // REP-002: Planificación vs ejecución con desfase
-                    $fechaDesde = $_GET['fecha_desde'] ?? null;
-                    $fechaHasta = $_GET['fecha_hasta'] ?? null;
-                    
-                    $whereClause = '';
-                    $params = [];
-                    
-                    if ($fechaDesde && $fechaHasta) {
-                        $whereClause = "WHERE s.fecha_planificada BETWEEN ? AND ?";
-                        $params = [$fechaDesde, $fechaHasta];
-                    }
-                    
-                    $planVsEjecucion = $db->executeRaw(
-                        "SELECT * FROM v_plan_vs_ejecucion $whereClause ORDER BY sesion_id",
-                        $params
-                    );
-                    
-                    respondWithSuccess($planVsEjecucion);
-                    break;
-                    
-                case 'disponibilidad-profesionales':
-                    // PRO-002: Disponibilidad por profesional/sucursal/box
-                    $profesionalId = $_GET['profesional_id'] ?? null;
-                    $sucursalId = $_GET['sucursal_id'] ?? null;
-                    $boxId = $_GET['box_id'] ?? null;
-                    $fecha = $_GET['fecha'] ?? date('Y-m-d');
-                    
-                    $whereConditions = ["DATE(s.fecha_planificada) = ?"];
-                    $params = [$fecha];
-                    
-                    if ($profesionalId) {
-                        $whereConditions[] = "s.profesional_id = ?";
-                        $params[] = $profesionalId;
-                    }
-                    
-                    if ($sucursalId) {
-                        $whereConditions[] = "s.sucursal_id = ?";
-                        $params[] = $sucursalId;
-                    }
-                    
-                    if ($boxId) {
-                        $whereConditions[] = "s.box_id = ?";
-                        $params[] = $boxId;
-                    }
-                    
-                    $whereClause = "WHERE " . implode(" AND ", $whereConditions);
-                    
-                    $disponibilidad = $db->select(
-                        "SELECT s.*, p.nombre as profesional_nombre, suc.nombre as sucursal_nombre, b.nombre as box_nombre
-                         FROM sesion s
-                         LEFT JOIN profesional p ON s.profesional_id = p.id
-                         LEFT JOIN sucursal suc ON s.sucursal_id = suc.id
-                         LEFT JOIN box b ON s.box_id = b.id
-                         $whereClause
-                         ORDER BY s.fecha_planificada",
-                        $params
-                    );
-                    
-                    respondWithSuccess($disponibilidad);
-                    break;
-                    
-                case 'ofertas-aplicadas':
-                    // OFE-004: Ofertas aplicadas a una venta en orden
-                    $ventaId = $_GET['venta_id'] ?? null;
-                    
-                    if (!$ventaId) {
-                        respondWithError('ID de venta requerido para reporte de ofertas', 400);
-                        return;
-                    }
-                    
-                    $ofertasAplicadas = $db->select(
-                        "SELECT vo.*, o.nombre as oferta_nombre, o.tipo as oferta_tipo
-                         FROM venta_oferta vo
-                         LEFT JOIN oferta o ON vo.oferta_id = o.id
-                         WHERE vo.venta_id = ?
-                         ORDER BY vo.secuencia",
-                        [$ventaId]
-                    );
-                    
-                    respondWithSuccess($ofertasAplicadas);
-                    break;
-                    
-                default:
-                    respondWithError('Tipo de reporte no válido', 400);
-            }
+            $result = $db->executeRaw("CALL sp_obtener_disponibilidad(?, ?, ?, ?, ?)", [
+                $fechaInicio, $fechaFin, $profesionalId, $sucursalId, $boxId
+            ]);
+            echo json_encode(['success' => true, 'data' => $result]);
             break;
             
-        default:
-            respondWithError('Método no permitido para reportes', 405);
+        case 'POST':
+            if (isset($data['accion']) && $data['accion'] === 'generar_plan') {
+                // Generar plan completo de sesiones
+                $db->executeRaw("CALL sp_generar_plan_sesiones(?, ?, ?, ?, ?, ?)", [
+                    $data['venta_id'], $data['sucursal_id'], $data['box_id'],
+                    $data['profesional_id'], $data['fecha_inicio'], $data['duracion_minutos']
+                ]);
+                echo json_encode(['success' => true, 'data' => ['plan_generado' => true]]);
+            }
+            break;
     }
 }
 
-/**
- * Maneja operaciones de profesionales
- */
+// ---------- OFERTAS ----------
+
+function handleOfertas($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM oferta WHERE id = ?", [$id]);
+            } else {
+                $result = $db->select("SELECT * FROM v_ofertas_aplicables ORDER BY prioridad");
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            if ($data['tipo'] === 'pack_temporal') {
+                // Crear oferta pack temporal
+                $result = $db->executeRaw("CALL sp_crear_oferta_pack(?, ?, ?, ?, ?, ?, @oferta_id)", [
+                    $data['nombre'], $data['porc_descuento'], $data['fecha_inicio'],
+                    $data['fecha_fin'], $data['combinable'], $data['prioridad']
+                ]);
+            } else {
+                // Crear oferta combo
+                $result = $db->executeRaw("CALL sp_crear_oferta_combo(?, ?, ?, ?, ?, @oferta_id)", [
+                    $data['nombre'], $data['porc_descuento'], $data['min_packs'],
+                    $data['combinable'], $data['prioridad']
+                ]);
+            }
+            $ofertaId = $db->selectOne("SELECT @oferta_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $ofertaId]]);
+            break;
+    }
+}
+
+function handleOfertasCombo($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            $result = $db->select("SELECT * FROM v_ofertas_combo ORDER BY prioridad");
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            // Agregar pack a oferta combo
+            $result = $db->insert("INSERT INTO oferta_combo_pack (oferta_combo_id, pack_id) VALUES (?, ?)", [
+                $data['oferta_combo_id'], $data['pack_id']
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+// ---------- CATÁLOGOS ----------
+
+function handleTratamientos($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM tratamiento WHERE id = ?", [$id]);
+            } else {
+                $result = $db->select("SELECT * FROM tratamiento ORDER BY nombre");
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            $result = $db->insert("INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica) VALUES (?, ?, ?)", [
+                $data['nombre'], $data['descripcion'] ?? null, $data['requiere_ficha_especifica'] ?? false
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+function handlePacks($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM pack WHERE id = ?", [$id]);
+            } else {
+                $tratamientoId = $_GET['tratamiento_id'] ?? null;
+                if ($tratamientoId) {
+                    $result = $db->select("SELECT * FROM pack WHERE tratamiento_id = ? AND activo = TRUE ORDER BY nombre", [$tratamientoId]);
+                } else {
+                    $result = $db->select("SELECT * FROM pack WHERE activo = TRUE ORDER BY nombre");
+                }
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            $result = $db->insert("INSERT INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min) VALUES (?, ?, ?, ?)", [
+                $data['tratamiento_id'], $data['nombre'], $data['descripcion'] ?? null, $data['duracion_sesion_min'] ?? 0
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+function handleSucursales($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM sucursal WHERE id = ?", [$id]);
+            } else {
+                $result = $db->select("SELECT * FROM sucursal WHERE activo = TRUE ORDER BY nombre");
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            $result = $db->insert("INSERT INTO sucursal (nombre, direccion, telefono) VALUES (?, ?, ?)", [
+                $data['nombre'], $data['direccion'] ?? null, $data['telefono'] ?? null
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+function handleBoxes($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT * FROM box WHERE id = ?", [$id]);
+            } else {
+                $sucursalId = $_GET['sucursal_id'] ?? null;
+                if ($sucursalId) {
+                    $result = $db->select("SELECT * FROM box WHERE sucursal_id = ? AND activo = TRUE ORDER BY nombre", [$sucursalId]);
+                } else {
+                    $result = $db->select("SELECT * FROM box WHERE activo = TRUE ORDER BY nombre");
+                }
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            $result = $db->insert("INSERT INTO box (sucursal_id, nombre) VALUES (?, ?)", [
+                $data['sucursal_id'], $data['nombre']
+            ]);
+            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
 function handleProfesionales($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $profesional = $db->selectOne(
-                    "SELECT * FROM profesional WHERE id = ?", 
-                    [$id]
-                );
-                
-                if (!$profesional) {
-                    respondWithError('Profesional no encontrado', 404);
-                    return;
-                }
-                
-                respondWithSuccess($profesional);
-                
+                $result = $db->selectOne("SELECT * FROM profesional WHERE id = ?", [$id]);
             } else {
-                $profesionales = $db->select(
-                    "SELECT * FROM profesional WHERE activo = true ORDER BY nombre"
-                );
-                respondWithSuccess($profesionales);
+                $result = $db->select("SELECT * FROM profesional WHERE activo = TRUE ORDER BY nombre");
             }
+            echo json_encode(['success' => true, 'data' => $result]);
             break;
             
         case 'POST':
-            $requiredFields = ['nombre', 'tipo_profesional'];
-            validateRequiredFields($data, $requiredFields);
-            
-            $profesionalId = $db->insertReturning(
-                "INSERT INTO profesional (nombre, tipo_profesional, bio, foto_url, activo) 
-                 VALUES (?, ?, ?, ?, ?) RETURNING id",
-                [
-                    $data['nombre'],
-                    $data['tipo_profesional'],
-                    $data['bio'] ?? null,
-                    $data['foto_url'] ?? null,
-                    $data['activo'] ?? true
-                ]
-            );
-            
-            respondWithSuccess(['id' => $profesionalId, 'message' => 'Profesional creado exitosamente']);
-            break;
-            
-        case 'PUT':
-            if (!$id) {
-                respondWithError('ID requerido para actualizar', 400);
-                return;
-            }
-            
-            $updated = $db->update(
-                "UPDATE profesional SET 
-                 nombre = ?, tipo_profesional = ?, bio = ?, foto_url = ?, activo = ?
-                 WHERE id = ?",
-                [
-                    $data['nombre'] ?? '',
-                    $data['tipo_profesional'] ?? '',
-                    $data['bio'] ?? null,
-                    $data['foto_url'] ?? null,
-                    $data['activo'] ?? true,
-                    $id
-                ]
-            );
-            
-            if ($updated > 0) {
-                respondWithSuccess(['message' => 'Profesional actualizado exitosamente']);
-            } else {
-                respondWithError('Profesional no encontrado', 404);
-            }
+            // Crear profesional
+            $result = $db->executeRaw("CALL sp_crear_profesional(?, ?, ?, ?, @profesional_id)", [
+                $data['nombre'], $data['tipo_profesional'], $data['bio'] ?? null, $data['foto_url'] ?? null
+            ]);
+            $profesionalId = $db->selectOne("SELECT @profesional_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $profesionalId]]);
             break;
     }
 }
 
-/**
- * Maneja estadísticas
- */
-function handleStats($db, $method) {
-    if ($method !== 'GET') {
-        respondWithError('Método no permitido', 405);
-        return;
-    }
-    
-    try {
-        $stats = $db->getStats();
-        respondWithSuccess($stats);
-    } catch (Exception $e) {
-        respondWithError('Error obteniendo estadísticas: ' . $e->getMessage());
-    }
-}
+// ---------- REPORTES ----------
 
-/**
- * Maneja health check
- */
-function handleHealth($db) {
-    try {
-        $health = $db->healthCheck();
-        respondWithSuccess($health);
-    } catch (Exception $e) {
-        respondWithError('Error en health check: ' . $e->getMessage());
-    }
-}
-
-/**
- * Maneja backup
- */
-function handleBackup($db, $method) {
-    if ($method !== 'POST') {
-        respondWithError('Método no permitido', 405);
-        return;
-    }
-    
-    try {
-        $success = $db->backup();
-        if ($success) {
-            respondWithSuccess(['message' => 'Backup creado exitosamente']);
-        } else {
-            respondWithError('Error creando backup');
-        }
-    } catch (Exception $e) {
-        respondWithError('Error creando backup: ' . $e->getMessage());
-    }
-}
-
-/**
- * Maneja configuración de variables de entorno
- */
-function handleConfig($db, $method, $id, $data) {
-    if ($method !== 'GET') {
-        respondWithError('Método no permitido', 405);
-        return;
-    }
-    
-    try {
-        // Cargar variables de entorno desde .env si existe
-        $envConfig = [];
-        
-        // Intentar cargar archivo .env
-        $envFile = __DIR__ . '/.env';
-        if (file_exists($envFile)) {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                if (strpos($line, '#') === 0) continue; // Comentarios
-                if (strpos($line, '=') !== false) {
-                    list($key, $value) = explode('=', $line, 2);
-                    $key = trim($key);
-                    $value = trim($value);
+function handleReportes($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            $tipo = $_GET['tipo'] ?? '';
+            $fechaInicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-30 days'));
+            $fechaFin = $_GET['fecha_fin'] ?? date('Y-m-d');
+            
+            switch ($tipo) {
+                case 'progreso_ventas':
+                    $result = $db->executeRaw("CALL sp_reporte_progreso_ventas(?, ?)", [$fechaInicio, $fechaFin]);
+                    break;
                     
-                    // Remover comillas si existen
-                    if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
-                        (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
-                        $value = substr($value, 1, -1);
-                    }
+                case 'plan_vs_ejecucion':
+                    $result = $db->executeRaw("CALL sp_reporte_plan_vs_ejecucion(?, ?)", [$fechaInicio, $fechaFin]);
+                    break;
                     
-                    $envConfig[$key] = $value;
-                }
+                case 'ofertas_aplicadas':
+                    $result = $db->select("SELECT * FROM v_reporte_ofertas WHERE DATE(fecha_creacion) BETWEEN ? AND ?", [$fechaInicio, $fechaFin]);
+                    break;
+                    
+                case 'disponibilidad':
+                    $result = $db->select("SELECT * FROM v_disponibilidad_profesionales");
+                    break;
+                    
+                default:
+                    $result = [];
+                    break;
             }
-        }
-        
-        // Configuración por defecto
-        $defaultConfig = [
-            'API_URL' => $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'],
-            'API_TIMEOUT' => 10000,
-            'API_RETRIES' => 3,
-            'APP_NAME' => 'Clínica Beleza',
-            'APP_VERSION' => '2.0.0',
-            'APP_ENV' => 'development',
-            'CACHE_TTL' => 300,
-            'CACHE_ENABLED' => true
-        ];
-        
-        // Combinar configuración por defecto con variables de entorno
-        $config = array_merge($defaultConfig, $envConfig);
-        
-        // Solo devolver variables seguras para el frontend
-        $safeConfig = [
-            'API_URL' => $config['API_URL'],
-            'API_TIMEOUT' => (int)$config['API_TIMEOUT'],
-            'API_RETRIES' => (int)$config['API_RETRIES'],
-            'APP_NAME' => $config['APP_NAME'],
-            'APP_VERSION' => $config['APP_VERSION'],
-            'APP_ENV' => $config['APP_ENV'],
-            'CACHE_TTL' => (int)$config['CACHE_TTL'],
-            'CACHE_ENABLED' => filter_var($config['CACHE_ENABLED'], FILTER_VALIDATE_BOOLEAN)
-        ];
-        
-        respondWithSuccess($safeConfig);
-        
-    } catch (Exception $e) {
-        respondWithError('Error cargando configuración: ' . $e->getMessage());
+            
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
     }
-}
-
-/**
- * Valida campos requeridos
- */
-function validateRequiredFields($data, $requiredFields) {
-    $missing = [];
-    foreach ($requiredFields as $field) {
-        if (!isset($data[$field]) || empty($data[$field])) {
-            $missing[] = $field;
-        }
-    }
-    
-    if (!empty($missing)) {
-        respondWithError('Campos requeridos faltantes: ' . implode(', ', $missing), 400);
-    }
-}
-
-/**
- * Responde con éxito
- */
-function respondWithSuccess($data, $code = 200) {
-    http_response_code($code);
-    echo json_encode([
-        'success' => true,
-        'data' => $data
-    ], JSON_UNESCAPED_UNICODE);
-}
-
-/**
- * Responde con error
- */
-function respondWithError($message, $code = 400) {
-    http_response_code($code);
-    echo json_encode([
-        'success' => false,
-        'error' => $message
-    ], JSON_UNESCAPED_UNICODE);
 }
 
 ?>
