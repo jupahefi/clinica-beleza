@@ -11,10 +11,11 @@ USE clinica_estetica;
 
 DELIMITER $$
 
-CREATE PROCEDURE AddUniqueIndexIfNotExists(
+CREATE PROCEDURE AddIndexIfNotExists(
     IN indexName VARCHAR(64),
     IN tableName VARCHAR(64),
-    IN columnList VARCHAR(200)
+    IN columnList VARCHAR(200),
+    IN isUnique BOOLEAN
 )
 BEGIN
     DECLARE indexExists INT DEFAULT 0;
@@ -26,7 +27,11 @@ BEGIN
     AND index_name = indexName;
     
     IF indexExists = 0 THEN
-        SET @sql = CONCAT('CREATE UNIQUE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ')');
+        IF isUnique THEN
+            SET @sql = CONCAT('CREATE UNIQUE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ')');
+        ELSE
+            SET @sql = CONCAT('CREATE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ')');
+        END IF;
         PREPARE stmt FROM @sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
@@ -45,7 +50,7 @@ CREATE TABLE IF NOT EXISTS sucursal (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CALL AddUniqueIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre');
+CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -54,7 +59,7 @@ CREATE TABLE IF NOT EXISTS box (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE INDEX ix_box_sucursal ON box (sucursal_id);
+CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS profesional (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -76,8 +81,8 @@ CREATE TABLE IF NOT EXISTS ficha (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CALL AddUniqueIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo');
-CALL AddUniqueIndexIfNotExists('ux_ficha_email', 'ficha', 'email');
+CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
+CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -85,7 +90,7 @@ CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   descripcion TEXT
 );
 
-CALL AddUniqueIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre');
+CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -95,8 +100,8 @@ CREATE TABLE IF NOT EXISTS ficha_especifica (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_ficha_especifica_ficha ON ficha_especifica (ficha_id);
-CREATE INDEX ix_ficha_especifica_tipo ON ficha_especifica (tipo_id);
+CALL AddIndexIfNotExists('ix_ficha_especifica_ficha', 'ficha_especifica', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_ficha_especifica_tipo', 'ficha_especifica', 'tipo_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -105,7 +110,7 @@ CREATE TABLE IF NOT EXISTS tratamiento (
   requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CALL AddUniqueIndexIfNotExists('ux_tratamiento_nombre', 'tratamiento', 'nombre');
+CALL AddIndexIfNotExists('ux_tratamiento_nombre', 'tratamiento', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -116,7 +121,7 @@ CREATE TABLE IF NOT EXISTS pack (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CALL AddUniqueIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, nombre');
+CALL AddIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -130,9 +135,9 @@ CREATE TABLE IF NOT EXISTS evaluacion (
   fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_eval_ficha ON evaluacion (ficha_id);
-CREATE INDEX ix_eval_tratamiento ON evaluacion (tratamiento_id);
-CREATE INDEX ix_eval_pack ON evaluacion (pack_id);
+CALL AddIndexIfNotExists('ix_eval_ficha', 'evaluacion', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_eval_tratamiento', 'evaluacion', 'tratamiento_id', FALSE);
+CALL AddIndexIfNotExists('ix_eval_pack', 'evaluacion', 'pack_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -146,7 +151,7 @@ CREATE TABLE IF NOT EXISTS oferta (
   prioridad INT NOT NULL DEFAULT 0
 );
 
-CALL AddUniqueIndexIfNotExists('ux_oferta_nombre', 'oferta', 'nombre');
+CALL AddIndexIfNotExists('ux_oferta_nombre', 'oferta', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS oferta_pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -155,7 +160,7 @@ CREATE TABLE IF NOT EXISTS oferta_pack (
   porc_descuento DECIMAL(5,2) NOT NULL DEFAULT 0.00
 );
 
-CALL AddUniqueIndexIfNotExists('ux_oferta_pack', 'oferta_pack', 'oferta_id, pack_id');
+CALL AddIndexIfNotExists('ux_oferta_pack', 'oferta_pack', 'oferta_id, pack_id', TRUE);
 
 CREATE TABLE IF NOT EXISTS oferta_combo (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -169,7 +174,7 @@ CREATE TABLE IF NOT EXISTS oferta_combo_pack (
   pack_id BIGINT NOT NULL
 );
 
-CALL AddUniqueIndexIfNotExists('ux_oferta_combo_pack', 'oferta_combo_pack', 'oferta_combo_id, pack_id');
+CALL AddIndexIfNotExists('ux_oferta_combo_pack', 'oferta_combo_pack', 'oferta_combo_id, pack_id', TRUE);
 
 CREATE TABLE IF NOT EXISTS venta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -186,9 +191,9 @@ CREATE TABLE IF NOT EXISTS venta (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ix_venta_ficha ON venta (ficha_id);
-CREATE INDEX ix_venta_tratamiento ON venta (tratamiento_id);
-CREATE INDEX ix_venta_pack ON venta (pack_id);
+CALL AddIndexIfNotExists('ix_venta_ficha', 'venta', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_tratamiento', 'venta', 'tratamiento_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_pack', 'venta', 'pack_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS venta_oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -199,7 +204,7 @@ CREATE TABLE IF NOT EXISTS venta_oferta (
   monto_descuento DECIMAL(12,2) NOT NULL DEFAULT 0.00
 );
 
-CALL AddUniqueIndexIfNotExists('ux_venta_oferta_seq', 'venta_oferta', 'venta_id, secuencia');
+CALL AddIndexIfNotExists('ux_venta_oferta_seq', 'venta_oferta', 'venta_id, secuencia', TRUE);
 
 CREATE TABLE IF NOT EXISTS sesion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -217,11 +222,11 @@ CREATE TABLE IF NOT EXISTS sesion (
   observaciones TEXT
 );
 
-CALL AddUniqueIndexIfNotExists('ux_sesion_venta_num', 'sesion', 'venta_id, numero_sesion');
-CREATE INDEX ix_sesion_profesional ON sesion (profesional_id);
-CREATE INDEX ix_sesion_box ON sesion (box_id);
-CREATE INDEX ix_sesion_sucursal ON sesion (sucursal_id);
-CREATE INDEX ix_sesion_estado ON sesion (estado);
+CALL AddIndexIfNotExists('ux_sesion_venta_num', 'sesion', 'venta_id, numero_sesion', TRUE);
+CALL AddIndexIfNotExists('ix_sesion_profesional', 'sesion', 'profesional_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_box', 'sesion', 'box_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_sucursal', 'sesion', 'sucursal_id', FALSE);
+CALL AddIndexIfNotExists('ix_sesion_estado', 'sesion', 'estado', FALSE);
 
 -- ---------- Foreign keys (added idempotently) ----------
 
@@ -290,7 +295,7 @@ CALL AddForeignKeyIfNotExists('sesion', 'fk_sesion_profesional', 'profesional_id
 
 -- Clean up procedures
 DROP PROCEDURE IF EXISTS AddForeignKeyIfNotExists;
-DROP PROCEDURE IF EXISTS AddUniqueIndexIfNotExists;
+DROP PROCEDURE IF EXISTS AddIndexIfNotExists;
 
 -- ---------- Business rules & checks ----------
 
