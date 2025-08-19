@@ -14,6 +14,20 @@ DROP PROCEDURE IF EXISTS AddIndexIfNotExists;
 DROP PROCEDURE IF EXISTS AddForeignKeyIfNotExists;
 DROP PROCEDURE IF EXISTS AddCheckConstraintIfNotExists;
 
+-- Drop existing triggers
+DROP TRIGGER IF EXISTS trg_venta_requiere_ficha_especifica;
+DROP TRIGGER IF EXISTS trg_sesion_numero_en_rango;
+DROP TRIGGER IF EXISTS trg_venta_calcular_total;
+DROP TRIGGER IF EXISTS trg_venta_oferta_calcular_total;
+DROP TRIGGER IF EXISTS trg_venta_oferta_update_total;
+DROP TRIGGER IF EXISTS trg_venta_oferta_delete_total;
+DROP TRIGGER IF EXISTS trg_oferta_validar_fechas;
+DROP TRIGGER IF EXISTS trg_oferta_validar_fechas_update;
+DROP TRIGGER IF EXISTS trg_sesion_auto_realizada;
+DROP TRIGGER IF EXISTS trg_sesion_profesional_activo;
+DROP TRIGGER IF EXISTS trg_sesion_box_activo;
+DROP TRIGGER IF EXISTS trg_sesion_sucursal_activa;
+
 DELIMITER $$
 
 CREATE PROCEDURE AddIndexIfNotExists(
