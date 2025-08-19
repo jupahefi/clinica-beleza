@@ -173,15 +173,28 @@ function handleConfig($db) {
 
 function handleHealth($db) {
     try {
-        $health = $db->healthCheck();
-        echo json_encode([
-            'success' => true,
-            'health' => $health,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
+        // Verificar conexión a la base de datos
+        $db->selectOne("SELECT 1 as test");
+        
+        $health = [
+            'status' => 'healthy',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'database' => 'connected',
+            'api_version' => $_ENV['APP_VERSION'] ?? '2.0.0'
+        ];
+        
+        echo json_encode(['success' => true, 'data' => $health]);
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Error de salud: ' . $e->getMessage()]);
+        http_response_code(503);
+        echo json_encode([
+            'success' => false, 
+            'data' => [
+                'status' => 'unhealthy',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'database' => 'disconnected',
+                'error' => $e->getMessage()
+            ]
+        ]);
     }
 }
 
