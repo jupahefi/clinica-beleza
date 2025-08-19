@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sucursal (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_sucursal_nombre ON sucursal (nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_sucursal_nombre ON sucursal (nombre);
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS ficha (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX ux_ficha_codigo ON ficha (codigo);
-CREATE UNIQUE INDEX ux_ficha_email ON ficha (email);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ficha_codigo ON ficha (codigo);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ficha_email ON ficha (email);
 
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   descripcion TEXT
 );
 
-CREATE UNIQUE INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica (nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica (nombre);
 
 CREATE TABLE IF NOT EXISTS ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS tratamiento (
   requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE UNIQUE INDEX ux_tratamiento_nombre ON tratamiento (nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tratamiento_nombre ON tratamiento (nombre);
 
 CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS pack (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_pack_tratamiento_nombre ON pack (tratamiento_id, nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_pack_tratamiento_nombre ON pack (tratamiento_id, nombre);
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS oferta (
   prioridad INT NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX ux_oferta_nombre ON oferta (nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_oferta_nombre ON oferta (nombre);
 
 CREATE TABLE IF NOT EXISTS oferta_pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS oferta_pack (
   porc_descuento DECIMAL(5,2) NOT NULL DEFAULT 0.00
 );
 
-CREATE UNIQUE INDEX ux_oferta_pack ON oferta_pack (oferta_id, pack_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_oferta_pack ON oferta_pack (oferta_id, pack_id);
 
 CREATE TABLE IF NOT EXISTS oferta_combo (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS oferta_combo_pack (
   pack_id BIGINT NOT NULL
 );
 
-CREATE UNIQUE INDEX ux_oferta_combo_pack ON oferta_combo_pack (oferta_combo_id, pack_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_oferta_combo_pack ON oferta_combo_pack (oferta_combo_id, pack_id);
 
 CREATE TABLE IF NOT EXISTS venta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS venta_oferta (
   monto_descuento DECIMAL(12,2) NOT NULL DEFAULT 0.00
 );
 
-CREATE UNIQUE INDEX ux_venta_oferta_seq ON venta_oferta (venta_id, secuencia);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_venta_oferta_seq ON venta_oferta (venta_id, secuencia);
 
 CREATE TABLE IF NOT EXISTS sesion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS sesion (
   observaciones TEXT
 );
 
-CREATE UNIQUE INDEX ux_sesion_venta_num ON sesion (venta_id, numero_sesion);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_sesion_venta_num ON sesion (venta_id, numero_sesion);
 CREATE INDEX ix_sesion_profesional ON sesion (profesional_id);
 CREATE INDEX ix_sesion_box ON sesion (box_id);
 CREATE INDEX ix_sesion_sucursal ON sesion (sucursal_id);
