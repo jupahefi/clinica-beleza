@@ -1251,6 +1251,104 @@ export const reportesAPI = {
 };
 
 // ============================================================================
+// API DE PAGOS
+// ============================================================================
+
+export const pagosAPI = {
+    /**
+     * Obtiene todos los pagos
+     */
+    async getAll(params = {}) {
+        const cacheKey = `pagos_${JSON.stringify(params)}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+        
+        const data = await get('pagos', params);
+        setCached(cacheKey, data);
+        return data;
+    },
+    
+    /**
+     * Obtiene un pago específico
+     */
+    async getById(id) {
+        const cacheKey = `pago_${id}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+        
+        const data = await get(`pagos/${id}`);
+        setCached(cacheKey, data);
+        return data;
+    },
+    
+    /**
+     * Obtiene pagos por venta
+     */
+    async getByVenta(ventaId) {
+        const cacheKey = `pagos_venta_${ventaId}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+        
+        const data = await get('pagos', { venta_id: ventaId });
+        setCached(cacheKey, data);
+        return data;
+    },
+    
+    /**
+     * Busca pagos con filtros
+     */
+    async search(query) {
+        const cacheKey = `pagos_search_${query}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+        
+        const data = await get('pagos', { search: query });
+        setCached(cacheKey, data);
+        return data;
+    },
+    
+    /**
+     * Crea un nuevo pago
+     */
+    async create(pagoData) {
+        const data = await post('pagos', pagoData);
+        clearCacheByPattern('pagos_');
+        return data;
+    },
+    
+    /**
+     * Actualiza un pago existente
+     */
+    async update(id, pagoData) {
+        const data = await put(`pagos/${id}`, pagoData);
+        clearCacheByPattern('pagos_');
+        return data;
+    },
+    
+    /**
+     * Elimina un pago (soft delete)
+     */
+    async delete(id) {
+        const data = await del(`pagos/${id}`);
+        clearCacheByPattern('pagos_');
+        return data;
+    },
+    
+    /**
+     * Obtiene el resumen de pagos de una venta
+     */
+    async getResumenVenta(ventaId) {
+        const cacheKey = `pagos_resumen_${ventaId}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+        
+        const data = await get('pagos', { venta_id: ventaId, resumen: true });
+        setCached(cacheKey, data);
+        return data;
+    }
+};
+
+// ============================================================================
 // FUNCIONES UTILITARIAS
 // ============================================================================
 

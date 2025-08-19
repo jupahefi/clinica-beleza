@@ -70,6 +70,10 @@ try {
             handleVentas($db, $method, $id, $data);
             break;
             
+        case 'pagos':
+            handlePagos($db, $method, $id, $data);
+            break;
+            
         case 'sesiones':
             handleSesiones($db, $method, $id, $data);
             break;
@@ -1483,6 +1487,172 @@ function handleFichasEspecificas($db, $method, $id, $data) {
                 respondWithSuccess(['message' => 'Ficha específica actualizada exitosamente']);
             } else {
                 respondWithError('Ficha específica no encontrada', 404);
+            }
+            break;
+    }
+}
+
+/**
+ * Maneja operaciones de pagos
+ */
+function handlePagos($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $pago = $db->selectOne(
+                    "SELECT p.*, v.precio_total, v.total_pagado, f.nombres, f.apellidos
+                     FROM pago p
+                     LEFT JOIN venta v ON p.venta_id = v.id
+                     LEFT JOIN ficha f ON v.ficha_id = f.id
+                     WHERE p.id = ?", 
+                    [$id]
+                );
+                
+                if (!$pago) {
+                    respondWithError('Pago no encontrado', 404);
+                    return;
+                }
+                
+                respondWithSuccess($pago);
+                
+            } else {
+                $ventaId = $_GET['venta_id'] ?? null;
+                $resumen = $_GET['resumen'] ?? false;
+                
+                if ($resumen && $ventaId) {
+                    // Resumen de pagos para una venta
+                    $pagos = $db->select(
+                        "SELECT 
+                            COUNT(*) as total_pagos,
+                            SUM(monto) as total_pagado,
+                            MAX(fecha_pago) as ultimo_pago
+                         FROM pago 
+                         WHERE venta_id = ?",
+                        [$ventaId]
+                    );
+                    
+                    $venta = $db->selectOne(
+                        "SELECT precio_total, total_pagado FROM venta WHERE id = ?",
+                        [$ventaId]
+                    );
+                    
+                    $resumen = [
+                        'venta_id' => $ventaId,
+                        'total_pagos' => $pagos[0]['total_pagos'] ?? 0,
+                        'total_pagado' => $pagos[0]['total_pagado'] ?? 0,
+                        'precio_total' => $venta['precio_total'] ?? 0,
+                        'pendiente' => ($venta['precio_total'] ?? 0) - ($pagos[0]['total_pagado'] ?? 0)
+                    ];
+                    
+                    respondWithSuccess($resumen);
+                    
+                } else if ($ventaId) {
+                    // Pagos de una venta específica
+                    $pagos = $db->select(
+                        "SELECT p.*, f.nombres, f.apellidos
+                         FROM pago p
+                         LEFT JOIN venta v ON p.venta_id = v.id
+                         LEFT JOIN ficha f ON v.ficha_id = f.id
+                         WHERE p.venta_id = ?
+                         ORDER BY p.fecha_pago DESC",
+                        [$ventaId]
+                    );
+                    
+                    respondWithSuccess($pagos);
+                    
+                } else {
+                    // Todos los pagos
+                    $pagos = $db->select(
+                        "SELECT p.*, v.precio_total, f.nombres, f.apellidos
+                         FROM pago p
+                         LEFT JOIN venta v ON p.venta_id = v.id
+                         LEFT JOIN ficha f ON v.ficha_id = f.id
+                         ORDER BY p.fecha_pago DESC
+                         LIMIT 50"
+                    );
+                    
+                    respondWithSuccess($pagos);
+                }
+            }
+            break;
+            
+        case 'POST':
+            $requiredFields = ['venta_id', 'monto', 'metodo_pago'];
+            validateRequiredFields($data, $requiredFields);
+            
+            $pagoId = $db->insertReturning(
+                "INSERT INTO pago (venta_id, monto, metodo_pago, fecha_pago, observaciones, fecha_registro) 
+                 VALUES (?, ?, ?, ?, ?, NOW()) RETURNING id",
+                [
+                    $data['venta_id'],
+                    $data['monto'],
+                    $data['metodo_pago'],
+                    $data['fecha_pago'] ?? date('Y-m-d'),
+                    $data['observaciones'] ?? null
+                ]
+            );
+            
+            // Actualizar total pagado en la venta
+            $venta = $db->selectOne(
+                "SELECT precio_total, total_pagado FROM venta WHERE id = ?",
+                [$data['venta_id']]
+            );
+            
+            if ($venta) {
+                $nuevoTotalPagado = $venta['total_pagado'] + $data['monto'];
+                $nuevoEstado = $nuevoTotalPagado >= $venta['precio_total'] ? 'pagado' : 'pendiente';
+                
+                $db->update(
+                    "UPDATE venta SET total_pagado = ?, estado = ? WHERE id = ?",
+                    [$nuevoTotalPagado, $nuevoEstado, $data['venta_id']]
+                );
+            }
+            
+            respondWithSuccess(['id' => $pagoId, 'message' => 'Pago registrado exitosamente']);
+            break;
+            
+        case 'PUT':
+            if (!$id) {
+                respondWithError('ID requerido para actualizar', 400);
+                return;
+            }
+            
+            $updated = $db->update(
+                "UPDATE pago SET 
+                 monto = ?, metodo_pago = ?, fecha_pago = ?, observaciones = ?
+                 WHERE id = ?",
+                [
+                    $data['monto'] ?? 0,
+                    $data['metodo_pago'] ?? '',
+                    $data['fecha_pago'] ?? date('Y-m-d'),
+                    $data['observaciones'] ?? null,
+                    $id
+                ]
+            );
+            
+            if ($updated > 0) {
+                respondWithSuccess(['message' => 'Pago actualizado exitosamente']);
+            } else {
+                respondWithError('Pago no encontrado', 404);
+            }
+            break;
+            
+        case 'DELETE':
+            if (!$id) {
+                respondWithError('ID requerido para eliminar', 400);
+                return;
+            }
+            
+            // Soft delete - cambiar estado en lugar de eliminar
+            $deleted = $db->update(
+                "UPDATE pago SET activo = false WHERE id = ?",
+                [$id]
+            );
+            
+            if ($deleted > 0) {
+                respondWithSuccess(['message' => 'Pago eliminado exitosamente']);
+            } else {
+                respondWithError('Pago no encontrado', 404);
             }
             break;
     }
