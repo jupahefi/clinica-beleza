@@ -370,21 +370,32 @@ function handleSesiones($db, $method, $id, $data) {
             if (isset($_GET['fecha'])) {
                 $fecha = $_GET['fecha'];
                 $sesiones = $db->select(
-                    "SELECT s.*, v.tratamiento, p.nombre as paciente_nombre, p.rut as paciente_rut 
+                    "SELECT s.*, 
+                           p.nombre as paciente_nombre,
+                           v.tratamiento as venta_tratamiento,
+                           b.nombre as box_nombre,
+                           b.color as box_color
                      FROM sesiones s 
-                     JOIN ventas v ON s.venta_id = v.id 
-                     JOIN pacientes p ON s.paciente_id = p.id 
-                     WHERE DATE(s.fecha_agendada) = ? 
-                     ORDER BY s.fecha_agendada",
+                     LEFT JOIN pacientes p ON s.paciente_id = p.id 
+                     LEFT JOIN ventas v ON s.venta_id = v.id 
+                     LEFT JOIN boxes b ON s.box_id = b.id 
+                     WHERE DATE(s.fecha_inicio) = ? AND s.estado != 'eliminado'
+                     ORDER BY s.fecha_inicio",
                     [$fecha]
                 );
             } else {
                 $sesiones = $db->select(
-                    "SELECT s.*, v.tratamiento, p.nombre as paciente_nombre 
+                    "SELECT s.*, 
+                           p.nombre as paciente_nombre,
+                           v.tratamiento as venta_tratamiento,
+                           b.nombre as box_nombre,
+                           b.color as box_color
                      FROM sesiones s 
-                     JOIN ventas v ON s.venta_id = v.id 
-                     JOIN pacientes p ON s.paciente_id = p.id 
-                     ORDER BY s.fecha_agendada DESC 
+                     LEFT JOIN pacientes p ON s.paciente_id = p.id 
+                     LEFT JOIN ventas v ON s.venta_id = v.id 
+                     LEFT JOIN boxes b ON s.box_id = b.id 
+                     WHERE s.estado != 'eliminado'
+                     ORDER BY s.fecha_inicio DESC 
                      LIMIT 50"
                 );
             }
@@ -393,15 +404,43 @@ function handleSesiones($db, $method, $id, $data) {
             break;
             
         case 'POST':
+            // Validar que el box esté disponible en esa fecha/hora
+            $boxId = $data['box_id'];
+            $fechaInicio = $data['fecha_inicio'];
+            $fechaFin = $data['fecha_fin'];
+            
+            $conflictQuery = "
+                SELECT COUNT(*) as count FROM sesiones 
+                WHERE box_id = ? AND estado NOT IN ('cancelada', 'eliminado')
+                AND (
+                    (fecha_inicio < ? AND fecha_fin > ?) OR
+                    (fecha_inicio < ? AND fecha_fin > ?) OR
+                    (fecha_inicio >= ? AND fecha_fin <= ?)
+                )
+            ";
+            
+            $conflicts = $db->select($conflictQuery, [$boxId, $fechaFin, $fechaInicio, $fechaFin, $fechaInicio, $fechaInicio, $fechaFin]);
+            
+            if ($conflicts[0]['count'] > 0) {
+                respondWithError('El box no está disponible en esa fecha y hora');
+                return;
+            }
+            
             $sesionId = $db->insert(
-                "INSERT INTO sesiones (venta_id, paciente_id, fecha_agendada, box_id, observaciones) 
-                 VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO sesiones (venta_id, paciente_id, box_id, titulo, fecha_inicio, fecha_fin, duracion_minutos, estado, color, observaciones, usuario_creador) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $data['venta_id'],
                     $data['paciente_id'],
-                    $data['fecha_agendada'],
-                    $data['box_id'] ?? 1,
-                    $data['observaciones'] ?? null
+                    $data['box_id'],
+                    $data['titulo'] ?? 'Sesión de tratamiento',
+                    $data['fecha_inicio'],
+                    $data['fecha_fin'],
+                    $data['duracion_minutos'] ?? 60,
+                    $data['estado'] ?? 'agendada',
+                    $data['color'] ?? '#7FB3D3',
+                    $data['observaciones'] ?? null,
+                    $data['usuario_creador'] ?? 'system'
                 ]
             );
             
@@ -413,18 +452,63 @@ function handleSesiones($db, $method, $id, $data) {
                 respondWithError('ID de sesión requerido', 400);
             }
             
+            $updateFields = [];
+            $params = [];
+            
+            if (isset($data['estado'])) {
+                $updateFields[] = 'estado = ?';
+                $params[] = $data['estado'];
+            }
+            
+            if (isset($data['fecha_inicio'])) {
+                $updateFields[] = 'fecha_inicio = ?';
+                $params[] = $data['fecha_inicio'];
+            }
+            
+            if (isset($data['fecha_fin'])) {
+                $updateFields[] = 'fecha_fin = ?';
+                $params[] = $data['fecha_fin'];
+            }
+            
+            if (isset($data['observaciones'])) {
+                $updateFields[] = 'observaciones = ?';
+                $params[] = $data['observaciones'];
+            }
+            
+            if (isset($data['motivo_cancelacion'])) {
+                $updateFields[] = 'motivo_cancelacion = ?';
+                $params[] = $data['motivo_cancelacion'];
+            }
+            
+            if (isset($data['usuario_modificador'])) {
+                $updateFields[] = 'usuario_modificador = ?';
+                $params[] = $data['usuario_modificador'];
+            }
+            
+            $updateFields[] = 'updated_at = CURRENT_TIMESTAMP';
+            
+            $params[] = $id;
+            
             $db->update(
-                "UPDATE sesiones SET estado = ?, fecha_inicio = ?, fecha_fin = ?, observaciones = ? WHERE id = ?",
-                [
-                    $data['estado'],
-                    $data['fecha_inicio'] ?? null,
-                    $data['fecha_fin'] ?? null,
-                    $data['observaciones'] ?? null,
-                    $id
-                ]
+                "UPDATE sesiones SET " . implode(', ', $updateFields) . " WHERE id = ?",
+                $params
             );
             
             respondWithSuccess(['message' => 'Sesión actualizada exitosamente']);
+            break;
+            
+        case 'DELETE':
+            if (!$id) {
+                respondWithError('ID de sesión requerido', 400);
+            }
+            
+            // En lugar de eliminar, cambiar estado a eliminado
+            $db->update(
+                "UPDATE sesiones SET estado = 'eliminado', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [$id]
+            );
+            
+            respondWithSuccess(['message' => 'Sesión eliminada exitosamente']);
             break;
             
         default:
@@ -472,8 +556,58 @@ function handleOfertas($db, $method, $id, $data) {
 function handleBoxes($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
-            $boxes = $db->select("SELECT * FROM boxes ORDER BY id");
+            $boxes = $db->select("SELECT * FROM boxes WHERE estado != 'eliminado' ORDER BY id");
             respondWithSuccess($boxes);
+            break;
+            
+        case 'POST':
+            $boxId = $db->insert(
+                "INSERT INTO boxes (nombre, descripcion, estado, color, capacidad) 
+                 VALUES (?, ?, ?, ?, ?)",
+                [
+                    $data['nombre'],
+                    $data['descripcion'] ?? null,
+                    $data['estado'] ?? 'disponible',
+                    $data['color'] ?? '#7FB3D3',
+                    $data['capacidad'] ?? 1
+                ]
+            );
+            
+            respondWithSuccess(['id' => $boxId, 'message' => 'Box creado exitosamente']);
+            break;
+            
+        case 'PUT':
+            if (!$id) {
+                respondWithError('ID de box requerido', 400);
+            }
+            
+            $db->update(
+                "UPDATE boxes SET nombre = ?, descripcion = ?, estado = ?, color = ?, capacidad = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [
+                    $data['nombre'],
+                    $data['descripcion'] ?? null,
+                    $data['estado'],
+                    $data['color'] ?? '#7FB3D3',
+                    $data['capacidad'] ?? 1,
+                    $id
+                ]
+            );
+            
+            respondWithSuccess(['message' => 'Box actualizado exitosamente']);
+            break;
+            
+        case 'DELETE':
+            if (!$id) {
+                respondWithError('ID de box requerido', 400);
+            }
+            
+            // En lugar de eliminar, cambiar estado a eliminado
+            $db->update(
+                "UPDATE boxes SET estado = 'eliminado', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [$id]
+            );
+            
+            respondWithSuccess(['message' => 'Box eliminado exitosamente']);
             break;
             
         default:

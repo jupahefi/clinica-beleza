@@ -313,6 +313,11 @@
         <section id="sesiones" class="view-section">
             <div class="container">
                 <h2 class="section-title">Gestión de Sesiones</h2>
+                
+                <!-- Calendario -->
+                <div id="calendar-wrapper"></div>
+                
+                <!-- Formulario de Nueva Sesión -->
                 <div class="section-content">
                     <div class="form-container">
                         <h3>Nueva Sesión</h3>
@@ -325,8 +330,22 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="tipoSesion">Tipo de Sesión</label>
-                                    <input type="text" id="tipoSesion" required>
+                                    <label for="ventaSesion">Venta Asociada</label>
+                                    <select id="ventaSesion" required>
+                                        <option value="">Seleccionar venta...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="boxSesion">Box</label>
+                                    <select id="boxSesion" required>
+                                        <option value="">Seleccionar box...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="duracionSesion">Duración (minutos)</label>
+                                    <input type="number" id="duracionSesion" min="15" max="240" value="60" required>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -367,9 +386,11 @@
                                 <thead>
                                     <tr>
                                         <th>Paciente</th>
-                                        <th>Tipo</th>
+                                        <th>Venta</th>
+                                        <th>Box</th>
                                         <th>Fecha</th>
                                         <th>Hora</th>
+                                        <th>Duración</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -570,7 +591,8 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script type="module" src="js/main.js"></script>
+               <!-- Scripts -->
+           <script src="js/calendar.js"></script>
+           <script type="module" src="js/main.js"></script>
 </body>
 </html>
