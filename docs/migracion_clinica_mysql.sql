@@ -10,32 +10,32 @@ USE clinica_estetica;
 -- ---------- Drop existing indexes and constraints ----------
 
 -- Drop unique indexes
-DROP INDEX IF EXISTS ux_sucursal_nombre ON sucursal;
-DROP INDEX IF EXISTS ux_ficha_codigo ON ficha;
-DROP INDEX IF EXISTS ux_ficha_email ON ficha;
-DROP INDEX IF EXISTS ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica;
-DROP INDEX IF EXISTS ux_tratamiento_nombre ON tratamiento;
-DROP INDEX IF EXISTS ux_pack_tratamiento_nombre ON pack;
-DROP INDEX IF EXISTS ux_oferta_nombre ON oferta;
-DROP INDEX IF EXISTS ux_oferta_pack ON oferta_pack;
-DROP INDEX IF EXISTS ux_oferta_combo_pack ON oferta_combo_pack;
-DROP INDEX IF EXISTS ux_venta_oferta_seq ON venta_oferta;
-DROP INDEX IF EXISTS ux_sesion_venta_num ON sesion;
+DROP INDEX ux_sucursal_nombre ON sucursal;
+DROP INDEX ux_ficha_codigo ON ficha;
+DROP INDEX ux_ficha_email ON ficha;
+DROP INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica;
+DROP INDEX ux_tratamiento_nombre ON tratamiento;
+DROP INDEX ux_pack_tratamiento_nombre ON pack;
+DROP INDEX ux_oferta_nombre ON oferta;
+DROP INDEX ux_oferta_pack ON oferta_pack;
+DROP INDEX ux_oferta_combo_pack ON oferta_combo_pack;
+DROP INDEX ux_venta_oferta_seq ON venta_oferta;
+DROP INDEX ux_sesion_venta_num ON sesion;
 
 -- Drop regular indexes
-DROP INDEX IF EXISTS ix_box_sucursal ON box;
-DROP INDEX IF EXISTS ix_ficha_especifica_ficha ON ficha_especifica;
-DROP INDEX IF EXISTS ix_ficha_especifica_tipo ON ficha_especifica;
-DROP INDEX IF EXISTS ix_eval_ficha ON evaluacion;
-DROP INDEX IF EXISTS ix_eval_tratamiento ON evaluacion;
-DROP INDEX IF EXISTS ix_eval_pack ON evaluacion;
-DROP INDEX IF EXISTS ix_venta_ficha ON venta;
-DROP INDEX IF EXISTS ix_venta_tratamiento ON venta;
-DROP INDEX IF EXISTS ix_venta_pack ON venta;
-DROP INDEX IF EXISTS ix_sesion_profesional ON sesion;
-DROP INDEX IF EXISTS ix_sesion_box ON sesion;
-DROP INDEX IF EXISTS ix_sesion_sucursal ON sesion;
-DROP INDEX IF EXISTS ix_sesion_estado ON sesion;
+DROP INDEX ix_box_sucursal ON box;
+DROP INDEX ix_ficha_especifica_ficha ON ficha_especifica;
+DROP INDEX ix_ficha_especifica_tipo ON ficha_especifica;
+DROP INDEX ix_eval_ficha ON evaluacion;
+DROP INDEX ix_eval_tratamiento ON evaluacion;
+DROP INDEX ix_eval_pack ON evaluacion;
+DROP INDEX ix_venta_ficha ON venta;
+DROP INDEX ix_venta_tratamiento ON venta;
+DROP INDEX ix_venta_pack ON venta;
+DROP INDEX ix_sesion_profesional ON sesion;
+DROP INDEX ix_sesion_box ON sesion;
+DROP INDEX ix_sesion_sucursal ON sesion;
+DROP INDEX ix_sesion_estado ON sesion;
 
 -- ---------- Tables ----------
 
@@ -228,47 +228,47 @@ CREATE INDEX ix_sesion_estado ON sesion (estado);
 -- ---------- Drop existing constraints ----------
 
 -- Drop check constraints
-ALTER TABLE sesion DROP CONSTRAINT IF EXISTS ck_sesion_numero_pos;
-ALTER TABLE venta DROP CONSTRAINT IF EXISTS ck_venta_cantidad_pos;
-ALTER TABLE venta DROP CONSTRAINT IF EXISTS ck_venta_estado;
-ALTER TABLE sesion DROP CONSTRAINT IF EXISTS ck_sesion_estado;
-ALTER TABLE evaluacion DROP CONSTRAINT IF EXISTS ck_eval_precio_pos;
-ALTER TABLE evaluacion DROP CONSTRAINT IF EXISTS ck_eval_sesiones_pos;
-ALTER TABLE venta DROP CONSTRAINT IF EXISTS ck_venta_precio_pos;
-ALTER TABLE venta DROP CONSTRAINT IF EXISTS ck_venta_descuento_rango;
-ALTER TABLE venta DROP CONSTRAINT IF EXISTS ck_venta_total_pos;
-ALTER TABLE oferta DROP CONSTRAINT IF EXISTS ck_oferta_descuento_rango;
-ALTER TABLE oferta_pack DROP CONSTRAINT IF EXISTS ck_oferta_pack_descuento_rango;
-ALTER TABLE venta_oferta DROP CONSTRAINT IF EXISTS ck_venta_oferta_monto_pos;
-ALTER TABLE venta_oferta DROP CONSTRAINT IF EXISTS ck_venta_oferta_descuento_rango;
-ALTER TABLE oferta_combo DROP CONSTRAINT IF EXISTS ck_oferta_combo_min_packs;
-ALTER TABLE pack DROP CONSTRAINT IF EXISTS ck_pack_duracion_pos;
-ALTER TABLE oferta DROP CONSTRAINT IF EXISTS ck_oferta_prioridad_pos;
+ALTER TABLE sesion DROP CONSTRAINT ck_sesion_numero_pos;
+ALTER TABLE venta DROP CONSTRAINT ck_venta_cantidad_pos;
+ALTER TABLE venta DROP CONSTRAINT ck_venta_estado;
+ALTER TABLE sesion DROP CONSTRAINT ck_sesion_estado;
+ALTER TABLE evaluacion DROP CONSTRAINT ck_eval_precio_pos;
+ALTER TABLE evaluacion DROP CONSTRAINT ck_eval_sesiones_pos;
+ALTER TABLE venta DROP CONSTRAINT ck_venta_precio_pos;
+ALTER TABLE venta DROP CONSTRAINT ck_venta_descuento_rango;
+ALTER TABLE venta DROP CONSTRAINT ck_venta_total_pos;
+ALTER TABLE oferta DROP CONSTRAINT ck_oferta_descuento_rango;
+ALTER TABLE oferta_pack DROP CONSTRAINT ck_oferta_pack_descuento_rango;
+ALTER TABLE venta_oferta DROP CONSTRAINT ck_venta_oferta_monto_pos;
+ALTER TABLE venta_oferta DROP CONSTRAINT ck_venta_oferta_descuento_rango;
+ALTER TABLE oferta_combo DROP CONSTRAINT ck_oferta_combo_min_packs;
+ALTER TABLE pack DROP CONSTRAINT ck_pack_duracion_pos;
+ALTER TABLE oferta DROP CONSTRAINT ck_oferta_prioridad_pos;
 
 -- Drop foreign keys
-ALTER TABLE box DROP FOREIGN KEY IF EXISTS fk_box_sucursal;
-ALTER TABLE ficha_especifica DROP FOREIGN KEY IF EXISTS fk_ficha_especifica_ficha;
-ALTER TABLE ficha_especifica DROP FOREIGN KEY IF EXISTS fk_ficha_especifica_tipo;
-ALTER TABLE pack DROP FOREIGN KEY IF EXISTS fk_pack_tratamiento;
-ALTER TABLE evaluacion DROP FOREIGN KEY IF EXISTS fk_eval_ficha;
-ALTER TABLE evaluacion DROP FOREIGN KEY IF EXISTS fk_eval_tratamiento;
-ALTER TABLE evaluacion DROP FOREIGN KEY IF EXISTS fk_eval_pack;
-ALTER TABLE evaluacion DROP FOREIGN KEY IF EXISTS fk_eval_profesional;
-ALTER TABLE oferta_pack DROP FOREIGN KEY IF EXISTS fk_oferta_pack_oferta;
-ALTER TABLE oferta_pack DROP FOREIGN KEY IF EXISTS fk_oferta_pack_pack;
-ALTER TABLE oferta_combo DROP FOREIGN KEY IF EXISTS fk_oferta_combo_oferta;
-ALTER TABLE oferta_combo_pack DROP FOREIGN KEY IF EXISTS fk_oferta_combo_pack_combo;
-ALTER TABLE oferta_combo_pack DROP FOREIGN KEY IF EXISTS fk_oferta_combo_pack_pack;
-ALTER TABLE venta DROP FOREIGN KEY IF EXISTS fk_venta_ficha;
-ALTER TABLE venta DROP FOREIGN KEY IF EXISTS fk_venta_eval;
-ALTER TABLE venta DROP FOREIGN KEY IF EXISTS fk_venta_tratamiento;
-ALTER TABLE venta DROP FOREIGN KEY IF EXISTS fk_venta_pack;
-ALTER TABLE venta_oferta DROP FOREIGN KEY IF EXISTS fk_venta_oferta_venta;
-ALTER TABLE venta_oferta DROP FOREIGN KEY IF EXISTS fk_venta_oferta_oferta;
-ALTER TABLE sesion DROP FOREIGN KEY IF EXISTS fk_sesion_venta;
-ALTER TABLE sesion DROP FOREIGN KEY IF EXISTS fk_sesion_sucursal;
-ALTER TABLE sesion DROP FOREIGN KEY IF EXISTS fk_sesion_box;
-ALTER TABLE sesion DROP FOREIGN KEY IF EXISTS fk_sesion_profesional;
+ALTER TABLE box DROP FOREIGN KEY fk_box_sucursal;
+ALTER TABLE ficha_especifica DROP FOREIGN KEY fk_ficha_especifica_ficha;
+ALTER TABLE ficha_especifica DROP FOREIGN KEY fk_ficha_especifica_tipo;
+ALTER TABLE pack DROP FOREIGN KEY fk_pack_tratamiento;
+ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_ficha;
+ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_tratamiento;
+ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_pack;
+ALTER TABLE evaluacion DROP FOREIGN KEY fk_eval_profesional;
+ALTER TABLE oferta_pack DROP FOREIGN KEY fk_oferta_pack_oferta;
+ALTER TABLE oferta_pack DROP FOREIGN KEY fk_oferta_pack_pack;
+ALTER TABLE oferta_combo DROP FOREIGN KEY fk_oferta_combo_oferta;
+ALTER TABLE oferta_combo_pack DROP FOREIGN KEY fk_oferta_combo_pack_combo;
+ALTER TABLE oferta_combo_pack DROP FOREIGN KEY fk_oferta_combo_pack_pack;
+ALTER TABLE venta DROP FOREIGN KEY fk_venta_ficha;
+ALTER TABLE venta DROP FOREIGN KEY fk_venta_eval;
+ALTER TABLE venta DROP FOREIGN KEY fk_venta_tratamiento;
+ALTER TABLE venta DROP FOREIGN KEY fk_venta_pack;
+ALTER TABLE venta_oferta DROP FOREIGN KEY fk_venta_oferta_venta;
+ALTER TABLE venta_oferta DROP FOREIGN KEY fk_venta_oferta_oferta;
+ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_venta;
+ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_sucursal;
+ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_box;
+ALTER TABLE sesion DROP FOREIGN KEY fk_sesion_profesional;
 
 -- ---------- Add foreign keys ----------
 
