@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sucursal (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_sucursal_nombre ON sucursal (LOWER(nombre));
+CREATE UNIQUE INDEX ux_sucursal_nombre ON sucursal (nombre);
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS ficha (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX ux_ficha_codigo ON ficha (LOWER(codigo));
-CREATE UNIQUE INDEX ux_ficha_email ON ficha (LOWER(email));
+CREATE UNIQUE INDEX ux_ficha_codigo ON ficha (codigo);
+CREATE UNIQUE INDEX ux_ficha_email ON ficha (email);
 
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   descripcion TEXT
 );
 
-CREATE UNIQUE INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica (LOWER(nombre));
+CREATE UNIQUE INDEX ux_tipo_ficha_especifica_nombre ON tipo_ficha_especifica (nombre);
 
 CREATE TABLE IF NOT EXISTS ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS tratamiento (
   requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE UNIQUE INDEX ux_tratamiento_nombre ON tratamiento (LOWER(nombre));
+CREATE UNIQUE INDEX ux_tratamiento_nombre ON tratamiento (nombre);
 
 CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS pack (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE UNIQUE INDEX ux_pack_tratamiento_nombre ON pack (tratamiento_id, LOWER(nombre));
+CREATE UNIQUE INDEX ux_pack_tratamiento_nombre ON pack (tratamiento_id, nombre);
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS oferta (
   prioridad INT NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX ux_oferta_nombre ON oferta (LOWER(nombre));
+CREATE UNIQUE INDEX ux_oferta_nombre ON oferta (nombre);
 
 CREATE TABLE IF NOT EXISTS oferta_pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
