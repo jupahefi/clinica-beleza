@@ -5,7 +5,7 @@
 
 import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
 import { fichasAPI, tiposFichaEspecificaAPI, fichasEspecificasAPI } from '../api-client.js';
-import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../config.js';
+import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../constants.js';
 
 let pacienteActual = null;
 
