@@ -26,20 +26,23 @@ export async function loadEnvironment() {
     ENV_LOADING = true;
     
     try {
-        const response = await fetch('./env.php', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            cache: 'no-cache'
-        });
+        // Por ahora, usar valores por defecto ya que env.php fue eliminado
+        // En el futuro, se puede implementar un endpoint para variables de entorno
+        console.log('ℹ️ Usando configuración por defecto (env.php no disponible)');
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        ENV_CONFIG = await response.json();
-        console.log('✅ Variables de entorno cargadas correctamente');
+        ENV_CONFIG = {
+            GOOGLE_CALENDAR_API_KEY: '',
+            GOOGLE_CLIENT_ID: '',
+            APP_ENV: 'production',
+            APP_URL: window.location.origin,
+            API_URL: window.location.origin,
+            TIMEZONE: 'America/Santiago',
+            CLINIC_NAME: 'Clínica Beleza',
+            CLINIC_EMAIL: '',
+            CLINIC_PHONE: '',
+            ENABLE_CACHE: 'true',
+            CACHE_DURATION: '3600'
+        };
         
         return ENV_CONFIG;
         

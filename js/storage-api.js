@@ -98,6 +98,133 @@ async function cargarDatosIniciales() {
         console.log('📥 Cargando datos desde la API...');
         
         // Cargar en paralelo para mejor rendimiento
+        const [pacientes, ventas, pagos, sesiones, ofertas, boxes] = await Promise.all([
+            pacientesAPI.getAll().catch(() => []),
+            ventasAPI.getAll().catch(() => []),
+            pagosAPI.getAll().catch(() => []),
+            sesionesAPI.getAll().catch(() => []),
+            ofertasAPI.getActive().catch(() => []),
+            boxesAPI.getAll().catch(() => [])
+        ]);
+        
+        // Actualizar cache local
+        pacientes.forEach(p => LOCAL_CACHE.pacientes.set(p.id, p));
+        ventas.forEach(v => LOCAL_CACHE.ventas.set(v.id, v));
+        pagos.forEach(p => LOCAL_CACHE.pagos.set(p.id, p));
+        sesiones.forEach(s => LOCAL_CACHE.sesiones.set(s.id, s));
+        ofertas.forEach(o => LOCAL_CACHE.ofertas.set(o.id, o));
+        boxes.forEach(b => LOCAL_CACHE.boxes.set(b.id, b));
+        
+        STORAGE_STATE.lastSync = Date.now();
+        console.log('✅ Datos cargados desde la API');
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos desde API:', error);
+        throw error;
+    }
+}
+
+/**
+ * Carga datos desde localStorage (fallback)
+ */
+function cargarDatosLocales() {
+    try {
+        console.log('💾 Cargando datos desde localStorage...');
+        
+        // Cargar pacientes
+        const pacientesData = localStorage.getItem('clinica_pacientes');
+        if (pacientesData) {
+            const pacientes = JSON.parse(pacientesData);
+            pacientes.forEach(p => LOCAL_CACHE.pacientes.set(p.id, p));
+        }
+        
+        // Cargar ventas
+        const ventasData = localStorage.getItem('clinica_ventas');
+        if (ventasData) {
+            const ventas = JSON.parse(ventasData);
+            ventas.forEach(v => LOCAL_CACHE.ventas.set(v.id, v));
+        }
+        
+        // Cargar pagos
+        const pagosData = localStorage.getItem('clinica_pagos');
+        if (pagosData) {
+            const pagos = JSON.parse(pagosData);
+            pagos.forEach(p => LOCAL_CACHE.pagos.set(p.id, p));
+        }
+        
+        console.log('✅ Datos cargados desde localStorage');
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos locales:', error);
+    }
+}
+
+/**
+ * Configura sincronización automática
+ */
+function configurarSincronizacion() {
+    if (STORAGE_CONFIG.syncInterval > 0) {
+        setInterval(async () => {
+            if (STORAGE_STATE.isOnline && STORAGE_STATE.pendingSync.length > 0) {
+                await sincronizarPendientes();
+            }
+        }, STORAGE_CONFIG.syncInterval);
+    }
+}
+
+/**
+ * Sincroniza operaciones pendientes
+ */
+async function sincronizarPendientes() {
+    if (STORAGE_STATE.pendingSync.length === 0) return;
+    
+    console.log('🔄 Sincronizando operaciones pendientes...');
+    
+    const operaciones = [...STORAGE_STATE.pendingSync];
+    STORAGE_STATE.pendingSync = [];
+    
+    for (const operacion of operaciones) {
+        try {
+            switch (operacion.entity) {
+                case 'pacientes':
+                    if (operacion.method === 'create') {
+                        await pacientesAPI.create(operacion.data);
+                    } else if (operacion.method === 'update') {
+                        await pacientesAPI.update(operacion.id, operacion.data);
+                    } else if (operacion.method === 'delete') {
+                        await pacientesAPI.delete(operacion.id);
+                    }
+                    break;
+                    
+                case 'ventas':
+                    if (operacion.method === 'create') {
+                        await ventasAPI.create(operacion.data);
+                    } else if (operacion.method === 'update') {
+                        await ventasAPI.update(operacion.id, operacion.data);
+                    } else if (operacion.method === 'delete') {
+                        await ventasAPI.delete(operacion.id);
+                    }
+                    break;
+                    
+                case 'pagos':
+                    if (operacion.method === 'create') {
+                        await pagosAPI.create(operacion.data);
+                    } else if (operacion.method === 'update') {
+                        await pagosAPI.update(operacion.id, operacion.data);
+                    } else if (operacion.method === 'delete') {
+                        await pagosAPI.delete(operacion.id);
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('❌ Error sincronizando operación:', operacion, error);
+            // Reagregar a la cola para reintentar
+            STORAGE_STATE.pendingSync.push(operacion);
+        }
+    }
+    
+    console.log('✅ Sincronización completada');
+}
         const [pacientes, ventas, pagos, sesiones, ofertas, boxes] = await Promise.allSettled([
             pacientesAPI.getAll(),
             ventasAPI.getAll(),
@@ -485,6 +612,89 @@ export async function guardarVenta(ventaData) {
 }
 
 /**
+ * PAGOS API
+ */
+export async function obtenerPagos() {
+    if (STORAGE_STATE.isOnline && STORAGE_CONFIG.useApi) {
+        try {
+            const pagos = await pagosAPI.getAll();
+            LOCAL_CACHE.pagos.clear();
+            pagos.forEach(p => LOCAL_CACHE.pagos.set(p.id, p));
+            return pagos;
+        } catch (error) {
+            console.warn('⚠️ Error obteniendo pagos de API, usando cache:', error);
+        }
+    }
+    
+    return Array.from(LOCAL_CACHE.pagos.values());
+}
+
+export function obtenerPagosPorVenta(ventaId) {
+    return Array.from(LOCAL_CACHE.pagos.values())
+        .filter(p => p.venta_id == ventaId);
+}
+
+export async function guardarPago(pagoData) {
+    try {
+        let pago;
+        
+        if (STORAGE_STATE.isOnline && STORAGE_CONFIG.useApi) {
+            if (pagoData.id) {
+                const result = await pagosAPI.update(pagoData.id, pagoData);
+                pago = { ...pagoData, ...result };
+            } else {
+                const result = await pagosAPI.create(pagoData);
+                pago = { ...pagoData, id: result.id };
+            }
+        } else {
+            if (!pagoData.id) {
+                pagoData.id = generarId('pago');
+            }
+            
+            pago = {
+                ...pagoData,
+                _pending: true,
+                _timestamp: Date.now()
+            };
+            
+            STORAGE_STATE.pendingSync.push({
+                entity: 'pagos',
+                method: pagoData.id ? 'update' : 'create',
+                data: pagoData,
+                id: pagoData.id
+            });
+        }
+        
+        LOCAL_CACHE.pagos.set(pago.id, pago);
+        respaldarPagos();
+        
+        return pago;
+        
+    } catch (error) {
+        console.error('❌ Error guardando pago:', error);
+        throw error;
+    }
+}
+
+export function calcularEstadoPago(ventaId) {
+    const venta = LOCAL_CACHE.ventas.get(parseInt(ventaId));
+    if (!venta) return { pagado: 0, pendiente: 0, clase: 'status-pending', texto: 'Sin datos' };
+    
+    const pagosVenta = obtenerPagosPorVenta(ventaId);
+    const totalPagado = pagosVenta.reduce((sum, pago) => sum + parseFloat(pago.monto), 0);
+    const pendiente = Math.max(0, parseFloat(venta.precio_total) - totalPagado);
+    
+    const completamentePagado = pendiente === 0;
+    
+    return {
+        pagado: totalPagado,
+        pendiente,
+        clase: completamentePagado ? 'status-success' : 'status-pending',
+        texto: completamentePagado ? 'Pagado' : `Pendiente: $${pendiente.toLocaleString()}`
+    };
+}
+
+/**
  * FUNCIONES DE RESPALDO LOCAL
  */
 function respaldarPacientes() {
@@ -495,6 +705,11 @@ function respaldarPacientes() {
 function respaldarVentas() {
     const ventas = Array.from(LOCAL_CACHE.ventas.values());
     localStorage.setItem('clinica_ventas', JSON.stringify(ventas));
+}
+
+function respaldarPagos() {
+    const pagos = Array.from(LOCAL_CACHE.pagos.values());
+    localStorage.setItem('clinica_pagos', JSON.stringify(pagos));
 }
 
 /**

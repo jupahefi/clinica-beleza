@@ -4,7 +4,7 @@
  */
 
 import { generarId, formatearPrecio, formatearFecha, fechaActualInput, mostrarNotificacion } from '../utils.js';
-import { obtenerVentasPendientesPago, obtenerPacientePorId, obtenerVentaPorId, guardarPago, obtenerPagos, calcularEstadoPago } from '../storage.js';
+import { obtenerVentasPendientesPago, obtenerPacientePorId, obtenerVentaPorId, guardarPago, obtenerPagos, calcularEstadoPago } from '../storage-api.js';
 import { METODOS_PAGO } from '../config.js';
 
 let ventaSeleccionadaPago = null;

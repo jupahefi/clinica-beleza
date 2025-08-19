@@ -4,7 +4,7 @@
  */
 
 import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
-import { obtenerPacientes, obtenerPacientePorId, guardarPaciente } from '../storage.js';
+import { obtenerPacientes, obtenerPacientePorId, guardarPaciente } from '../storage-api.js';
 import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../config.js';
 
 let pacienteActual = null;

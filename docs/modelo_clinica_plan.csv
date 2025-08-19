@@ -1,0 +1,101 @@
+table,column,type,nullable,default,pk,fk,notes
+sucursal,id,bigserial,NO,,YES,,PK
+sucursal,nombre,varchar(120),NO,,,,Unique per business rules
+sucursal,direccion,varchar(200),YES,,,,
+sucursal,telefono,varchar(50),YES,,,,
+sucursal,activo,boolean,NO,true,,,
+box,id,bigserial,NO,,YES,,PK
+box,sucursal_id,bigint,NO,,,sucursal(id),A box belongs to one sucursal
+box,nombre,varchar(80),NO,,,,
+box,activo,boolean,NO,true,,,
+profesional,id,bigserial,NO,,YES,,PK
+profesional,nombre,varchar(150),NO,,,,
+profesional,tipo_profesional,varchar(80),NO,,,,"Ej: Kinesiólogo, Cosmetóloga"
+profesional,bio,text,YES,,,,
+profesional,foto_url,text,YES,,,,
+profesional,activo,boolean,NO,true,,,
+ficha,id,bigserial,NO,,YES,,PK
+ficha,codigo,varchar(40),NO,,,,Search key / human-friendly
+ficha,nombres,varchar(120),NO,,,,
+ficha,apellidos,varchar(120),NO,,,,
+ficha,rut,varchar(20),YES,,,,CL ID (optional)
+ficha,telefono,varchar(50),YES,,,,
+ficha,email,varchar(120),YES,,,,
+ficha,fecha_creacion,timestamptz,NO,now(),,,
+tipo_ficha_especifica,id,bigserial,NO,,YES,,PK
+tipo_ficha_especifica,nombre,varchar(100),NO,,,,
+tipo_ficha_especifica,descripcion,text,YES,,,,
+ficha_especifica,id,bigserial,NO,,YES,,PK
+ficha_especifica,ficha_id,bigint,NO,,,ficha(id),A ficha can have 1..n specific records
+ficha_especifica,tipo_id,bigint,NO,,,tipo_ficha_especifica(id),Which form/template
+ficha_especifica,datos,jsonb,NO,'{}'::jsonb,,,Arbitrary structured data
+ficha_especifica,fecha_creacion,timestamptz,NO,now(),,,
+tratamiento,id,bigserial,NO,,YES,,PK
+tratamiento,nombre,varchar(150),NO,,,,
+tratamiento,descripcion,text,YES,,,,
+tratamiento,requiere_ficha_especifica,boolean,NO,false,,,"If true, venta must reference valid ficha_especifica matching required tipo"
+pack,id,bigserial,NO,,YES,,PK
+pack,tratamiento_id,bigint,NO,,,tratamiento(id),Pack belongs to one tratamiento
+pack,nombre,varchar(150),NO,,,,
+pack,descripcion,text,YES,,,,
+pack,duracion_sesion_min,integer,NO,0,,,Default session duration (minutes)
+pack,activo,boolean,NO,true,,,
+evaluacion,id,bigserial,NO,,YES,,PK
+evaluacion,ficha_id,bigint,NO,,,ficha(id),
+evaluacion,tratamiento_id,bigint,NO,,,tratamiento(id),
+evaluacion,pack_id,bigint,YES,,,pack(id),Optional if treatment uses packs
+evaluacion,profesional_id,bigint,NO,,,profesional(id),Who performed evaluation
+evaluacion,precio_sugerido,"numeric(12,2)",NO,0.00,,,"Starts at 0, may change over time"
+evaluacion,sesiones_sugeridas,integer,NO,1,,,Entered by professional
+evaluacion,observaciones,text,YES,,,,
+evaluacion,fecha,timestamptz,NO,now(),,,
+oferta,id,bigserial,NO,,YES,,PK
+oferta,nombre,varchar(150),NO,,,,
+oferta,tipo,varchar(40),NO,,,,'pack_temporal' | 'descuento_manual' | 'combo_packs'
+oferta,porc_descuento,"numeric(5,2)",YES,,,,General % if applicable
+oferta,fecha_inicio,date,YES,,,,
+oferta,fecha_fin,date,YES,,,,
+oferta,combinable,boolean,NO,true,,,Allows stacking
+oferta,activo,boolean,NO,true,,,
+oferta,prioridad,integer,NO,0,,,Lower runs first
+oferta_pack,id,bigserial,NO,,YES,,PK
+oferta_pack,oferta_id,bigint,NO,,,oferta(id),
+oferta_pack,pack_id,bigint,NO,,,pack(id),
+oferta_pack,porc_descuento,"numeric(5,2)",NO,0.00,,,Override per-pack discount
+oferta_combo,id,bigserial,NO,,YES,,PK
+oferta_combo,oferta_id,bigint,NO,,,oferta(id),
+oferta_combo,min_packs,integer,NO,2,,,Minimum packs to qualify
+oferta_combo_pack,id,bigserial,NO,,YES,,PK
+oferta_combo_pack,oferta_combo_id,bigint,NO,,,oferta_combo(id),Eligible packs for combo
+oferta_combo_pack,pack_id,bigint,NO,,,pack(id),
+venta,id,bigserial,NO,,YES,,PK
+venta,ficha_id,bigint,NO,,,ficha(id),
+venta,evaluacion_id,bigint,YES,,,evaluacion(id),Required if tratamiento demands specific form
+venta,tratamiento_id,bigint,NO,,,tratamiento(id),
+venta,pack_id,bigint,YES,,,pack(id),If treatment has packs
+venta,cantidad_sesiones,integer,NO,1,,,Target number of sessions (y)
+venta,precio_lista,"numeric(12,2)",NO,0.00,,,Before discounts
+venta,descuento_manual_pct,"numeric(5,2)",YES,,,,Optional manual % discount at time of sale
+venta,descuento_aplicado_total,"numeric(12,2)",NO,0.00,,,Sum of stacked discounts in currency
+venta,total_pagado,"numeric(12,2)",NO,0.00,,,Final price after discounts
+venta,estado,varchar(30),NO,'pendiente',,,pendiente|pagado|anulado
+venta,fecha_creacion,timestamptz,NO,now(),,,
+venta_oferta,id,bigserial,NO,,YES,,PK
+venta_oferta,venta_id,bigint,NO,,,venta(id),Discount audit trail (order matters)
+venta_oferta,oferta_id,bigint,NO,,,oferta(id),
+venta_oferta,secuencia,integer,NO,0,,,Application order (discount-on-discount)
+venta_oferta,porc_descuento,"numeric(5,2)",NO,0.00,,,% applied at step
+venta_oferta,monto_descuento,"numeric(12,2)",NO,0.00,,,Absolute amount discounted at step
+sesion,id,bigserial,NO,,YES,,PK
+sesion,venta_id,bigint,NO,,,venta(id),A session belongs to a sale
+sesion,numero_sesion,integer,NO,,,,Shown as x of y within a sale
+sesion,sucursal_id,bigint,NO,,,sucursal(id),
+sesion,box_id,bigint,NO,,,box(id),
+sesion,profesional_id,bigint,NO,,,profesional(id),
+sesion,fecha_planificada,timestamptz,NO,,,,Planned date/time
+sesion,fecha_ejecucion,timestamptz,YES,,,,Actual execution time
+sesion,estado,varchar(30),NO,'planificada',,,planificada|confirmada|realizada|no_show|cancelada
+sesion,paciente_confirmado,boolean,NO,false,,,Confirmation flag once hour exists
+sesion,abierta_en,timestamptz,YES,,,,Open time (start)
+sesion,cerrada_en,timestamptz,YES,,,,Close time (end)
+sesion,observaciones,text,YES,,,,

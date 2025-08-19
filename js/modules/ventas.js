@@ -4,7 +4,7 @@
  */
 
 import { generarId, formatearPrecio, formatearFecha, mostrarNotificacion } from '../utils.js';
-import { obtenerVentasPorCliente, guardarVenta, obtenerPacientePorId, calcularEstadoPago } from '../storage.js';
+import { obtenerVentasPorCliente, guardarVenta, obtenerPacientePorId, calcularEstadoPago } from '../storage-api.js';
 import { TRATAMIENTOS_CONFIG } from '../config.js';
 
 let ventaActual = null;

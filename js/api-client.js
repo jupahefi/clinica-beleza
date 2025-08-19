@@ -24,7 +24,7 @@ const CACHE_EXPIRY = new Map();
  * Inicializa el cliente API con la configuración de entorno
  */
 export function initializeApiClient() {
-    API_CONFIG.baseUrl = getEnv('API_URL', window.location.origin) + '/api.php';
+    API_CONFIG.baseUrl = getEnv('API_URL', window.location.origin);
     console.log('🌐 Cliente API inicializado:', API_CONFIG.baseUrl);
 }
 
