@@ -92,7 +92,7 @@ export class VentasModule {
         const depilacionGroup = document.createElement('optgroup');
         depilacionGroup.label = 'DEPILACIÓN LÁSER';
         Object.entries(TRATAMIENTOS.DEPILACION).forEach(([key, tratamiento]) => {
-            const option = document.createElement('option');
+      const option = document.createElement('option');
             option.value = `depilacion_${key}`;
             option.textContent = `${tratamiento.nombre} - ${formatCurrency(tratamiento.precio_promo || tratamiento.precio)}`;
             option.dataset.precio = tratamiento.precio_promo || tratamiento.precio;
@@ -112,9 +112,9 @@ export class VentasModule {
             precioInput.value = '';
             sesionesInput.value = '';
             if (zonasContainer) zonasContainer.style.display = 'none';
-            return;
-        }
-        
+    return;
+  }
+  
         const option = document.querySelector(`option[value="${tratamientoId}"]`);
         if (option) {
             precioInput.value = option.dataset.precio || '';
@@ -426,14 +426,14 @@ export class VentasModule {
     }
     
     async saveVenta(formData, zonasSeleccionadas, consentimiento = null) {
-        const ventaData = {
+  const ventaData = {
             ...formData,
             zonas: zonasSeleccionadas,
             consentimiento: consentimiento,
             fecha_creacion: new Date().toISOString()
-        };
-        
-        try {
+  };
+  
+  try {
             const response = await ventasAPI.create(ventaData);
             
             if (response.success) {
@@ -462,7 +462,7 @@ export class VentasModule {
         try {
             this.pacientes = await fichasAPI.getAll();
             this.populatePacientesSelect();
-        } catch (error) {
+  } catch (error) {
             console.error('Error cargando pacientes:', error);
         }
     }
@@ -543,7 +543,7 @@ export class VentasModule {
             if (response.success) {
                 alert('✅ Venta eliminada exitosamente');
                 this.loadVentas();
-            } else {
+    } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {

@@ -23,22 +23,53 @@ export class SesionesModule {
     }
     
     initCalendar() {
-        // Inicializar el calendario cuando el contenedor esté disponible
-        document.addEventListener('DOMContentLoaded', () => {
-            const calendarContainer = document.getElementById('calendar-container');
-            if (calendarContainer && typeof Calendar !== 'undefined') {
-                this.calendar = new Calendar(calendarContainer, {
-                    events: this.sesiones.map(sesion => ({
-                        id: sesion.id,
-                        title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
-                        start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
-                        end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
-                        backgroundColor: this.getEventColor(sesion.estado),
-                        extendedProps: sesion
-                    }))
-                });
+        console.log('🔍 Inicializando calendario...');
+        
+        // Intentar inicializar inmediatamente
+        this.tryInitCalendar();
+        
+        // Si no funciona, intentar después de un pequeño delay
+        setTimeout(() => {
+            if (!this.calendar) {
+                console.log('🔄 Reintentando inicialización del calendario...');
+                this.tryInitCalendar();
             }
-        });
+        }, 100);
+        
+        // También intentar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (!this.calendar) {
+                    console.log('🔄 Inicializando calendario después de DOMContentLoaded...');
+                    this.tryInitCalendar();
+                }
+            });
+        }
+    }
+    
+    tryInitCalendar() {
+        const calendarContainer = document.getElementById('calendar-wrapper');
+        console.log('📦 Contenedor encontrado:', calendarContainer);
+        console.log('📅 Calendar disponible:', typeof Calendar !== 'undefined');
+        
+        if (calendarContainer && typeof Calendar !== 'undefined') {
+            console.log('✅ Inicializando calendario...');
+            this.calendar = new Calendar(calendarContainer, {
+                events: this.sesiones.map(sesion => ({
+                    id: sesion.id,
+                    title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
+                    start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
+                    end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
+                    backgroundColor: this.getEventColor(sesion.estado),
+                    extendedProps: sesion
+                }))
+            });
+            console.log('✅ Calendario inicializado correctamente');
+        } else {
+            console.error('❌ No se pudo inicializar el calendario');
+            console.error('Contenedor:', calendarContainer);
+            console.error('Calendar disponible:', typeof Calendar !== 'undefined');
+        }
     }
     
     setupEventListeners() {

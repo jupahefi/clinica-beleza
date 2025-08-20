@@ -50,15 +50,15 @@ class ClinicaBelezaApp {
     }
     
     setupNavigation() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
                 const view = link.dataset.view;
                 this.switchView(view);
-            });
         });
-        
+    });
+    
         // Activar vista inicial
         this.switchView('fichas');
     }
@@ -82,11 +82,11 @@ class ClinicaBelezaApp {
         navLinks.forEach(link => {
             link.classList.remove('active');
             if (link.dataset.view === viewName) {
-                link.classList.add('active');
-            }
+        link.classList.add('active');
+    }
         });
-        
-        // Cargar datos específicos de la vista
+    
+    // Cargar datos específicos de la vista
         this.loadViewData(viewName);
     }
     
@@ -120,26 +120,26 @@ class ClinicaBelezaApp {
     }
     
     setupMobileMenu() {
-        const hamburger = document.querySelector('.hamburger');
-        const navMenu = document.querySelector('.nav-menu');
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
         
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                hamburger.classList.toggle('active');
-                navMenu.classList.toggle('active');
-            });
-            
-            // Cerrar menú al hacer clic en un enlace
+        // Cerrar menú al hacer clic en un enlace
             const navLinks = document.querySelectorAll('.nav-link');
             navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    hamburger.classList.remove('active');
-                    navMenu.classList.remove('active');
-                });
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
             });
-        }
+        });
     }
-    
+}
+
     setupSearchFunctionality() {
         // Búsqueda de pacientes
         const buscarPaciente = document.getElementById('buscarPaciente');
