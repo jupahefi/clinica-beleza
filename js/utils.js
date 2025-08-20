@@ -29,6 +29,13 @@ export function formatearPrecio(precio) {
 }
 
 /**
+ * Formatea un precio en pesos chilenos (alias para compatibilidad)
+ */
+export function formatCurrency(precio) {
+  return formatearPrecio(precio);
+}
+
+/**
  * Formatea una fecha en formato chileno
  */
 export function formatearFecha(fecha) {
