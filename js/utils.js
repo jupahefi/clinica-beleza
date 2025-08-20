@@ -43,6 +43,13 @@ export function formatearFecha(fecha) {
 }
 
 /**
+ * Formatea una fecha en formato chileno (alias para compatibilidad)
+ */
+export function formatDate(fecha) {
+  return formatearFecha(fecha);
+}
+
+/**
  * Formatea fecha y hora
  */
 export function formatearFechaHora(fecha) {
@@ -471,6 +478,13 @@ export function debounce(func, wait) {
 export function mostrarNotificacion(mensaje, tipo = 'info') {
   // Por simplicidad usamos alert, pero se puede expandir a un sistema de notificaciones
   alert(mensaje);
+}
+
+/**
+ * Muestra notificación/alerta personalizada (alias para compatibilidad)
+ */
+export function showMessage(mensaje, tipo = 'info') {
+  return mostrarNotificacion(mensaje, tipo);
 }
 
 /**
