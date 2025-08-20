@@ -362,45 +362,60 @@ class Calendar {
     
     async loadEvents() {
         try {
-            const response = await fetch('/api.php?action=sesiones');
+            // Usar la nueva API
+            const response = await fetch('/api.php/sesiones');
             const data = await response.json();
             
             if (data.success) {
-                this.events = data.data;
+                this.events = data.data || [];
                 this.renderCalendar();
+            } else {
+                this.events = [];
+                console.warn('No se pudieron cargar los eventos:', data.error);
             }
         } catch (error) {
             console.error('Error cargando eventos:', error);
+            this.events = [];
         }
     }
     
     async loadBoxes() {
         try {
-            const response = await fetch('/api.php?action=boxes');
+            // Usar la nueva API
+            const response = await fetch('/api.php/boxes');
             const data = await response.json();
             
             if (data.success) {
-                this.boxes = data.data;
+                this.boxes = data.data || [];
                 this.updateBoxFilter();
+            } else {
+                this.boxes = [];
+                console.warn('No se pudieron cargar los boxes:', data.error);
             }
         } catch (error) {
             console.error('Error cargando boxes:', error);
+            this.boxes = [];
         }
     }
     
     updateBoxFilter() {
         const select = document.getElementById('calendar-box-filter');
+        if (!select) return;
+        
         select.innerHTML = '<option value="">Todos los boxes</option>';
         
-        this.boxes.forEach(box => {
-            const option = document.createElement('option');
-            option.value = box.id;
-            option.textContent = box.nombre;
-            select.appendChild(option);
-        });
+        if (this.boxes && Array.isArray(this.boxes)) {
+            this.boxes.forEach(box => {
+                const option = document.createElement('option');
+                option.value = box.id;
+                option.textContent = box.nombre;
+                select.appendChild(option);
+            });
+        }
     }
     
     showEventModal(eventId) {
+        if (!this.events || !Array.isArray(this.events)) return;
         const event = this.events.find(e => e.id == eventId);
         if (!event) return;
         
@@ -494,10 +509,12 @@ class Calendar {
     }
     
     getEventsForDate(date) {
+        if (!this.events || !Array.isArray(this.events)) return [];
         return this.events.filter(event => this.isSameDay(new Date(event.fecha_inicio), date));
     }
     
     getEventsForWeek(start) {
+        if (!this.events || !Array.isArray(this.events)) return [];
         const end = new Date(start);
         end.setDate(end.getDate() + 7);
         
@@ -508,6 +525,7 @@ class Calendar {
     }
     
     getEventsForMonth(date) {
+        if (!this.events || !Array.isArray(this.events)) return [];
         const start = new Date(date.getFullYear(), date.getMonth(), 1);
         const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         
