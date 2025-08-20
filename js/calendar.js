@@ -122,7 +122,10 @@ class Calendar {
                 </div>
                 <div class="calendar-day-events">
                     ${timeSlots.map(slot => `
-                        <div class="calendar-day-event-slot" data-time="${slot}">
+                        <div class="calendar-day-event-slot slot-cell" 
+                             data-date="${this.formatDate(date)}" 
+                             data-time="${slot}"
+                             data-datetime="${date.toISOString().split('T')[0]}T${slot}">
                             ${this.renderEventsInSlot(dayEvents, slot)}
                         </div>
                     `).join('')}
@@ -179,7 +182,10 @@ class Calendar {
                 `).join('')}
                 
                 ${this.generateMonthDays(calendarStart, calendarEnd).map(day => `
-                    <div class="calendar-month-day ${this.isToday(day) ? 'today' : ''} ${this.isOtherMonth(day) ? 'other-month' : ''}">
+                    <div class="calendar-month-day slot-cell ${this.isToday(day) ? 'today' : ''} ${this.isOtherMonth(day) ? 'other-month' : ''}"
+                         data-date="${this.formatDate(day)}" 
+                         data-time="09:00"
+                         data-datetime="${day.toISOString().split('T')[0]}T09:00">
                         <div class="calendar-month-day-number">${day.getDate()}</div>
                         <div class="calendar-month-events">
                             ${this.renderMonthEvents(monthEvents, day)}
@@ -313,10 +319,14 @@ class Calendar {
         
         // Eventos del calendario
         this.container.addEventListener('click', (e) => {
+            console.log('🎯 Click detectado en calendario:', e.target.className);
+            
             if (e.target.closest('.calendar-event')) {
+                console.log('📅 Evento clickeado');
                 const eventId = e.target.closest('.calendar-event').dataset.eventId;
                 this.showEventModal(eventId);
             } else if (e.target.closest('.slot-cell')) {
+                console.log('⏰ Slot clickeado');
                 const slot = e.target.closest('.slot-cell');
                 const date = slot.dataset.date;
                 const time = slot.dataset.time;
@@ -425,13 +435,19 @@ class Calendar {
     }
     
     handleSlotClick(date, time, datetime) {
-        console.log('Slot clickeado:', { date, time, datetime });
+        console.log('🎯 Slot clickeado en calendario:', { date, time, datetime });
+        
+        // Prevenir cualquier comportamiento por defecto
+        event.preventDefault();
+        event.stopPropagation();
         
         // Llenar los campos del formulario de nueva sesión
         this.fillSessionForm(date, time, datetime);
         
         // Hacer scroll a la sección de inputs
         this.scrollToSessionForm();
+        
+        console.log('✅ Proceso de slot completado');
     }
     
     fillSessionForm(date, time, datetime) {
@@ -482,66 +498,7 @@ class Calendar {
         this.showEventDetailsModal(event);
     }
     
-    showNewAgendaModal(date, time, datetime) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>📅 Nueva Agenda</h3>
-                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Fecha y Hora:</label>
-                        <input type="datetime-local" id="agenda-datetime" value="${datetime}" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Paciente:</label>
-                        <select id="agenda-paciente" required>
-                            <option value="">Seleccionar paciente...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Tratamiento:</label>
-                        <select id="agenda-tratamiento" required>
-                            <option value="">Seleccionar tratamiento...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Profesional:</label>
-                        <select id="agenda-profesional" required>
-                            <option value="">Seleccionar profesional...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Box:</label>
-                        <select id="agenda-box" required>
-                            <option value="">Seleccionar box...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Observaciones:</label>
-                        <textarea id="agenda-observaciones" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
-                    <button class="btn btn-primary save-agenda">Guardar Agenda</button>
-                </div>
-            </div>
-        `;
-        
-        // Agregar event listener para guardar
-        modal.querySelector('.save-agenda').addEventListener('click', () => {
-            this.saveNewAgenda(modal);
-        });
-        
-        document.body.appendChild(modal);
-        
-        // Cargar datos en los selects
-        this.loadAgendaFormData(modal);
-    }
+
     
     showEventDetailsModal(event) {
         const modal = document.createElement('div');
@@ -663,99 +620,7 @@ class Calendar {
         }
     }
     
-    async loadAgendaFormData(modal) {
-        try {
-            // Cargar pacientes
-            const pacientesResponse = await fetch('./api.php/fichas');
-            const pacientes = await pacientesResponse.json();
-            const pacienteSelect = modal.querySelector('#agenda-paciente');
-            pacientes.forEach(paciente => {
-                const option = document.createElement('option');
-                option.value = paciente.id;
-                option.textContent = `${paciente.nombres} ${paciente.apellidos}`;
-                pacienteSelect.appendChild(option);
-            });
-            
-            // Cargar tratamientos
-            const tratamientosResponse = await fetch('./api.php/tratamientos');
-            const tratamientos = await tratamientosResponse.json();
-            const tratamientoSelect = modal.querySelector('#agenda-tratamiento');
-            tratamientos.forEach(tratamiento => {
-                const option = document.createElement('option');
-                option.value = tratamiento.id;
-                option.textContent = tratamiento.nombre;
-                tratamientoSelect.appendChild(option);
-            });
-            
-            // Cargar profesionales
-            const profesionalesResponse = await fetch('./api.php/profesionales');
-            const profesionales = await profesionalesResponse.json();
-            const profesionalSelect = modal.querySelector('#agenda-profesional');
-            profesionales.forEach(profesional => {
-                const option = document.createElement('option');
-                option.value = profesional.id;
-                option.textContent = profesional.nombre;
-                profesionalSelect.appendChild(option);
-            });
-            
-            // Cargar boxes
-            const boxesResponse = await fetch('./api.php/boxes');
-            const boxes = await boxesResponse.json();
-            const boxSelect = modal.querySelector('#agenda-box');
-            boxes.forEach(box => {
-                const option = document.createElement('option');
-                option.value = box.id;
-                option.textContent = box.nombre;
-                boxSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Error cargando datos del formulario:', error);
-        }
-    }
-    
-    async saveNewAgenda(modal) {
-        const formData = {
-            paciente_id: modal.querySelector('#agenda-paciente').value,
-            tratamiento_id: modal.querySelector('#agenda-tratamiento').value,
-            profesional_id: modal.querySelector('#agenda-profesional').value,
-            box_id: modal.querySelector('#agenda-box').value,
-            fecha_planificada: modal.querySelector('#agenda-datetime').value,
-            observaciones: modal.querySelector('#agenda-observaciones').value
-        };
-        
-        // Validar campos requeridos
-        if (!formData.paciente_id || !formData.tratamiento_id || !formData.profesional_id || !formData.box_id) {
-            alert('Por favor complete todos los campos requeridos');
-            return;
-        }
-        
-        try {
-            const response = await fetch('./api.php/sesiones', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Error guardando agenda');
-            }
-            
-            const result = await response.json();
-            console.log('Agenda guardada:', result);
-            
-            // Cerrar modal y recargar calendario
-            modal.remove();
-            this.loadEvents();
-            this.renderCalendar();
-            
-            alert('Agenda guardada exitosamente');
-        } catch (error) {
-            console.error('Error guardando agenda:', error);
-            alert('Error guardando agenda: ' + error.message);
-        }
-    }
+
     
     async openSession(sessionId) {
         try {
@@ -808,6 +673,12 @@ class Calendar {
             'cancelada': 'Cancelada'
         };
         return labels[status] || status;
+    }
+    
+    updateEvents(newEvents) {
+        console.log('🔄 Actualizando eventos del calendario:', newEvents.length);
+        this.events = newEvents || [];
+        this.renderCalendar();
     }
     
     // Métodos de utilidad

@@ -354,6 +354,30 @@
     background: rgba(127, 179, 211, 0.2);
 }
 
+/* Slots clickeables para vista día */
+.calendar-day-event-slot.slot-cell {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.calendar-day-event-slot.slot-cell:hover {
+    background: rgba(127, 179, 211, 0.1);
+}
+
+/* Slots clickeables para vista mes */
+.calendar-month-day.slot-cell {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.calendar-month-day.slot-cell:hover {
+    background: rgba(127, 179, 211, 0.1);
+}
+
+.calendar-month-day.slot-cell:active {
+    background: rgba(127, 179, 211, 0.2);
+}
+
 .calendar-time-label {
     position: absolute;
     top: 0;
