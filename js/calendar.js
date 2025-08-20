@@ -427,8 +427,50 @@ class Calendar {
     handleSlotClick(date, time, datetime) {
         console.log('Slot clickeado:', { date, time, datetime });
         
-        // Crear modal para nueva agenda
-        this.showNewAgendaModal(date, time, datetime);
+        // Llenar los campos del formulario de nueva sesión
+        this.fillSessionForm(date, time, datetime);
+        
+        // Hacer scroll a la sección de inputs
+        this.scrollToSessionForm();
+    }
+    
+    fillSessionForm(date, time, datetime) {
+        // Llenar fecha y hora en el formulario de sesión
+        const fechaInput = document.getElementById('fechaSesion');
+        const horaInput = document.getElementById('horaSesion');
+        
+        if (fechaInput) {
+            fechaInput.value = date;
+        }
+        
+        if (horaInput) {
+            // Convertir formato de hora (ej: "14:00" a "14:00")
+            horaInput.value = time;
+        }
+        
+        console.log('✅ Formulario llenado con fecha:', date, 'hora:', time);
+    }
+    
+    scrollToSessionForm() {
+        // Buscar el formulario de nueva sesión
+        const sessionForm = document.getElementById('sesionForm');
+        if (sessionForm) {
+            // Hacer scroll suave al formulario
+            sessionForm.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+            
+            // Resaltar brevemente el formulario
+            sessionForm.style.boxShadow = '0 0 20px rgba(127, 179, 211, 0.5)';
+            setTimeout(() => {
+                sessionForm.style.boxShadow = '';
+            }, 2000);
+            
+            console.log('✅ Scroll realizado al formulario de sesión');
+        } else {
+            console.error('❌ No se encontró el formulario de sesión');
+        }
     }
     
     showEventModal(eventId) {
@@ -569,6 +611,49 @@ class Calendar {
         }
         
         document.body.appendChild(modal);
+    }
+    
+    openSession(sessionId) {
+        console.log('🔄 Abriendo sesión:', sessionId);
+        
+        // Disparar un evento personalizado para que el módulo de sesiones lo maneje
+        const event = new CustomEvent('openSession', { 
+            detail: { sessionId: sessionId } 
+        });
+        document.dispatchEvent(event);
+        
+        // También cerrar el modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    closeSession(sessionId) {
+        console.log('🔄 Cerrando sesión:', sessionId);
+        
+        // Disparar un evento personalizado para que el módulo de sesiones lo maneje
+        const event = new CustomEvent('closeSession', { 
+            detail: { sessionId: sessionId } 
+        });
+        document.dispatchEvent(event);
+        
+        // También cerrar el modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    getStatusLabel(status) {
+        const labels = {
+            'planificada': 'Planificada',
+            'confirmada': 'Confirmada',
+            'en_curso': 'En Curso',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada'
+        };
+        return labels[status] || status;
     }
     
     closeModal() {

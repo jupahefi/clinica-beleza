@@ -367,6 +367,64 @@
 }
 
 /* Eventos del calendario */
+
+/* Badges de estado */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.planificada {
+    background: #E3F2FD;
+    color: #1976D2;
+}
+
+.status-badge.confirmada {
+    background: #E8F5E8;
+    color: #388E3C;
+}
+
+.status-badge.en_curso {
+    background: #FFF3E0;
+    color: #F57C00;
+}
+
+.status-badge.completada {
+    background: #E8F5E8;
+    color: #388E3C;
+}
+
+.status-badge.cancelada {
+    background: #FFEBEE;
+    color: #D32F2F;
+}
+
+/* Detalles del evento */
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row strong {
+    color: #333;
+    min-width: 120px;
+}
 .calendar-event {
     position: absolute;
     left: 2px;
