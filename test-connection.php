@@ -24,7 +24,7 @@ if ($headers) {
 
 // 2. Test del archivo api.php
 echo "\n2. Probando api.php...\n";
-$apiUrl = $baseUrl . '/clinica-beleza/api.php';
+$apiUrl = $baseUrl . '/api.php';
 $headers = get_headers($apiUrl);
 if ($headers) {
     echo "✅ api.php responde\n";

@@ -11,7 +11,7 @@ echo "🧪 TEST API - GUARDADO DE PACIENTES\n";
 echo "===================================\n\n";
 
 // URL base de la API
-$baseUrl = 'https://clinica-beleza.equalitech.xyz/clinica-beleza/api.php';
+$baseUrl = 'https://clinica-beleza.equalitech.xyz/api.php';
 
 // Datos del formulario (igual que envía el frontend)
 $data = [
