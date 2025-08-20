@@ -5,6 +5,7 @@
 
 import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS } from '../constants.js';
 import { formatCurrency, formatDate } from '../utils.js';
+import { sesionesAPI, fichasAPI } from '../api-client.js';
 
 export class SesionesModule {
     constructor() {
@@ -186,26 +187,14 @@ export class SesionesModule {
         }
         
         try {
-            const response = await fetch('./api.php/sesiones', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
+            const response = await sesionesAPI.createSesion(formData);
             
-            if (!response.ok) {
-                throw new Error('Error creando sesión');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Sesión creada exitosamente');
                 this.limpiarFormularioSesion();
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -228,7 +217,7 @@ export class SesionesModule {
     async abrirSesion(sesionId) {
         try {
             // Obtener datos de la sesión
-            const sesion = await this.getSesion(sesionId);
+            const sesion = await sesionesAPI.getSesion(sesionId);
             if (!sesion) {
                 alert('No se pudo obtener la información de la sesión');
                 return;
@@ -295,30 +284,18 @@ export class SesionesModule {
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
         
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    accion: 'abrir',
-                    observaciones: observaciones,
-                    intensidades: intensidades
-                })
+            const response = await sesionesAPI.updateSesion(sesionId, {
+                accion: 'abrir',
+                observaciones: observaciones,
+                intensidades: intensidades
             });
             
-            if (!response.ok) {
-                throw new Error('Error abriendo sesión');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Sesión abierta exitosamente');
                 document.querySelector('.sesion-modal').remove();
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -331,28 +308,16 @@ export class SesionesModule {
         if (observaciones === null) return; // Usuario canceló
         
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    accion: 'cerrar',
-                    observaciones: observaciones
-                })
+            const response = await sesionesAPI.updateSesion(sesionId, {
+                accion: 'cerrar',
+                observaciones: observaciones
             });
             
-            if (!response.ok) {
-                throw new Error('Error cerrando sesión');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Sesión cerrada exitosamente');
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -370,28 +335,16 @@ export class SesionesModule {
         }
         
         try {
-            const response = await fetch('./api.php/intensidades', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    paciente_id: pacienteId,
-                    intensidades: intensidades,
-                    fecha: new Date().toISOString()
-                })
+            const response = await fichasAPI.createIntensidades({
+                paciente_id: pacienteId,
+                intensidades: intensidades,
+                fecha: new Date().toISOString()
             });
             
-            if (!response.ok) {
-                throw new Error('Error guardando intensidades');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Intensidades guardadas exitosamente');
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -408,17 +361,11 @@ export class SesionesModule {
         }
         
         try {
-            const response = await fetch(`./api.php/intensidades?paciente_id=${paciente}`);
+            const response = await fichasAPI.getIntensidadesByPaciente(paciente);
             
-            if (!response.ok) {
-                throw new Error('Error cargando intensidades');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data.length > 0) {
+            if (response.success && response.data.length > 0) {
                 // Obtener la última configuración de intensidades
-                const ultimaConfig = result.data[result.data.length - 1];
+                const ultimaConfig = response.data[response.data.length - 1];
                 this.aplicarIntensidades(ultimaConfig.intensidades, gridId);
                 alert('✅ Intensidades anteriores cargadas');
             } else {
@@ -472,13 +419,9 @@ export class SesionesModule {
     
     async loadSesiones() {
         try {
-            const response = await fetch('./api.php/sesiones');
-            const result = await response.json();
-            
-            if (result.success) {
-                this.sesiones = result.data;
-                this.renderSesiones();
-            }
+            const response = await sesionesAPI.getSesiones();
+            this.sesiones = response.data;
+            this.renderSesiones();
         } catch (error) {
             console.error('Error cargando sesiones:', error);
         }
@@ -486,11 +429,10 @@ export class SesionesModule {
     
     async getSesion(sesionId) {
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`);
-            const result = await response.json();
+            const response = await sesionesAPI.getSesion(sesionId);
             
-            if (result.success) {
-                return result.data;
+            if (response.success) {
+                return response.data;
             }
             return null;
         } catch (error) {
@@ -569,27 +511,15 @@ export class SesionesModule {
     
     async confirmarPaciente(sesionId) {
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    accion: 'confirmar'
-                })
+            const response = await sesionesAPI.updateSesion(sesionId, {
+                accion: 'confirmar'
             });
             
-            if (!response.ok) {
-                throw new Error('Error confirmando paciente');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Paciente confirmado exitosamente');
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -604,28 +534,16 @@ export class SesionesModule {
         if (!nuevaFecha || !nuevaHora) return;
         
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    accion: 'reprogramar',
-                    nueva_fecha: nuevaFecha + ' ' + nuevaHora
-                })
+            const response = await sesionesAPI.updateSesion(sesionId, {
+                accion: 'reprogramar',
+                nueva_fecha: nuevaFecha + ' ' + nuevaHora
             });
             
-            if (!response.ok) {
-                throw new Error('Error reprogramando sesión');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Sesión reprogramada exitosamente');
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -637,27 +555,15 @@ export class SesionesModule {
         if (!confirm('¿Está seguro de que desea cancelar esta sesión?')) return;
         
         try {
-            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    accion: 'cancelar'
-                })
+            const response = await sesionesAPI.updateSesion(sesionId, {
+                accion: 'cancelar'
             });
             
-            if (!response.ok) {
-                throw new Error('Error cancelando sesión');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Sesión cancelada exitosamente');
                 this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -689,6 +595,11 @@ export class SesionesModule {
         if (form) {
             form.reset();
         }
+    }
+
+    async loadPacientes() {
+        // Este método se mantiene para compatibilidad con main.js
+        // Los pacientes se cargan dinámicamente cuando se necesitan
     }
 }
 

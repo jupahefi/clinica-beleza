@@ -202,19 +202,23 @@ class ClinicaBelezaApp {
     
     async loadInitialData() {
         try {
-            // Cargar datos básicos
-            await Promise.all([
-                this.modules.pacientes.loadPacientes(),
-                this.modules.ventas.loadVentas(),
-                this.modules.pagos.loadPagos(),
-                this.modules.sesiones.loadSesiones(),
-                this.modules.boxes.loadBoxes(),
-                this.modules.ofertas.loadOfertas()
-            ]);
+            console.log('🔄 Cargando datos iniciales...');
             
-            console.log('✅ Datos iniciales cargados correctamente');
+            // Cargar datos básicos de forma individual para manejar errores
+            const loadPromises = [
+                this.modules.pacientes.cargarPacientes().catch(e => console.warn('⚠️ Error cargando pacientes:', e.message)),
+                this.modules.ventas.loadVentas().catch(e => console.warn('⚠️ Error cargando ventas:', e.message)),
+                this.modules.pagos.loadPagos().catch(e => console.warn('⚠️ Error cargando pagos:', e.message)),
+                this.modules.sesiones.loadSesiones().catch(e => console.warn('⚠️ Error cargando sesiones:', e.message)),
+                this.modules.boxes.cargarBoxes().catch(e => console.warn('⚠️ Error cargando boxes:', e.message)),
+                this.modules.ofertas.cargarOfertas().catch(e => console.warn('⚠️ Error cargando ofertas:', e.message))
+            ];
+            
+            await Promise.allSettled(loadPromises);
+            
+            console.log('✅ Datos iniciales cargados (con errores manejados)');
         } catch (error) {
-            console.error('❌ Error cargando datos iniciales:', error);
+            console.error('❌ Error crítico cargando datos iniciales:', error);
             showMessage('Error cargando datos iniciales', 'error');
         }
     }
@@ -249,10 +253,10 @@ class ClinicaBelezaApp {
     async showQuickStats() {
         try {
             const stats = {
-                pacientes: this.modules.pacientes.pacientes.length,
-                ventas: this.modules.ventas.ventas.length,
-                pagos: this.modules.pagos.pagos.length,
-                sesiones: this.modules.sesiones.sesiones.length
+                pacientes: this.modules.pacientes.pacientes?.length || 0,
+                ventas: this.modules.ventas.ventas?.length || 0,
+                pagos: this.modules.pagos.pagos?.length || 0,
+                sesiones: this.modules.sesiones.sesiones?.length || 0
             };
             
             const statsMessage = `

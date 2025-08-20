@@ -6,6 +6,7 @@
 import { TRATAMIENTOS, ZONAS_CUERPO, ZONAS_CUERPO_LABELS, PRECIO_POR_ZONA } from '../constants.js';
 import { formatCurrency } from '../utils.js';
 import { fichasEspecificas } from './fichas-especificas.js';
+import { ventasAPI, fichasAPI } from '../api-client.js';
 
 export class VentasModule {
     constructor() {
@@ -433,26 +434,14 @@ export class VentasModule {
         };
         
         try {
-            const response = await fetch('./api.php/ventas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(ventaData)
-            });
+            const response = await ventasAPI.create(ventaData);
             
-            if (!response.ok) {
-                throw new Error('Error creando venta');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Venta creada exitosamente');
                 this.limpiarFormularioVenta();
                 this.loadVentas();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
@@ -462,13 +451,8 @@ export class VentasModule {
     
     async loadVentas() {
         try {
-            const response = await fetch('./api.php/ventas');
-            const result = await response.json();
-            
-            if (result.success) {
-                this.ventas = result.data;
-                this.renderVentas();
-            }
+            this.ventas = await ventasAPI.getAll();
+            this.renderVentas();
         } catch (error) {
             console.error('Error cargando ventas:', error);
         }
@@ -476,13 +460,8 @@ export class VentasModule {
     
     async loadPacientes() {
         try {
-            const response = await fetch('./api.php/pacientes');
-            const result = await response.json();
-            
-            if (result.success) {
-                this.pacientes = result.data;
-                this.populatePacientesSelect();
-            }
+            this.pacientes = await fichasAPI.getAll();
+            this.populatePacientesSelect();
         } catch (error) {
             console.error('Error cargando pacientes:', error);
         }
@@ -530,11 +509,8 @@ export class VentasModule {
     
     async verDetalles(ventaId) {
         try {
-            const response = await fetch(`./api.php/ventas/${ventaId}`);
-            const result = await response.json();
-            
-            if (result.success) {
-                const venta = result.data;
+            const venta = await ventasAPI.getById(ventaId);
+            if (venta) {
                 const detalles = `
                     <strong>Detalles de la Venta:</strong><br>
                     <strong>Paciente:</strong> ${venta.paciente_nombre}<br>
@@ -562,21 +538,13 @@ export class VentasModule {
         if (!confirm('¿Está seguro de que desea eliminar esta venta?')) return;
         
         try {
-            const response = await fetch(`./api.php/ventas/${ventaId}`, {
-                method: 'DELETE'
-            });
+            const response = await ventasAPI.delete(ventaId);
             
-            if (!response.ok) {
-                throw new Error('Error eliminando venta');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.success) {
                 alert('✅ Venta eliminada exitosamente');
                 this.loadVentas();
             } else {
-                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+                alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Error:', error);
