@@ -6,17 +6,39 @@
 import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS } from '../constants.js';
 import { formatCurrency, formatDate } from '../utils.js';
 import { sesionesAPI, fichasAPI } from '../api-client.js';
+import '../calendar.js';
 
 export class SesionesModule {
     constructor() {
         this.sesiones = [];
         this.intensidades = {}; // Almacena intensidades por paciente y zona
+        this.calendar = null; // Instancia del calendario
         this.init();
     }
     
-    init() {
-        this.loadSesiones();
+    async init() {
         this.setupEventListeners();
+        this.initCalendar();
+        await this.loadSesiones();
+    }
+    
+    initCalendar() {
+        // Inicializar el calendario cuando el contenedor esté disponible
+        document.addEventListener('DOMContentLoaded', () => {
+            const calendarContainer = document.getElementById('calendar-container');
+            if (calendarContainer && typeof Calendar !== 'undefined') {
+                this.calendar = new Calendar(calendarContainer, {
+                    events: this.sesiones.map(sesion => ({
+                        id: sesion.id,
+                        title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
+                        start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
+                        end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
+                        backgroundColor: this.getEventColor(sesion.estado),
+                        extendedProps: sesion
+                    }))
+                });
+            }
+        });
     }
     
     setupEventListeners() {
@@ -192,11 +214,11 @@ export class SesionesModule {
             if (response.success) {
                 alert('✅ Sesión creada exitosamente');
                 this.limpiarFormularioSesion();
-                this.loadSesiones();
+                await this.loadSesiones(); // Recargar sesiones y actualizar calendario
             } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
-        } catch (error) {
+  } catch (error) {
             console.error('Error:', error);
             alert('❌ Error creando sesión: ' + error.message);
         }
@@ -311,7 +333,7 @@ export class SesionesModule {
             
             if (response.success) {
                 alert('✅ Sesión cerrada exitosamente');
-                this.loadSesiones();
+                await this.loadSesiones();
             } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
@@ -401,6 +423,7 @@ export class SesionesModule {
         try {
             this.sesiones = await sesionesAPI.getAll();
             this.renderSesiones();
+            this.updateCalendarEvents(); // Actualizar calendario
         } catch (error) {
             console.error('Error cargando sesiones:', error);
         }
@@ -417,14 +440,14 @@ export class SesionesModule {
     }
     
     renderSesiones() {
-        const tbody = document.getElementById('cuerpoTablaSesiones');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
+    const tbody = document.getElementById('cuerpoTablaSesiones');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
         this.sesiones.forEach(sesion => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+        const row = document.createElement('tr');
+        row.innerHTML = `
                 <td>${sesion.paciente_nombre || 'N/A'}</td>
                 <td>${sesion.venta_id || 'N/A'}</td>
                 <td>${sesion.box_nombre || 'N/A'}</td>
@@ -436,17 +459,17 @@ export class SesionesModule {
                         ${this.getEstadoLabel(sesion.estado)}
                     </span>
                 </td>
-                <td>
-                    <div class="action-buttons">
+            <td>
+                <div class="action-buttons">
                         ${this.getActionButtons(sesion)}
-                    </div>
-                </td>
-            `;
+      </div>
+            </td>
+        `;
             
-            tbody.appendChild(row);
-        });
-    }
-    
+        tbody.appendChild(row);
+    });
+}
+
     getEstadoLabel(estado) {
         const estados = {
             'programada': 'Programada',
@@ -488,13 +511,13 @@ export class SesionesModule {
         try {
             const response = await sesionesAPI.confirmarPaciente(sesionId);
             
-            if (response.success) {
+                        if (response.success) {
                 alert('✅ Paciente confirmado exitosamente');
-                this.loadSesiones();
-            } else {
+                await this.loadSesiones();
+  } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
-        } catch (error) {
+  } catch (error) {
             console.error('Error confirmando paciente:', error);
             alert('❌ Error confirmando paciente: ' + error.message);
         }
@@ -512,13 +535,13 @@ export class SesionesModule {
         try {
             const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
             
-            if (response.success) {
+                        if (response.success) {
                 alert('✅ Sesión reprogramada exitosamente');
-                this.loadSesiones();
-            } else {
+                await this.loadSesiones();
+        } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
-            }
-        } catch (error) {
+        }
+  } catch (error) {
             console.error('Error reprogramando sesión:', error);
             alert('❌ Error reprogramando sesión: ' + error.message);
         }
@@ -530,10 +553,10 @@ export class SesionesModule {
         try {
             const response = await sesionesAPI.delete(sesionId);
             
-            if (response.success) {
+                        if (response.success) {
                 alert('✅ Sesión cancelada exitosamente');
-                this.loadSesiones();
-            } else {
+                await this.loadSesiones();
+        } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
@@ -571,6 +594,40 @@ export class SesionesModule {
     async loadPacientes() {
         // Este método se mantiene para compatibilidad con main.js
         // Los pacientes se cargan dinámicamente cuando se necesitan
+    }
+    
+    // Métodos auxiliares para el calendario
+    calculateEndTime(fecha, hora, duracion) {
+        const start = new Date(`${fecha}T${hora}`);
+        const end = new Date(start.getTime() + (duracion * 60000)); // duracion en minutos
+        return end.toISOString();
+    }
+    
+    getEventColor(estado) {
+        const colores = {
+            'programada': '#FFC107',     // Amarillo
+            'confirmada': '#17A2B8',     // Azul
+            'en_curso': '#28A745',       // Verde
+            'completada': '#6C757D',     // Gris
+            'cancelada': '#DC3545',      // Rojo
+            'reprogramada': '#FD7E14'    // Naranja
+        };
+        return colores[estado] || '#007BFF';
+    }
+    
+    // Actualizar eventos del calendario cuando cambian las sesiones
+    updateCalendarEvents() {
+        if (this.calendar) {
+            const events = this.sesiones.map(sesion => ({
+                id: sesion.id,
+                title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
+                start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
+                end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
+                backgroundColor: this.getEventColor(sesion.estado),
+                extendedProps: sesion
+            }));
+            this.calendar.updateEvents(events);
+        }
     }
 }
 
