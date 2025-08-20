@@ -43,6 +43,31 @@ body {
     z-index: 1000;
 }
 
+/* Ajustar header en móviles */
+@media (max-width: 768px) {
+    .header {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar {
+        padding: 0.75rem 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0.5rem 0;
+    }
+    
+    .logo-img {
+        height: 40px;
+    }
+    
+    .logo-text {
+        font-size: 1.2rem;
+    }
+}
+
 .navbar {
     padding: 1rem 0;
 }
@@ -136,6 +161,21 @@ body {
     padding: 2rem 0;
 }
 
+/* Ajustar espaciado en móviles */
+@media (max-width: 768px) {
+    .main-content {
+        margin-top: 80px;
+        padding: 1.5rem 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        margin-top: 70px;
+        padding: 1rem 0;
+    }
+}
+
 /* Section Styles */
 .view-section {
     display: none;
@@ -152,6 +192,21 @@ body {
     color: var(--calypso-pastel);
     margin-bottom: 3rem;
     position: relative;
+}
+
+/* Ajustar título en móviles */
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
 }
 
 .section-title::after {
@@ -171,6 +226,19 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     margin-top: 2rem;
+}
+
+/* Ajustar contenido de sección en móviles */
+@media (max-width: 768px) {
+    .section-content {
+        margin-top: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-content {
+        margin-top: 1rem;
+    }
 }
 
 /* Form Container */
@@ -402,6 +470,27 @@ body {
 /* Table Styles */
 .table-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--calypso-pastel) var(--light-gray);
+}
+
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: var(--light-gray);
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: var(--calypso-pastel);
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--calypso-dark);
 }
 
 .data-table {
@@ -724,6 +813,50 @@ body {
         margin: 10px;
         max-width: calc(100vw - 20px);
         max-height: calc(100vh - 20px);
+    }
+
+    /* Mejorar formularios específicos */
+    .form-container {
+        margin: 0 5px;
+        padding: 1rem;
+    }
+
+    .form-container h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Ajustar textareas */
+    .form-group textarea {
+        min-height: 60px;
+        resize: vertical;
+    }
+
+    /* Mejorar tablas en móvil */
+    .data-table {
+        min-width: 600px; /* Forzar scroll horizontal */
+    }
+
+    .data-table th,
+    .data-table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    /* Ajustar filtros */
+    .filter-container {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .filter-container select {
+        width: 100%;
+        font-size: 16px;
+        padding: 0.6rem;
+        min-height: 44px;
     }
 }
 
