@@ -18,6 +18,9 @@ import { formatCurrency, formatDate, showMessage } from './utils.js';
 // Importar constantes
 import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS, TRATAMIENTOS } from './constants.js';
 
+// Importar cliente API
+import { initializeApiClient } from './api-client.js';
+
 class ClinicaBelezaApp {
     constructor() {
         this.currentView = 'fichas';
@@ -34,12 +37,15 @@ class ClinicaBelezaApp {
         this.init();
     }
     
-    init() {
+    async init() {
+        // Inicializar cliente API primero
+        initializeApiClient();
+        
         this.setupNavigation();
         this.setupMobileMenu();
         this.setupSearchFunctionality();
         this.setupGlobalEventListeners();
-        this.loadInitialData();
+        await this.loadInitialData();
         this.showWelcomeMessage();
     }
     
@@ -87,7 +93,7 @@ class ClinicaBelezaApp {
     loadViewData(viewName) {
         switch (viewName) {
             case 'fichas':
-                this.modules.pacientes.loadPacientes();
+                this.modules.pacientes.cargarPacientes();
                 break;
             case 'ventas':
                 this.modules.ventas.loadVentas();
@@ -99,15 +105,16 @@ class ClinicaBelezaApp {
                 break;
             case 'sesiones':
                 this.modules.sesiones.loadSesiones();
+                this.modules.sesiones.loadPacientes();
                 break;
             case 'boxes':
-                this.modules.boxes.loadBoxes();
+                this.modules.boxes.cargarBoxes();
                 break;
             case 'ofertas':
-                this.modules.ofertas.loadOfertas();
+                this.modules.ofertas.cargarOfertas();
                 break;
-            case 'historial':
-                this.modules.reportes.loadHistorial();
+            case 'reportes':
+                this.modules.reportes.cargarReportesDisponibles();
                 break;
         }
     }

@@ -97,6 +97,11 @@ export class PacientesModule {
         return this.cargarPacientesSelect();
     }
     
+    async loadPacientes() {
+        // Alias para compatibilidad con main.js
+        return this.cargarPacientes();
+    }
+    
     async cargarPacienteSeleccionado() {
         const pacienteSelect = document.getElementById('pacienteSelect');
         const pacienteId = pacienteSelect?.value;

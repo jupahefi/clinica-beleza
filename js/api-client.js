@@ -22,7 +22,8 @@ const API_CACHE = {
  * Inicializa el cliente API
  */
 export function initializeApiClient() {
-    API_CONFIG.baseUrl = getEnv('API_URL', window.location.origin);
+    // Usar la URL actual como base si no hay configuración específica
+    API_CONFIG.baseUrl = window.location.origin;
     console.log('🌐 Cliente API inicializado (passthrough):', API_CONFIG.baseUrl);
 }
 
@@ -76,7 +77,14 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
  * Función genérica para peticiones GET
  */
 async function get(endpoint, params = {}) {
-    const url = new URL(`${API_CONFIG.baseUrl}/api.php/${endpoint}`);
+    let url;
+    
+    if (API_CONFIG.baseUrl) {
+        url = new URL(`${API_CONFIG.baseUrl}/api.php/${endpoint}`);
+    } else {
+        // Si no hay baseUrl, usar URL relativa
+        url = new URL(`/api.php/${endpoint}`, window.location.origin);
+    }
     
     // Agregar parámetros de consulta
     Object.keys(params).forEach(key => {
@@ -99,7 +107,9 @@ async function get(endpoint, params = {}) {
  * Función genérica para peticiones POST
  */
 async function post(endpoint, data = {}) {
-    const url = `${API_CONFIG.baseUrl}/api.php/${endpoint}`;
+    const url = API_CONFIG.baseUrl ? 
+        `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
+        `/api.php/${endpoint}`;
     
     const response = await fetchWithRetry(url, {
         method: 'POST',
@@ -119,7 +129,9 @@ async function post(endpoint, data = {}) {
  * Función genérica para peticiones PUT
  */
 async function put(endpoint, data = {}) {
-    const url = `${API_CONFIG.baseUrl}/api.php/${endpoint}`;
+    const url = API_CONFIG.baseUrl ? 
+        `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
+        `/api.php/${endpoint}`;
     
     const response = await fetchWithRetry(url, {
         method: 'PUT',
@@ -139,7 +151,9 @@ async function put(endpoint, data = {}) {
  * Función genérica para peticiones DELETE
  */
 async function del(endpoint) {
-    const url = `${API_CONFIG.baseUrl}/api.php/${endpoint}`;
+    const url = API_CONFIG.baseUrl ? 
+        `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
+        `/api.php/${endpoint}`;
     
     const response = await fetchWithRetry(url, {
         method: 'DELETE'
@@ -159,7 +173,11 @@ async function del(endpoint) {
  */
 export async function checkConnection() {
     try {
-        const response = await fetch(`${API_CONFIG.baseUrl}/api.php/health`);
+        const url = API_CONFIG.baseUrl ? 
+            `${API_CONFIG.baseUrl}/api.php/health` : 
+            `/api.php/health`;
+            
+        const response = await fetch(url);
         const data = await response.json();
         return {
             connected: data.success,
