@@ -1,4 +1,149 @@
 /* Calendario CSS inspirado en EventCalendar */
+
+/* Estilos para modales */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: #f0f0f0;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    border-top: 2px solid #f0f0f0;
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge.planificada {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-badge.confirmada {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.status-badge.en_curso {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-badge.completada {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.status-badge.cancelada {
+    background: #ffebee;
+    color: #d32f2f;
+}
 .calendar-container {
     background: var(--white);
     border-radius: 15px;
@@ -115,8 +260,12 @@
 .calendar-grid {
     display: grid;
     grid-template-columns: 60px repeat(7, 1fr);
-    grid-template-rows: 50px repeat(auto-fit, 120px);
+    grid-template-rows: 50px repeat(auto-fit, 60px);
     border: 1px solid #E9ECEF;
+}
+
+.calendar-grid.week-view {
+    grid-template-rows: 50px repeat(12, 60px); /* 8:00 AM a 8:00 PM = 12 horas */
 }
 
 .calendar-time-header {
@@ -169,10 +318,30 @@
     padding: 0.25rem;
     position: relative;
     background: var(--white);
+    min-height: 60px;
 }
 
-.calendar-time-slot:hover {
-    background: rgba(127, 179, 211, 0.05);
+.calendar-time-slot.time-label {
+    background: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.calendar-time-slot.slot-cell {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.calendar-time-slot.slot-cell:hover {
+    background: rgba(127, 179, 211, 0.1);
+}
+
+.calendar-time-slot.slot-cell:active {
+    background: rgba(127, 179, 211, 0.2);
 }
 
 .calendar-time-label {

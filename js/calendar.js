@@ -135,9 +135,10 @@ class Calendar {
         const weekStart = this.getWeekStart(this.currentDate);
         const weekDays = this.getWeekDays(weekStart);
         const weekEvents = this.getEventsForWeek(weekStart);
+        const timeSlots = this.generateTimeSlots();
         
         container.innerHTML = `
-            <div class="calendar-grid">
+            <div class="calendar-grid week-view">
                 <div class="calendar-time-header">Hora</div>
                 ${weekDays.map(day => `
                     <div class="calendar-day-header ${this.isToday(day) ? 'today' : ''}">
@@ -146,12 +147,15 @@ class Calendar {
                     </div>
                 `).join('')}
                 
-                ${this.generateTimeSlots().map(time => `
-                    <div class="calendar-time-slot">
+                ${timeSlots.map(time => `
+                    <div class="calendar-time-slot time-label">
                         <div class="calendar-time-label">${time}</div>
                     </div>
                     ${weekDays.map(day => `
-                        <div class="calendar-time-slot" data-date="${this.formatDate(day)}" data-time="${time}">
+                        <div class="calendar-time-slot slot-cell" 
+                             data-date="${this.formatDate(day)}" 
+                             data-time="${time}"
+                             data-datetime="${day.toISOString().split('T')[0]}T${time}">
                             ${this.renderEventsInSlot(weekEvents, time, day)}
                         </div>
                     `).join('')}
@@ -186,19 +190,19 @@ class Calendar {
         `;
     }
     
-    generateTimeSlots(start = null, end = null, duration = 30) {
+    generateTimeSlots(start = null, end = null, duration = 60) {
         const slots = [];
-        const startTime = start || new Date();
+        const startTime = new Date();
         startTime.setHours(8, 0, 0, 0);
         
-        const endTime = end || new Date();
+        const endTime = new Date();
         endTime.setHours(20, 0, 0, 0);
         
         const current = new Date(startTime);
         
         while (current < endTime) {
             slots.push(this.formatTime(current));
-            current.setMinutes(current.getMinutes() + duration);
+            current.setHours(current.getHours() + 1);
         }
         
         return slots;
@@ -312,6 +316,12 @@ class Calendar {
             if (e.target.closest('.calendar-event')) {
                 const eventId = e.target.closest('.calendar-event').dataset.eventId;
                 this.showEventModal(eventId);
+            } else if (e.target.closest('.slot-cell')) {
+                const slot = e.target.closest('.slot-cell');
+                const date = slot.dataset.date;
+                const time = slot.dataset.time;
+                const datetime = slot.dataset.datetime;
+                this.handleSlotClick(date, time, datetime);
             }
         });
     }
@@ -414,66 +424,151 @@ class Calendar {
         }
     }
     
+    handleSlotClick(date, time, datetime) {
+        console.log('Slot clickeado:', { date, time, datetime });
+        
+        // Crear modal para nueva agenda
+        this.showNewAgendaModal(date, time, datetime);
+    }
+    
     showEventModal(eventId) {
         if (!this.events || !Array.isArray(this.events)) return;
         const event = this.events.find(e => e.id == eventId);
         if (!event) return;
         
+        // Crear modal con detalles del evento
+        this.showEventDetailsModal(event);
+    }
+    
+    showNewAgendaModal(date, time, datetime) {
         const modal = document.createElement('div');
-        modal.className = 'calendar-event-modal';
+        modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="calendar-event-modal-content">
-                <div class="calendar-event-modal-header">
-                    <h3 class="calendar-event-modal-title">${event.titulo}</h3>
-                    <button class="calendar-event-modal-close">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📅 Nueva Agenda</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
                 </div>
-                
-                <div class="calendar-event-details">
-                    <div class="calendar-event-detail">
-                        <span class="calendar-event-detail-label">Paciente:</span>
-                        <span class="calendar-event-detail-value">${event.paciente_nombre}</span>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Fecha y Hora:</label>
+                        <input type="datetime-local" id="agenda-datetime" value="${datetime}" readonly>
                     </div>
-                    <div class="calendar-event-detail">
-                        <span class="calendar-event-detail-label">Fecha:</span>
-                        <span class="calendar-event-detail-value">${this.formatDateTime(new Date(event.fecha_inicio))}</span>
+                    <div class="form-group">
+                        <label>Paciente:</label>
+                        <select id="agenda-paciente" required>
+                            <option value="">Seleccionar paciente...</option>
+                        </select>
                     </div>
-                    <div class="calendar-event-detail">
-                        <span class="calendar-event-detail-label">Box:</span>
-                        <span class="calendar-event-detail-value">${event.box_nombre}</span>
+                    <div class="form-group">
+                        <label>Tratamiento:</label>
+                        <select id="agenda-tratamiento" required>
+                            <option value="">Seleccionar tratamiento...</option>
+                        </select>
                     </div>
-                    <div class="calendar-event-detail">
-                        <span class="calendar-event-detail-label">Estado:</span>
-                        <span class="calendar-event-detail-value">${this.formatStatus(event.estado)}</span>
+                    <div class="form-group">
+                        <label>Profesional:</label>
+                        <select id="agenda-profesional" required>
+                            <option value="">Seleccionar profesional...</option>
+                        </select>
                     </div>
-                    ${event.observaciones ? `
-                        <div class="calendar-event-detail">
-                            <span class="calendar-event-detail-label">Observaciones:</span>
-                            <span class="calendar-event-detail-value">${event.observaciones}</span>
-                        </div>
-                    ` : ''}
+                    <div class="form-group">
+                        <label>Box:</label>
+                        <select id="agenda-box" required>
+                            <option value="">Seleccionar box...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Observaciones:</label>
+                        <textarea id="agenda-observaciones" rows="3"></textarea>
+                    </div>
                 </div>
-                
-                <div class="calendar-event-actions">
-                    <button class="btn btn-secondary" onclick="calendar.editEvent(${event.id})">Editar</button>
-                    <button class="btn btn-warning" onclick="calendar.rescheduleEvent(${event.id})">Reagendar</button>
-                    <button class="btn btn-danger" onclick="calendar.cancelEvent(${event.id})">Cancelar</button>
-                    <button class="btn btn-primary" onclick="calendar.closeModal()">Cerrar</button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                    <button class="btn btn-primary save-agenda">Guardar Agenda</button>
                 </div>
             </div>
         `;
         
+        // Agregar event listener para guardar
+        modal.querySelector('.save-agenda').addEventListener('click', () => {
+            this.saveNewAgenda(modal);
+        });
+        
         document.body.appendChild(modal);
         
-        // Cerrar modal
-        modal.querySelector('.calendar-event-modal-close').addEventListener('click', () => {
-            this.closeModal();
-        });
+        // Cargar datos en los selects
+        this.loadAgendaFormData(modal);
+    }
+    
+    showEventDetailsModal(event) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📋 Detalles de Sesión</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="event-details">
+                        <div class="detail-row">
+                            <strong>Paciente:</strong> ${event.paciente_nombre || 'N/A'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Tratamiento:</strong> ${event.tratamiento_nombre || 'N/A'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Profesional:</strong> ${event.profesional_nombre || 'N/A'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Box:</strong> ${event.box_nombre || 'N/A'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Fecha:</strong> ${new Date(event.fecha_planificada).toLocaleDateString('es-ES')}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Hora:</strong> ${new Date(event.fecha_planificada).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Estado:</strong> 
+                            <span class="status-badge ${event.estado}">${this.getStatusLabel(event.estado)}</span>
+                        </div>
+                        ${event.observaciones ? `
+                        <div class="detail-row">
+                            <strong>Observaciones:</strong> ${event.observaciones}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cerrar</button>
+                    ${event.estado === 'planificada' ? `
+                        <button class="btn btn-success open-session">Abrir Sesión</button>
+                    ` : ''}
+                    ${event.estado === 'en_curso' ? `
+                        <button class="btn btn-warning close-session">Cerrar Sesión</button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
         
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.closeModal();
-            }
-        });
+        // Agregar event listeners para acciones
+        if (event.estado === 'planificada') {
+            modal.querySelector('.open-session').addEventListener('click', () => {
+                this.openSession(event.id);
+                modal.remove();
+            });
+        }
+        
+        if (event.estado === 'en_curso') {
+            modal.querySelector('.close-session').addEventListener('click', () => {
+                this.closeSession(event.id);
+                modal.remove();
+            });
+        }
+        
+        document.body.appendChild(modal);
     }
     
     closeModal() {
@@ -481,6 +576,153 @@ class Calendar {
         if (modal) {
             modal.remove();
         }
+    }
+    
+    async loadAgendaFormData(modal) {
+        try {
+            // Cargar pacientes
+            const pacientesResponse = await fetch('./api.php/fichas');
+            const pacientes = await pacientesResponse.json();
+            const pacienteSelect = modal.querySelector('#agenda-paciente');
+            pacientes.forEach(paciente => {
+                const option = document.createElement('option');
+                option.value = paciente.id;
+                option.textContent = `${paciente.nombres} ${paciente.apellidos}`;
+                pacienteSelect.appendChild(option);
+            });
+            
+            // Cargar tratamientos
+            const tratamientosResponse = await fetch('./api.php/tratamientos');
+            const tratamientos = await tratamientosResponse.json();
+            const tratamientoSelect = modal.querySelector('#agenda-tratamiento');
+            tratamientos.forEach(tratamiento => {
+                const option = document.createElement('option');
+                option.value = tratamiento.id;
+                option.textContent = tratamiento.nombre;
+                tratamientoSelect.appendChild(option);
+            });
+            
+            // Cargar profesionales
+            const profesionalesResponse = await fetch('./api.php/profesionales');
+            const profesionales = await profesionalesResponse.json();
+            const profesionalSelect = modal.querySelector('#agenda-profesional');
+            profesionales.forEach(profesional => {
+                const option = document.createElement('option');
+                option.value = profesional.id;
+                option.textContent = profesional.nombre;
+                profesionalSelect.appendChild(option);
+            });
+            
+            // Cargar boxes
+            const boxesResponse = await fetch('./api.php/boxes');
+            const boxes = await boxesResponse.json();
+            const boxSelect = modal.querySelector('#agenda-box');
+            boxes.forEach(box => {
+                const option = document.createElement('option');
+                option.value = box.id;
+                option.textContent = box.nombre;
+                boxSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error cargando datos del formulario:', error);
+        }
+    }
+    
+    async saveNewAgenda(modal) {
+        const formData = {
+            paciente_id: modal.querySelector('#agenda-paciente').value,
+            tratamiento_id: modal.querySelector('#agenda-tratamiento').value,
+            profesional_id: modal.querySelector('#agenda-profesional').value,
+            box_id: modal.querySelector('#agenda-box').value,
+            fecha_planificada: modal.querySelector('#agenda-datetime').value,
+            observaciones: modal.querySelector('#agenda-observaciones').value
+        };
+        
+        // Validar campos requeridos
+        if (!formData.paciente_id || !formData.tratamiento_id || !formData.profesional_id || !formData.box_id) {
+            alert('Por favor complete todos los campos requeridos');
+            return;
+        }
+        
+        try {
+            const response = await fetch('./api.php/sesiones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error guardando agenda');
+            }
+            
+            const result = await response.json();
+            console.log('Agenda guardada:', result);
+            
+            // Cerrar modal y recargar calendario
+            modal.remove();
+            this.loadEvents();
+            this.renderCalendar();
+            
+            alert('Agenda guardada exitosamente');
+        } catch (error) {
+            console.error('Error guardando agenda:', error);
+            alert('Error guardando agenda: ' + error.message);
+        }
+    }
+    
+    async openSession(sessionId) {
+        try {
+            const response = await fetch(`./api.php/sesiones/${sessionId}/abrir`, {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error abriendo sesión');
+            }
+            
+            // Recargar calendario
+            this.loadEvents();
+            this.renderCalendar();
+            
+            alert('Sesión abierta exitosamente');
+        } catch (error) {
+            console.error('Error abriendo sesión:', error);
+            alert('Error abriendo sesión: ' + error.message);
+        }
+    }
+    
+    async closeSession(sessionId) {
+        try {
+            const response = await fetch(`./api.php/sesiones/${sessionId}/cerrar`, {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error cerrando sesión');
+            }
+            
+            // Recargar calendario
+            this.loadEvents();
+            this.renderCalendar();
+            
+            alert('Sesión cerrada exitosamente');
+        } catch (error) {
+            console.error('Error cerrando sesión:', error);
+            alert('Error cerrando sesión: ' + error.message);
+        }
+    }
+    
+    getStatusLabel(status) {
+        const labels = {
+            'planificada': 'Planificada',
+            'confirmada': 'Confirmada',
+            'en_curso': 'En Curso',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada'
+        };
+        return labels[status] || status;
     }
     
     // Métodos de utilidad
