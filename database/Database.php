@@ -43,11 +43,11 @@ class Database {
     private function __construct() {
         // Configuración de MySQL
         $this->config = [
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'port' => $_ENV['DB_PORT'] ?? '3306',
-            'dbname' => $_ENV['DB_NAME'] ?? 'clinica_beleza',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASS'] ?? ''
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'port' => getenv('DB_PORT') ?: '3306',
+            'dbname' => getenv('DB_NAME') ?: 'clinica_estetica',
+            'username' => getenv('DB_USER') ?: 'root',
+            'password' => getenv('DB_PASS') ?: ''
         ];
         
         $this->connect();
