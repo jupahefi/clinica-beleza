@@ -238,11 +238,6 @@ export function toggleFichasEspecificas() {
   }
 }
 
-// Mantener compatibilidad con llamadas anteriores
-export function toggleFichaEspecifica() {
-  toggleFichasEspecificas();
-}
-
 /**
  * Carga las opciones de tipos de piel
  */
@@ -707,39 +702,4 @@ export async function buscarPacientes(termino) {
  */
 export function obtenerPacienteActual() {
   return pacienteActual;
-}
-
-/**
- * Muestra/oculta las fichas específicas según los checkboxes seleccionados
- */
-export function toggleFichasEspecificas() {
-  const fichaDepilacion = document.getElementById('fichaDepilacionCard');
-  const fichaCorporal = document.getElementById('fichaCorporalCard');
-  
-  const depilacionChecked = document.getElementById('fichaDepilacion')?.checked;
-  const corporalChecked = document.getElementById('fichaCorporal')?.checked;
-  
-  // Mostrar/ocultar ficha de depilación
-  if (fichaDepilacion) {
-    if (depilacionChecked) {
-      fichaDepilacion.classList.remove('hidden');
-    } else {
-      fichaDepilacion.classList.add('hidden');
-      // Limpiar campos cuando se oculta
-      document.getElementById('zonasDepilacion').value = '';
-      document.getElementById('observacionesMedicas').value = '';
-    }
-  }
-  
-  // Mostrar/ocultar ficha corporal
-  if (fichaCorporal) {
-    if (corporalChecked) {
-      fichaCorporal.classList.remove('hidden');
-    } else {
-      fichaCorporal.classList.add('hidden');
-      // Limpiar campos cuando se oculta
-      document.getElementById('tratamientosPrevios').value = '';
-      document.getElementById('objetivoEstetico').value = '';
-    }
-  }
 }

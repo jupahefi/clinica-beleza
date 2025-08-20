@@ -292,13 +292,13 @@ function exponerFuncionesGlobales() {
     window.limpiarFormularioOferta = limpiarFormularioOferta;
     
     // Funciones de módulos
-  window.toggleFichasEspecificas = toggleFichasEspecificas;
+    window.toggleFichasEspecificas = toggleFichasEspecificas;
     window.guardarPacienteFormulario = guardarPacienteFormulario;
     window.limpiarFormularioPaciente = limpiarFormularioPaciente;
-  window.confirmarVenta = confirmarVenta;
-  window.registrarPago = registrarPago;
-  window.iniciarSesion = iniciarSesion;
-  window.terminarSesion = terminarSesion;
+    window.confirmarVenta = confirmarVenta;
+    window.registrarPago = registrarPago;
+    window.iniciarSesion = iniciarSesion;
+    window.terminarSesion = terminarSesion;
     window.editarSesion = editarSesion;
     window.cancelarSesion = cancelarSesion;
     window.reagendarSesion = reagendarSesion;
