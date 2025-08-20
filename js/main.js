@@ -140,24 +140,6 @@ function cambiarVista(vista) {
     
     // Cargar datos específicos de la vista
     cargarDatosVista(vista);
-    
-    // Hacer scroll suave hacia arriba para mostrar el título de la sección
-    setTimeout(() => {
-        // Intentar hacer scroll al título de la sección específica
-        const seccionTitulo = seccion.querySelector('.section-title');
-        if (seccionTitulo) {
-            seccionTitulo.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        } else {
-            // Fallback: scroll hacia arriba
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-    }, 100);
 }
 
 // Inicializar menú móvil

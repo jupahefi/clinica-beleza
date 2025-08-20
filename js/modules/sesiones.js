@@ -26,7 +26,7 @@ export async function inicializarSesiones() {
     // Configurar búsqueda
     configurarBusqueda();
     
-    console.log('✅ Módulo de sesiones inicializado');
+  console.log('✅ Módulo de sesiones inicializado');
 }
 
 function inicializarCalendario() {
@@ -75,7 +75,7 @@ async function cargarPacientes() {
                 select.appendChild(option);
             }
         });
-    } catch (error) {
+  } catch (error) {
         console.error('Error cargando pacientes:', error);
     }
 }
@@ -96,7 +96,7 @@ async function cargarVentas() {
                 select.appendChild(option);
             }
         }
-    } catch (error) {
+  } catch (error) {
         console.error('Error cargando ventas:', error);
     }
 }
@@ -115,7 +115,7 @@ async function cargarBoxes() {
                 select.appendChild(option);
             }
         });
-    } catch (error) {
+  } catch (error) {
         console.error('Error cargando boxes:', error);
     }
 }
@@ -136,7 +136,7 @@ async function cargarProfesionales() {
                 }
             });
         }
-    } catch (error) {
+      } catch (error) {
         console.error('Error cargando profesionales:', error);
     }
 }
@@ -198,7 +198,7 @@ async function cargarVentasPorPaciente(pacienteId) {
                 select.appendChild(option);
             }
         }
-    } catch (error) {
+  } catch (error) {
         console.error('Error cargando ventas del paciente:', error);
     }
 }
@@ -232,7 +232,7 @@ async function guardarSesion() {
             mostrarMensaje('Sesión agendada correctamente', 'success');
             form.reset();
             await cargarSesiones();
-        } else {
+  } else {
             mostrarMensaje('Error al agendar sesión', 'error');
         }
     } catch (error) {
@@ -297,7 +297,7 @@ function actualizarTablaSesiones(sesionesAMostrar = sesiones) {
                     <button class="btn btn-sm btn-danger" onclick="cancelarSesion(${sesion.id})">
                         <i class="fas fa-times"></i>
                     </button>
-                </div>
+      </div>
             </td>
         `;
         tbody.appendChild(row);
@@ -337,10 +337,10 @@ export async function cancelarSesion(sesionId) {
             if (data) {
                 mostrarMensaje('Sesión cancelada correctamente', 'success');
                 await cargarSesiones();
-            } else {
+  } else {
                 mostrarMensaje('Error al cancelar sesión', 'error');
             }
-        } catch (error) {
+  } catch (error) {
             console.error('Error cancelando sesión:', error);
             mostrarMensaje('Error al cancelar sesión', 'error');
         }
@@ -363,7 +363,7 @@ export async function iniciarSesion(sesionId) {
         } else {
             mostrarMensaje('Error al iniciar sesión', 'error');
         }
-    } catch (error) {
+  } catch (error) {
         console.error('Error iniciando sesión:', error);
         mostrarMensaje('Error al iniciar sesión', 'error');
     }
@@ -385,7 +385,7 @@ export async function terminarSesion(sesionId) {
         } else {
             mostrarMensaje('Error al completar sesión', 'error');
         }
-    } catch (error) {
+  } catch (error) {
         console.error('Error terminando sesión:', error);
         mostrarMensaje('Error al terminar sesión', 'error');
     }
@@ -422,7 +422,7 @@ function formatearEstado(estado) {
 function mostrarMensaje(mensaje, tipo = 'info') {
     if (window.mostrarMensaje) {
         window.mostrarMensaje(mensaje, tipo);
-    } else {
+  } else {
         console.log(`${tipo.toUpperCase()}: ${mensaje}`);
     }
 }
