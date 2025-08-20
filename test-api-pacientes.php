@@ -15,6 +15,7 @@ $baseUrl = 'https://clinica-beleza.equalitech.xyz/api.php';
 
 // Datos del formulario (igual que envía el frontend)
 $data = [
+    'codigo' => 'TEST' . date('YmdHis'), // Código único para el test
     'nombres' => 'Test API',
     'apellidos' => 'Paciente',
     'telefono' => '912345678',
