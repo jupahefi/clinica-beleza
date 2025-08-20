@@ -226,7 +226,22 @@ export const fichasEspecificasAPI = {
     getById: (id) => get(`fichas-especificas/${id}`),
     
     // Agregar ficha específica
-    create: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica)
+    create: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
+    
+    // Guardar ficha específica (alias para create)
+    saveFichaEspecifica: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
+    
+    // Guardar consentimiento y firma
+    saveConsentimientoFirma: (formData) => {
+        // Para FormData, necesitamos usar fetch directamente
+        return fetch('./api.php/consentimiento-firma', {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json());
+    },
+    
+    // Obtener consentimiento y firma
+    getConsentimientoFirma: (fichaId, tipoConsentimiento) => get(`consentimiento-firma/${fichaId}/${tipoConsentimiento}`)
 };
 
 export const tiposFichaEspecificaAPI = {
@@ -265,8 +280,17 @@ export const ventasAPI = {
     // Obtener todas las ventas
     getAll: () => get('ventas'),
     
+    // Buscar ventas
+    search: (busqueda = '') => get('ventas', { busqueda }),
+    
     // Crear venta
     create: (venta) => post('ventas', venta),
+    
+    // Actualizar venta
+    update: (id, venta) => put(`ventas/${id}`, venta),
+    
+    // Eliminar venta
+    delete: (id) => del(`ventas/${id}`),
     
     // Aplicar descuento manual
     aplicarDescuento: (id, descuentoPct) => put(`ventas/${id}`, { descuento_manual_pct: descuentoPct })
@@ -300,6 +324,9 @@ export const sesionesAPI = {
     
     // Agendar sesión
     create: (sesion) => post('sesiones', sesion),
+    
+    // Eliminar sesión
+    delete: (id) => del(`sesiones/${id}`),
     
     // Confirmar paciente
     confirmarPaciente: (id) => put(`sesiones/${id}`, { accion: 'confirmar' }),

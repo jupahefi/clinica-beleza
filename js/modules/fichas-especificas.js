@@ -4,8 +4,9 @@
  */
 
 import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS, PRECIO_POR_ZONA } from '../constants.js';
+import { formatCurrency, formatDate } from '../utils.js';
 import { ConsentimientoModal } from '../components/SignaturePad.js';
-import { formatCurrency } from '../utils.js';
+import { fichasEspecificasAPI } from '../api-client.js';
 
 export class FichasEspecificasModule {
     constructor() {
@@ -227,17 +228,13 @@ Fecha: ${new Date().toLocaleDateString()}
             formData.append('tipo_archivo', 'png');
             formData.append('profesional_id', 1); // TODO: Obtener del contexto de sesión
             
-            const response = await fetch('./api.php/consentimiento-firma', {
-                method: 'POST',
-                body: formData
-            });
+            const response = await fichasEspecificasAPI.saveConsentimientoFirma(formData);
             
-            if (!response.ok) {
+            if (response.success) {
+                return response.data;
+            } else {
                 throw new Error('Error guardando firma digital');
             }
-            
-            const result = await response.json();
-            return result;
         } catch (error) {
             console.error('Error guardando firma digital:', error);
             throw error;
@@ -246,14 +243,13 @@ Fecha: ${new Date().toLocaleDateString()}
     
     async verificarConsentimientoFirmado(fichaId, tipoConsentimiento = 'depilacion') {
         try {
-            const response = await fetch(`./api.php/consentimiento-firma/${fichaId}/${tipoConsentimiento}`);
+            const response = await fichasEspecificasAPI.getConsentimientoFirma(fichaId, tipoConsentimiento);
             
-            if (!response.ok) {
+            if (response.success) {
+                return response.data;
+            } else {
                 return null;
             }
-            
-            const result = await response.json();
-            return result;
         } catch (error) {
             console.error('Error verificando consentimiento:', error);
             return null;
@@ -295,20 +291,13 @@ Fecha: ${new Date().toLocaleDateString()}
         };
         
         try {
-            const response = await fetch('./api.php/fichas-especificas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(fichaData)
-            });
+            const response = await fichasEspecificasAPI.saveFichaEspecifica(fichaData);
             
-            if (!response.ok) {
+            if (response.success) {
+                return response.data;
+            } else {
                 throw new Error('Error guardando ficha de depilación');
             }
-            
-            const result = await response.json();
-            return result;
         } catch (error) {
             console.error('Error:', error);
             throw error;
@@ -339,20 +328,13 @@ Fecha: ${new Date().toLocaleDateString()}
         };
         
         try {
-            const response = await fetch('./api.php/fichas-especificas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(fichaData)
-            });
+            const response = await fichasEspecificasAPI.saveFichaEspecifica(fichaData);
             
-            if (!response.ok) {
+            if (response.success) {
+                return response.data;
+            } else {
                 throw new Error('Error guardando ficha corporal/facial');
             }
-            
-            const result = await response.json();
-            return result;
         } catch (error) {
             console.error('Error:', error);
             throw error;

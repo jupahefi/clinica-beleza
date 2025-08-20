@@ -52,81 +52,41 @@ export class ReportesModule {
     
     async generarReporteProgresoVentas() {
         try {
-            this.mostrarLoading('Generando reporte de progreso de ventas...');
-            
-            const reporte = await reportesAPI.getProgresoVentas();
-            
-            if (reporte) {
-                this.mostrarReporteProgresoVentas(reporte);
-                mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
-            } else {
-                mostrarNotificacion('Error al generar reporte de progreso de ventas', 'error');
-            }
+            const reporte = await reportesAPI.progresoVentas();
+            this.mostrarReporteProgresoVentas(reporte);
         } catch (error) {
             console.error('Error generando reporte de progreso de ventas:', error);
-            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-        } finally {
-            this.ocultarLoading();
+            this.mostrarError('Error generando reporte de progreso de ventas');
         }
     }
     
     async generarReportePlanVsEjecucion() {
         try {
-            this.mostrarLoading('Generando reporte de plan vs ejecución...');
-            
-            const reporte = await reportesAPI.getPlanVsEjecucion();
-            
-            if (reporte) {
-                this.mostrarReportePlanVsEjecucion(reporte);
-                mostrarNotificacion('Reporte de plan vs ejecución generado correctamente', 'success');
-            } else {
-                mostrarNotificacion('Error al generar reporte de plan vs ejecución', 'error');
-            }
+            const reporte = await reportesAPI.planVsEjecucion();
+            this.mostrarReportePlanVsEjecucion(reporte);
         } catch (error) {
-            console.error('Error generando reporte de plan vs ejecución:', error);
-            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-        } finally {
-            this.ocultarLoading();
+            console.error('Error generando reporte plan vs ejecución:', error);
+            this.mostrarError('Error generando reporte plan vs ejecución');
         }
     }
     
     async generarReporteDisponibilidadProfesionales() {
         try {
-            this.mostrarLoading('Generando reporte de disponibilidad de profesionales...');
-            
-            const reporte = await reportesAPI.getDisponibilidadProfesionales();
-            
-            if (reporte) {
-                this.mostrarReporteDisponibilidadProfesionales(reporte);
-                mostrarNotificacion('Reporte de disponibilidad generado correctamente', 'success');
-            } else {
-                mostrarNotificacion('Error al generar reporte de disponibilidad', 'error');
-            }
+            const reporte = await reportesAPI.disponibilidad();
+            this.mostrarReporteDisponibilidadProfesionales(reporte);
         } catch (error) {
             console.error('Error generando reporte de disponibilidad:', error);
-            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-        } finally {
-            this.ocultarLoading();
+            this.mostrarError('Error generando reporte de disponibilidad');
         }
     }
     
     async generarReporteOfertasAplicadas() {
         try {
-            this.mostrarLoading('Generando reporte de ofertas aplicadas...');
-            
-            const reporte = await reportesAPI.getOfertasAplicadas();
-            
-            if (reporte) {
-                this.mostrarReporteOfertasAplicadas(reporte);
-                mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
-            } else {
-                mostrarNotificacion('Error al generar reporte de ofertas aplicadas', 'error');
-            }
+            const reporte = await reportesAPI.ofertasAplicadas();
+            this.mostrarReporteOfertasAplicadas(reporte);
         } catch (error) {
             console.error('Error generando reporte de ofertas aplicadas:', error);
-            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-        } finally {
-            this.ocultarLoading();
+            this.mostrarError('Error generando reporte de ofertas aplicadas');
         }
     }
     
@@ -350,24 +310,45 @@ export class ReportesModule {
         }
     }
     
+    mostrarError(mensaje) {
+        console.error(mensaje);
+        // Aquí se puede integrar con el sistema de notificaciones del frontend
+        alert(mensaje);
+    }
+    
     async exportarReporte(tipoReporte, formato = 'csv') {
         try {
-            this.mostrarLoading(`Exportando reporte ${tipoReporte}...`);
-            
-            const reporte = await reportesAPI.exportar(tipoReporte, formato);
-            
-            if (reporte) {
-                this.descargarArchivo(reporte, `reporte_${tipoReporte}.${formato}`);
-                mostrarNotificacion(`Reporte ${tipoReporte} exportado correctamente`, 'success');
-            } else {
-                mostrarNotificacion(`Error al exportar reporte ${tipoReporte}`, 'error');
-            }
+            const reporte = await reportesAPI.progresoVentas(); // Usar el método correcto según el tipo
+            this.exportarDatos(reporte, tipoReporte, formato);
         } catch (error) {
-            console.error(`Error exportando reporte ${tipoReporte}:`, error);
-            mostrarNotificacion(`Error al exportar reporte: ${error.message}`, 'error');
-        } finally {
-            this.ocultarLoading();
+            console.error('Error exportando reporte:', error);
+            this.mostrarError('Error exportando reporte');
         }
+    }
+    
+    exportarDatos(datos, tipoReporte, formato) {
+        if (formato === 'csv') {
+            this.exportarCSV(datos, `reporte_${tipoReporte}.csv`);
+        } else if (formato === 'json') {
+            this.exportarJSON(datos, `reporte_${tipoReporte}.json`);
+        }
+    }
+    
+    exportarCSV(datos, nombreArchivo) {
+        // Implementar exportación a CSV
+        console.log('Exportando CSV:', datos);
+        alert('Funcionalidad de exportación CSV en desarrollo');
+    }
+    
+    exportarJSON(datos, nombreArchivo) {
+        // Implementar exportación a JSON
+        const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombreArchivo;
+        a.click();
+        URL.revokeObjectURL(url);
     }
     
     descargarArchivo(contenido, nombreArchivo) {

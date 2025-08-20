@@ -181,13 +181,13 @@ export class SesionesModule {
     async crearSesion() {
         const formData = this.getSesionFormData();
         
-        if (!formData.paciente || !formData.venta || !formData.box || !formData.fecha || !formData.hora) {
+        if (!formData.paciente_id || !formData.venta_id || !formData.fecha_planificada || !formData.hora_planificada) {
             alert('Por favor complete todos los campos obligatorios');
             return;
         }
         
         try {
-            const response = await sesionesAPI.createSesion(formData);
+            const response = await sesionesAPI.create(formData);
             
             if (response.success) {
                 alert('✅ Sesión creada exitosamente');
@@ -207,9 +207,9 @@ export class SesionesModule {
             paciente_id: document.getElementById('pacienteSesion').value,
             venta_id: document.getElementById('ventaSesion').value,
             box_id: document.getElementById('boxSesion').value,
-            fecha: document.getElementById('fechaSesion').value,
-            hora: document.getElementById('horaSesion').value,
-            duracion: document.getElementById('duracionSesion').value,
+            fecha_planificada: document.getElementById('fechaSesion').value,
+            hora_planificada: document.getElementById('horaSesion').value,
+            duracion: document.getElementById('duracionSesion').value || 60,
             observaciones: document.getElementById('observacionesSesion').value
         };
     }
@@ -217,14 +217,14 @@ export class SesionesModule {
     async abrirSesion(sesionId) {
         try {
             // Obtener datos de la sesión
-            const sesion = await sesionesAPI.getSesion(sesionId);
+            const sesion = await sesionesAPI.getById(sesionId);
             if (!sesion) {
                 alert('No se pudo obtener la información de la sesión');
                 return;
             }
             
-            // Mostrar modal de apertura de sesión
-            this.showAbrirSesionModal(sesion);
+            // Mostrar modal de intensidades
+            this.showIntensidadesModal(sesion);
             
         } catch (error) {
             console.error('Error abriendo sesión:', error);
@@ -304,14 +304,10 @@ export class SesionesModule {
     }
     
     async cerrarSesion(sesionId) {
-        const observaciones = prompt('Observaciones de cierre de sesión:');
-        if (observaciones === null) return; // Usuario canceló
+        const observaciones = prompt('Ingrese observaciones de la sesión (opcional):');
         
         try {
-            const response = await sesionesAPI.updateSesion(sesionId, {
-                accion: 'cerrar',
-                observaciones: observaciones
-            });
+            const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
             
             if (response.success) {
                 alert('✅ Sesión cerrada exitosamente');
@@ -320,23 +316,14 @@ export class SesionesModule {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error cerrando sesión:', error);
             alert('❌ Error cerrando sesión: ' + error.message);
         }
     }
     
-    async guardarIntensidades() {
-        const intensidades = this.getIntensidadesFromForm('intensidades-grid');
-        const pacienteId = document.getElementById('pacienteSesion').value;
-        
-        if (!pacienteId) {
-            alert('Por favor seleccione un paciente');
-            return;
-        }
-        
+    async guardarIntensidades(pacienteId, intensidades) {
         try {
-            const response = await fichasAPI.createIntensidades({
-                paciente_id: pacienteId,
+            const response = await sesionesAPI.abrirSesion(pacienteId, {
                 intensidades: intensidades,
                 fecha: new Date().toISOString()
             });
@@ -347,33 +334,26 @@ export class SesionesModule {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error guardando intensidades:', error);
             alert('❌ Error guardando intensidades: ' + error.message);
         }
     }
     
-    async cargarIntensidadesAnteriores(pacienteId = null, gridId = 'intensidades-grid') {
-        const paciente = pacienteId || document.getElementById('pacienteSesion').value;
-        
-        if (!paciente) {
-            alert('Por favor seleccione un paciente');
-            return;
-        }
-        
+    async cargarIntensidadesAnteriores(paciente) {
         try {
-            const response = await fichasAPI.getIntensidadesByPaciente(paciente);
+            const response = await sesionesAPI.getByVentaId(paciente);
             
-            if (response.success && response.data.length > 0) {
+            if (response && response.length > 0) {
                 // Obtener la última configuración de intensidades
-                const ultimaConfig = response.data[response.data.length - 1];
-                this.aplicarIntensidades(ultimaConfig.intensidades, gridId);
+                const ultimaConfig = response[response.length - 1];
+                this.aplicarIntensidades(ultimaConfig.intensidades, 'intensidades-grid');
                 alert('✅ Intensidades anteriores cargadas');
             } else {
                 alert('No se encontraron intensidades anteriores para este paciente');
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert('❌ Error cargando intensidades: ' + error.message);
+            console.error('Error cargando intensidades:', error);
+            alert('Error cargando intensidades anteriores: ' + error.message);
         }
     }
     
@@ -419,8 +399,7 @@ export class SesionesModule {
     
     async loadSesiones() {
         try {
-            const response = await sesionesAPI.getSesiones();
-            this.sesiones = response.data;
+            this.sesiones = await sesionesAPI.getAll();
             this.renderSesiones();
         } catch (error) {
             console.error('Error cargando sesiones:', error);
@@ -429,12 +408,8 @@ export class SesionesModule {
     
     async getSesion(sesionId) {
         try {
-            const response = await sesionesAPI.getSesion(sesionId);
-            
-            if (response.success) {
-                return response.data;
-            }
-            return null;
+            const sesion = await sesionesAPI.getById(sesionId);
+            return sesion;
         } catch (error) {
             console.error('Error obteniendo sesión:', error);
             return null;
@@ -511,9 +486,7 @@ export class SesionesModule {
     
     async confirmarPaciente(sesionId) {
         try {
-            const response = await sesionesAPI.updateSesion(sesionId, {
-                accion: 'confirmar'
-            });
+            const response = await sesionesAPI.confirmarPaciente(sesionId);
             
             if (response.success) {
                 alert('✅ Paciente confirmado exitosamente');
@@ -522,22 +495,22 @@ export class SesionesModule {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error confirmando paciente:', error);
             alert('❌ Error confirmando paciente: ' + error.message);
         }
     }
     
     async reprogramarSesion(sesionId) {
-        const nuevaFecha = prompt('Nueva fecha (YYYY-MM-DD):');
-        const nuevaHora = prompt('Nueva hora (HH:MM):');
+        const nuevaFecha = prompt('Ingrese la nueva fecha (YYYY-MM-DD):');
+        const nuevaHora = prompt('Ingrese la nueva hora (HH:MM):');
         
-        if (!nuevaFecha || !nuevaHora) return;
+        if (!nuevaFecha || !nuevaHora) {
+            alert('Por favor ingrese fecha y hora válidas');
+            return;
+        }
         
         try {
-            const response = await sesionesAPI.updateSesion(sesionId, {
-                accion: 'reprogramar',
-                nueva_fecha: nuevaFecha + ' ' + nuevaHora
-            });
+            const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
             
             if (response.success) {
                 alert('✅ Sesión reprogramada exitosamente');
@@ -546,7 +519,7 @@ export class SesionesModule {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error reprogramando sesión:', error);
             alert('❌ Error reprogramando sesión: ' + error.message);
         }
     }
@@ -555,9 +528,7 @@ export class SesionesModule {
         if (!confirm('¿Está seguro de que desea cancelar esta sesión?')) return;
         
         try {
-            const response = await sesionesAPI.updateSesion(sesionId, {
-                accion: 'cancelar'
-            });
+            const response = await sesionesAPI.delete(sesionId);
             
             if (response.success) {
                 alert('✅ Sesión cancelada exitosamente');
@@ -566,7 +537,7 @@ export class SesionesModule {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error cancelando sesión:', error);
             alert('❌ Error cancelando sesión: ' + error.message);
         }
     }
