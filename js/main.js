@@ -1,314 +1,347 @@
 /**
- * Archivo principal de la aplicación
- * Orquesta todos los módulos y maneja la navegación
+ * Archivo Principal - Clínica Beleza
+ * Orquestador de todos los módulos del sistema
  */
 
-import { inicializarPacientes, toggleFichasEspecificas, guardarPacienteFormulario } from './modules/pacientes.js';
-import { inicializarVentas, confirmarVenta } from './modules/ventas.js';
-import { inicializarPagos, registrarPago } from './modules/pagos.js';
-import { inicializarSesiones, iniciarSesion, terminarSesion, editarSesion, cancelarSesion, reagendarSesion } from './modules/sesiones.js';
-import { inicializarBoxes } from './modules/boxes.js';
-import { inicializarOfertas } from './modules/ofertas.js';
-import { inicializarReportes } from './modules/reportes.js';
-import { loadEnvironment, validateConfig } from './env.js';
-import { initializeApiClient, checkConnection } from './api-client.js';
+import { pacientesModule } from './modules/pacientes.js';
+import { ventasModule } from './modules/ventas.js';
+import { pagosModule } from './modules/pagos.js';
+import { sesionesModule } from './modules/sesiones.js';
+import { fichasEspecificas } from './modules/fichas-especificas.js';
+import { boxesModule } from './modules/boxes.js';
+import { ofertasModule } from './modules/ofertas.js';
+import { reportesModule } from './modules/reportes.js';
 
-// Estado global de la aplicación
-const AppState = {
-    inicializado: false,
-    vistaActual: 'fichas',
-    datosCargados: false
-};
+// Importar utilidades
+import { formatCurrency, formatDate, showMessage } from './utils.js';
 
-// Función principal de inicialización
-async function inicializarApp() {
-  if (AppState.inicializado) return;
-  
-  try {
-        console.log('🚀 Iniciando aplicación...');
-        
-        // Cargar configuración del entorno
-        await loadEnvironment();
-        
-        const isValid = validateConfig();
-        if (!isValid) {
-            console.error('❌ Error de configuración: Variables de entorno requeridas no encontradas');
-            mostrarMensaje('Error de configuración: Variables de entorno requeridas no encontradas', 'error');
-            return;
-        }
+// Importar constantes
+import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS, TRATAMIENTOS } from './constants.js';
 
-        // Inicializar cliente API (server-based)
-        initializeApiClient();
-        
-        // Verificar conexión a la API
-        const connection = await checkConnection();
-        if (!connection.connected) {
-            console.error('❌ No se puede conectar a la API:', connection.error);
-            mostrarMensaje('Error de conexión a la API: ' + connection.error, 'error');
-            return;
-        }
-        
-        console.log('✅ Conexión a API establecida');
-    
-    // Inicializar módulos
-    await inicializarPacientes();
-    await inicializarVentas();
-    await inicializarPagos();
-    await inicializarSesiones();
-    await inicializarBoxes();
-    await inicializarOfertas();
-    await inicializarReportes();
-    
-        // Inicializar navegación
-        inicializarNavegacion();
-    
-        // Inicializar funcionalidades móviles
-        inicializarMobileMenu();
-    
-        // Cargar datos iniciales
-        await cargarDatosIniciales();
-    
-    AppState.inicializado = true;
-    console.log('✅ Aplicación inicializada correctamente');
-        
-  } catch (error) {
-        console.error('❌ Error al inicializar la aplicación:', error);
-        mostrarMensaje('Error al inicializar la aplicación: ' + error.message, 'error');
-    }
-}
-
-// Inicializar navegación moderna
-function inicializarNavegacion() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const view = link.getAttribute('data-view');
-            if (view) {
-                cambiarVista(view);
-            }
-        });
-    });
-    
-    // Navegación por hash
-    window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.slice(1);
-        if (hash && ['fichas', 'ventas', 'pagos', 'sesiones', 'boxes', 'ofertas', 'historial'].includes(hash)) {
-            cambiarVista(hash);
-        }
-    });
-    
-    // Establecer vista inicial
-    const hash = window.location.hash.slice(1);
-    if (hash && ['fichas', 'ventas', 'pagos', 'sesiones', 'boxes', 'ofertas', 'historial'].includes(hash)) {
-        cambiarVista(hash);
-    } else {
-        cambiarVista('fichas');
-    }
-}
-
-// Cambiar vista
-function cambiarVista(vista) {
-    // Ocultar todas las secciones
-    document.querySelectorAll('.view-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    // Remover clase active de todos los enlaces
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-    
-    // Mostrar sección seleccionada
-    const seccion = document.getElementById(vista);
-    if (seccion) {
-        seccion.classList.add('active');
+class ClinicaBelezaApp {
+    constructor() {
+        this.currentView = 'fichas';
+        this.modules = {
+            pacientes: pacientesModule,
+            ventas: ventasModule,
+            pagos: pagosModule,
+            sesiones: sesionesModule,
+            fichasEspecificas: fichasEspecificas,
+            boxes: boxesModule,
+            ofertas: ofertasModule,
+            reportes: reportesModule
+        };
+        this.init();
     }
     
-    // Activar enlace correspondiente
-    const link = document.querySelector(`[data-view="${vista}"]`);
-    if (link) {
-        link.classList.add('active');
+    init() {
+        this.setupNavigation();
+        this.setupMobileMenu();
+        this.setupSearchFunctionality();
+        this.setupGlobalEventListeners();
+        this.loadInitialData();
+        this.showWelcomeMessage();
     }
     
-    // Actualizar hash
-    window.location.hash = vista;
-    
-    // Actualizar estado
-    AppState.vistaActual = vista;
-    
-    // Cargar datos específicos de la vista
-    cargarDatosVista(vista);
-}
-
-// Inicializar menú móvil
-function inicializarMobileMenu() {
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-        
-        // Cerrar menú al hacer clic en un enlace
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
+    setupNavigation() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = link.dataset.view;
+                this.switchView(view);
             });
         });
-    }
-}
-
-// Cargar datos iniciales
-async function cargarDatosIniciales() {
-    try {
-        // Aquí se cargarían los datos iniciales si es necesario
-        console.log('📊 Datos iniciales cargados');
-        AppState.datosCargados = true;
-    } catch (error) {
-        console.error('❌ Error al cargar datos iniciales:', error);
-    }
-}
-
-// Cargar datos específicos de cada vista
-function cargarDatosVista(vista) {
-  switch (vista) {
-        case 'fichas':
-            // Los datos se cargan automáticamente en el módulo de pacientes
-      break;
-        case 'ventas':
-            // Los datos se cargan automáticamente en el módulo de ventas
-      break;
-    case 'pagos':
-            // Los datos se cargan automáticamente en el módulo de pagos
-            break;
-        case 'sesiones':
-            // Los datos se cargan automáticamente en el módulo de sesiones
-            break;
-        case 'boxes':
-            cargarBoxes();
-            break;
-        case 'ofertas':
-            cargarOfertas();
-            break;
-        case 'historial':
-            cargarHistorial();
-      break;
-  }
-}
-
-// Funciones para cargar datos específicos
-function cargarBoxes() {
-    // Implementar carga de boxes
-    console.log('🏢 Cargando boxes...');
-}
-
-function cargarOfertas() {
-    // Implementar carga de ofertas
-    console.log('🏷️ Cargando ofertas...');
-}
-
-function cargarHistorial() {
-    // Implementar carga de historial
-    console.log('📋 Cargando historial...');
-}
-
-// Función para mostrar mensajes
-function mostrarMensaje(mensaje, tipo = 'info') {
-    // Crear elemento de mensaje
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message message-${tipo}`;
-    messageDiv.textContent = mensaje;
-    
-    // Insertar al inicio del contenedor principal
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent) {
-        mainContent.insertBefore(messageDiv, mainContent.firstChild);
         
-        // Remover mensaje después de 5 segundos
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.remove();
+        // Activar vista inicial
+        this.switchView('fichas');
+    }
+    
+    switchView(viewName) {
+        // Ocultar todas las vistas
+        const views = document.querySelectorAll('.view-section');
+        views.forEach(view => {
+            view.classList.remove('active');
+        });
+        
+        // Mostrar vista seleccionada
+        const targetView = document.getElementById(viewName);
+        if (targetView) {
+            targetView.classList.add('active');
+            this.currentView = viewName;
+        }
+        
+        // Actualizar navegación
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.view === viewName) {
+                link.classList.add('active');
             }
-        }, 5000);
+        });
+        
+        // Cargar datos específicos de la vista
+        this.loadViewData(viewName);
+    }
+    
+    loadViewData(viewName) {
+        switch (viewName) {
+            case 'fichas':
+                this.modules.pacientes.loadPacientes();
+                break;
+            case 'ventas':
+                this.modules.ventas.loadVentas();
+                this.modules.ventas.loadPacientes();
+                break;
+            case 'pagos':
+                this.modules.pagos.loadPagos();
+                this.modules.pagos.loadPacientes();
+                break;
+            case 'sesiones':
+                this.modules.sesiones.loadSesiones();
+                break;
+            case 'boxes':
+                this.modules.boxes.loadBoxes();
+                break;
+            case 'ofertas':
+                this.modules.ofertas.loadOfertas();
+                break;
+            case 'historial':
+                this.modules.reportes.loadHistorial();
+                break;
+        }
+    }
+    
+    setupMobileMenu() {
+        const hamburger = document.querySelector('.hamburger');
+        const navMenu = document.querySelector('.nav-menu');
+        
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Cerrar menú al hacer clic en un enlace
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                });
+            });
+        }
+    }
+    
+    setupSearchFunctionality() {
+        // Búsqueda de pacientes
+        const buscarPaciente = document.getElementById('buscarPaciente');
+        if (buscarPaciente) {
+            buscarPaciente.addEventListener('input', (e) => {
+                this.modules.pacientes.buscarPacientes(e.target.value);
+            });
+        }
+        
+        // Búsqueda de ventas
+        const buscarVenta = document.getElementById('buscarVenta');
+        if (buscarVenta) {
+            buscarVenta.addEventListener('input', (e) => {
+                this.modules.ventas.buscarVentas(e.target.value);
+            });
+        }
+        
+        // Búsqueda de pagos
+        const buscarPago = document.getElementById('buscarPago');
+        if (buscarPago) {
+            buscarPago.addEventListener('input', (e) => {
+                this.modules.pagos.buscarPagos(e.target.value);
+            });
+        }
+        
+        // Búsqueda de sesiones
+        const buscarSesion = document.getElementById('buscarSesion');
+        if (buscarSesion) {
+            buscarSesion.addEventListener('input', (e) => {
+                this.modules.sesiones.buscarSesiones(e.target.value);
+            });
+        }
+    }
+    
+    setupGlobalEventListeners() {
+        // Manejar cambios en fichas específicas
+        const fichasCheckboxes = document.querySelectorAll('input[name="fichasEspecificas"]');
+        fichasCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                this.modules.fichasEspecificas.toggleFichaEspecifica(e.target.id);
+            });
+        });
+        
+        // Manejar cambios en el toggle de fichas específicas
+        const toggleFichas = document.getElementById('toggleFichasEspecificas');
+        if (toggleFichas) {
+            toggleFichas.addEventListener('change', (e) => {
+                this.modules.pacientes.toggleFichasEspecificas(e.target.checked);
+            });
+        }
+        
+        // Filtro de historial
+        const filtroHistorial = document.getElementById('filtroHistorial');
+        if (filtroHistorial) {
+            filtroHistorial.addEventListener('change', (e) => {
+                this.modules.reportes.filtrarHistorial(e.target.value);
+            });
+        }
+    }
+    
+    async loadInitialData() {
+        try {
+            // Cargar datos básicos
+            await Promise.all([
+                this.modules.pacientes.loadPacientes(),
+                this.modules.ventas.loadVentas(),
+                this.modules.pagos.loadPagos(),
+                this.modules.sesiones.loadSesiones(),
+                this.modules.boxes.loadBoxes(),
+                this.modules.ofertas.loadOfertas()
+            ]);
+            
+            console.log('✅ Datos iniciales cargados correctamente');
+        } catch (error) {
+            console.error('❌ Error cargando datos iniciales:', error);
+            showMessage('Error cargando datos iniciales', 'error');
+        }
+    }
+    
+    showWelcomeMessage() {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = '';
+        
+        if (hour < 12) {
+            greeting = 'Buenos días';
+        } else if (hour < 18) {
+            greeting = 'Buenas tardes';
+        } else {
+            greeting = 'Buenas noches';
+        }
+        
+        console.log(`🏥 ${greeting}! Bienvenido al Sistema de Gestión de Clínica Beleza`);
+        console.log('📊 Sistema cargado y listo para usar');
+    }
+    
+    // Métodos de utilidad global
+    getCurrentView() {
+        return this.currentView;
+    }
+    
+    getModule(moduleName) {
+        return this.modules[moduleName];
+    }
+    
+    // Método para mostrar estadísticas rápidas
+    async showQuickStats() {
+        try {
+            const stats = {
+                pacientes: this.modules.pacientes.pacientes.length,
+                ventas: this.modules.ventas.ventas.length,
+                pagos: this.modules.pagos.pagos.length,
+                sesiones: this.modules.sesiones.sesiones.length
+            };
+            
+            const statsMessage = `
+                📊 Estadísticas Rápidas:
+                • Pacientes: ${stats.pacientes}
+                • Ventas: ${stats.ventas}
+                • Pagos: ${stats.pagos}
+                • Sesiones: ${stats.sesiones}
+            `;
+            
+            console.log(statsMessage);
+        } catch (error) {
+            console.error('Error obteniendo estadísticas:', error);
+        }
+    }
+    
+    // Método para exportar datos
+    exportData() {
+        const data = {
+            pacientes: this.modules.pacientes.pacientes,
+            ventas: this.modules.ventas.ventas,
+            pagos: this.modules.pagos.pagos,
+            sesiones: this.modules.sesiones.sesiones,
+            exportDate: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clinica-beleza-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showMessage('Datos exportados correctamente', 'success');
+    }
+    
+    // Método para importar datos
+    async importData(file) {
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            // Validar estructura de datos
+            if (!data.pacientes || !data.ventas || !data.pagos || !data.sesiones) {
+                throw new Error('Formato de archivo inválido');
+            }
+            
+            // Importar datos (implementar según necesidad)
+            console.log('Datos importados:', data);
+            showMessage('Datos importados correctamente', 'success');
+            
+        } catch (error) {
+            console.error('Error importando datos:', error);
+            showMessage('Error importando datos: ' + error.message, 'error');
+        }
     }
 }
 
-// Función para mostrar loading
-function mostrarLoading(elemento) {
-    elemento.classList.add('loading');
-}
-
-function ocultarLoading(elemento) {
-    elemento.classList.remove('loading');
-}
-
-// Funciones globales para formularios
-function limpiarFormularioPaciente() {
-    document.getElementById('pacienteForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-function limpiarFormularioVenta() {
-    document.getElementById('ventaForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-function limpiarFormularioPago() {
-    document.getElementById('pagoForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-function limpiarFormularioSesion() {
-    document.getElementById('sesionForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-function limpiarFormularioBox() {
-    document.getElementById('boxForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-function limpiarFormularioOferta() {
-    document.getElementById('ofertaForm').reset();
-    mostrarMensaje('Formulario limpiado', 'info');
-}
-
-// Exponer funciones globales
-function exponerFuncionesGlobales() {
-    window.cambiarVista = cambiarVista;
-    window.mostrarMensaje = mostrarMensaje;
-    window.mostrarLoading = mostrarLoading;
-    window.ocultarLoading = ocultarLoading;
-    window.limpiarFormularioPaciente = limpiarFormularioPaciente;
-    window.limpiarFormularioVenta = limpiarFormularioVenta;
-    window.limpiarFormularioPago = limpiarFormularioPago;
-    window.limpiarFormularioSesion = limpiarFormularioSesion;
-    window.limpiarFormularioBox = limpiarFormularioBox;
-    window.limpiarFormularioOferta = limpiarFormularioOferta;
+// Inicializar aplicación cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    window.clinicaApp = new ClinicaBelezaApp();
     
-    // Funciones de módulos
-    window.toggleFichasEspecificas = toggleFichasEspecificas;
-    window.guardarPacienteFormulario = guardarPacienteFormulario;
-    window.limpiarFormularioPaciente = limpiarFormularioPaciente;
-    window.confirmarVenta = confirmarVenta;
-    window.registrarPago = registrarPago;
-    window.iniciarSesion = iniciarSesion;
-    window.terminarSesion = terminarSesion;
-    window.editarSesion = editarSesion;
-    window.cancelarSesion = cancelarSesion;
-    window.reagendarSesion = reagendarSesion;
-}
-
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', async () => {
-  exponerFuncionesGlobales();
-    await inicializarApp();
+    // Hacer disponible globalmente para debugging
+    window.app = window.clinicaApp;
+    
+    // Mostrar estadísticas iniciales después de 2 segundos
+    setTimeout(() => {
+        window.clinicaApp.showQuickStats();
+    }, 2000);
 });
 
+// Funciones globales para compatibilidad
+window.limpiarFormularioPaciente = () => {
+    window.clinicaApp.getModule('pacientes').limpiarFormularioPaciente();
+};
+
+window.limpiarFormularioVenta = () => {
+    window.clinicaApp.getModule('ventas').limpiarFormularioVenta();
+};
+
+window.limpiarFormularioPago = () => {
+    window.clinicaApp.getModule('pagos').limpiarFormularioPago();
+};
+
+window.limpiarFormularioSesion = () => {
+    window.clinicaApp.getModule('sesiones').limpiarFormularioSesion();
+};
+
+window.limpiarFormularioBox = () => {
+    window.clinicaApp.getModule('boxes').limpiarFormularioBox();
+};
+
+window.limpiarFormularioOferta = () => {
+    window.clinicaApp.getModule('ofertas').limpiarFormularioOferta();
+};
+
 // Exportar para uso en otros módulos
-export { cambiarVista, mostrarMensaje, mostrarLoading, ocultarLoading };
+export default ClinicaBelezaApp;

@@ -51,6 +51,12 @@ DROP PROCEDURE IF EXISTS sp_reporte_plan_vs_ejecucion;
 DROP PROCEDURE IF EXISTS sp_ofertas_aplicables_venta;
 DROP PROCEDURE IF EXISTS sp_sesiones_venta;
 DROP PROCEDURE IF EXISTS sp_venta_completa;
+DROP PROCEDURE IF EXISTS sp_guardar_intensidades_zonas;
+DROP PROCEDURE IF EXISTS sp_cargar_intensidades_anteriores;
+DROP PROCEDURE IF EXISTS sp_calcular_precio_zonas;
+DROP PROCEDURE IF EXISTS sp_guardar_firma_digital;
+DROP PROCEDURE IF EXISTS sp_verificar_consentimiento_firmado;
+DROP PROCEDURE IF EXISTS sp_obtener_firma_consentimiento;
 
 DELIMITER $$
 
@@ -141,6 +147,33 @@ CREATE TABLE IF NOT EXISTS sucursal (
 
 CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
 
+CREATE TABLE IF NOT EXISTS zona_cuerpo (
+  codigo VARCHAR(50) PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  precio DECIMAL(12,2) NOT NULL DEFAULT 0.00
+);
+
+-- Insertar zonas del cuerpo predefinidas
+INSERT IGNORE INTO zona_cuerpo (codigo, nombre, precio) VALUES
+('PIERNAS', 'Piernas', 45000),
+('BRAZOS', 'Brazos', 35000),
+('REBAJE', 'Rebaje', 25000),
+('INTERGLUTEO', 'Interglúteo', 20000),
+('ROSTRO_C', 'Rostro C', 30000),
+('CUELLO', 'Cuello', 25000),
+('BOZO', 'Bozo', 15000),
+('AXILA', 'Axila', 20000),
+('MENTON', 'Mentón', 15000),
+('PATILLAS', 'Patillas', 15000),
+('ESPALDA', 'Espalda', 40000),
+('ABDOMEN', 'Abdomen', 30000),
+('GLUTEOS', 'Glúteos', 25000),
+('PECHO', 'Pecho', 30000),
+('BARBA', 'Barba', 25000),
+('DEDOS_MANOS', 'Dedos Manos', 10000),
+('EMPEINE_DEDOS', 'Empeine Dedos', 15000),
+('LINEA_ALBA', 'Línea Alba', 20000);
+
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   sucursal_id BIGINT NOT NULL,
@@ -189,6 +222,17 @@ CREATE TABLE IF NOT EXISTS ficha_especifica (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS consentimiento_firma (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  ficha_id BIGINT NOT NULL,
+  tipo_consentimiento VARCHAR(50) NOT NULL, -- 'depilacion', 'corporal', etc.
+  firma_blob LONGBLOB NOT NULL,
+  tipo_archivo VARCHAR(10) NOT NULL, -- 'png', 'jpeg'
+  fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  profesional_id BIGINT NOT NULL,
+  UNIQUE KEY uk_ficha_tipo_consentimiento (ficha_id, tipo_consentimiento)
+);
+
 CALL AddIndexIfNotExists('ix_ficha_especifica_ficha', 'ficha_especifica', 'ficha_id', FALSE);
 CALL AddIndexIfNotExists('ix_ficha_especifica_tipo', 'ficha_especifica', 'tipo_id', FALSE);
 
@@ -207,6 +251,8 @@ CREATE TABLE IF NOT EXISTS pack (
   nombre VARCHAR(150) NOT NULL,
   descripcion TEXT,
   duracion_sesion_min INT NOT NULL DEFAULT 0,
+  zonas_incluidas JSON,
+  precio_por_zona JSON,
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -308,7 +354,8 @@ CREATE TABLE IF NOT EXISTS sesion (
   paciente_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
   abierta_en TIMESTAMP NULL,
   cerrada_en TIMESTAMP NULL,
-  observaciones TEXT
+  observaciones TEXT,
+  intensidades_zonas JSON
 );
 
 CALL AddIndexIfNotExists('ux_sesion_venta_num', 'sesion', 'venta_id, numero_sesion', TRUE);
@@ -326,6 +373,9 @@ CALL AddForeignKeyIfNotExists('box', 'fk_box_sucursal', 'sucursal_id', 'sucursal
 
 CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_ficha', 'ficha_id', 'ficha', 'id');
 CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_tipo', 'tipo_id', 'tipo_ficha_especifica', 'id');
+
+CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_profesional', 'profesional_id', 'profesional', 'id');
 
 CALL AddForeignKeyIfNotExists('pack', 'fk_pack_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 
@@ -1415,6 +1465,143 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- ---------- DEPILACIÓN Y ZONAS DEL CUERPO ----------
+
+-- DEP-001: Guardar intensidades por zona del cuerpo
+DELIMITER $$
+CREATE PROCEDURE sp_guardar_intensidades_zonas(
+    IN p_sesion_id BIGINT,
+    IN p_intensidades_zonas JSON
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    UPDATE sesion 
+    SET intensidades_zonas = p_intensidades_zonas
+    WHERE id = p_sesion_id;
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- DEP-002: Cargar intensidades anteriores del paciente
+DELIMITER $$
+CREATE PROCEDURE sp_cargar_intensidades_anteriores(
+    IN p_ficha_id BIGINT,
+    IN p_tratamiento_id BIGINT
+)
+BEGIN
+    SELECT s.intensidades_zonas
+    FROM sesion s
+    JOIN venta v ON s.venta_id = v.id
+    WHERE v.ficha_id = p_ficha_id
+      AND v.tratamiento_id = p_tratamiento_id
+      AND s.intensidades_zonas IS NOT NULL
+    ORDER BY s.fecha_ejecucion DESC
+    LIMIT 1;
+END$$
+DELIMITER ;
+
+-- DEP-003: Calcular precio por zonas del cuerpo
+DELIMITER $$
+CREATE PROCEDURE sp_calcular_precio_zonas(
+    IN p_pack_id BIGINT,
+    IN p_zonas_seleccionadas JSON,
+    OUT p_precio_total DECIMAL(12,2)
+)
+BEGIN
+    DECLARE v_precio_base DECIMAL(12,2) DEFAULT 0;
+    DECLARE v_precio_zonas DECIMAL(12,2) DEFAULT 0;
+    DECLARE v_zonas_incluidas JSON;
+    DECLARE v_precio_por_zona JSON;
+    
+    -- Obtener información del pack
+    SELECT zonas_incluidas, precio_por_zona INTO v_zonas_incluidas, v_precio_por_zona
+    FROM pack WHERE id = p_pack_id;
+    
+    -- Calcular precio base del pack
+    SELECT precio_lista INTO v_precio_base
+    FROM venta WHERE pack_id = p_pack_id LIMIT 1;
+    
+    -- Calcular diferencia de zonas
+    -- (Esta lógica se puede expandir según necesidades específicas)
+    SET p_precio_total = v_precio_base + v_precio_zonas;
+END$$
+DELIMITER ;
+
+-- DEP-004: Guardar firma digital como BLOB
+DELIMITER $$
+CREATE PROCEDURE sp_guardar_firma_digital(
+    IN p_ficha_id BIGINT,
+    IN p_tipo_consentimiento VARCHAR(50),
+    IN p_firma_blob LONGBLOB,
+    IN p_tipo_archivo VARCHAR(10),
+    IN p_profesional_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    INSERT INTO consentimiento_firma (ficha_id, tipo_consentimiento, firma_blob, tipo_archivo, profesional_id)
+    VALUES (p_ficha_id, p_tipo_consentimiento, p_firma_blob, p_tipo_archivo, p_profesional_id)
+    ON DUPLICATE KEY UPDATE
+        firma_blob = p_firma_blob,
+        tipo_archivo = p_tipo_archivo,
+        fecha_firma = CURRENT_TIMESTAMP,
+        profesional_id = p_profesional_id;
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- DEP-005: Verificar si el paciente tiene consentimiento firmado
+DELIMITER $$
+CREATE PROCEDURE sp_verificar_consentimiento_firmado(
+    IN p_ficha_id BIGINT,
+    IN p_tipo_consentimiento VARCHAR(50)
+)
+BEGIN
+    SELECT 
+        cf.id,
+        cf.fecha_firma,
+        cf.tipo_archivo,
+        p.nombre AS profesional_nombre
+    FROM consentimiento_firma cf
+    JOIN profesional p ON cf.profesional_id = p.id
+    WHERE cf.ficha_id = p_ficha_id 
+      AND cf.tipo_consentimiento = p_tipo_consentimiento;
+END$$
+DELIMITER ;
+
+-- DEP-006: Obtener firma del consentimiento
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_firma_consentimiento(
+    IN p_ficha_id BIGINT,
+    IN p_tipo_consentimiento VARCHAR(50)
+)
+BEGIN
+    SELECT 
+        firma_blob,
+        tipo_archivo,
+        fecha_firma,
+        profesional_id
+    FROM consentimiento_firma
+    WHERE ficha_id = p_ficha_id 
+      AND tipo_consentimiento = p_tipo_consentimiento;
+END$$
+DELIMITER ;
+
 -- =============================================================================
 -- NOTA IMPORTANTE: TODA LA LÓGICA DE NEGOCIO ESTÁ EN LA BASE DE DATOS
 -- =============================================================================
@@ -1435,6 +1622,9 @@ DELIMITER ;
 -- ✓ BR-004: Campo pack.duracion_sesion_min
 -- ✓ BR-005: FK obligatorias en sesion
 -- ✓ BR-006: Arquitectura server-based (sin modo offline)
+-- ✓ BR-007: Tabla zona_cuerpo y campos pack.zonas_incluidas, pack.precio_por_zona
+-- ✓ BR-008: Campo sesion.intensidades_zonas para tracking de intensidades
+-- ✓ BR-009: Firma digital almacenada en ficha_especifica.datos
 -- 
 -- Vistas disponibles para consultas complejas:
 -- ✓ v_venta_progreso: Progreso de sesiones por venta

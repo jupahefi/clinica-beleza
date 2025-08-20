@@ -1,435 +1,699 @@
-// Módulo de Sesiones - Integrado con Calendario Propio
-// Server-based architecture - Sin modo offline
+/**
+ * Módulo de Gestión de Sesiones
+ * Maneja el agendamiento y control de sesiones de depilación
+ */
 
-import { sesionesAPI, fichasAPI, ventasAPI, boxesAPI, profesionalesAPI, sucursalesAPI } from '../api-client.js';
+import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS } from '../constants.js';
+import { formatCurrency, formatDate } from '../utils.js';
 
-let sesiones = [];
-let calendar = null;
-
-export async function inicializarSesiones() {
-    console.log('📅 Inicializando módulo de sesiones...');
+export class SesionesModule {
+    constructor() {
+        this.sesiones = [];
+        this.intensidades = {}; // Almacena intensidades por paciente y zona
+        this.init();
+    }
     
-    // Inicializar calendario
-    inicializarCalendario();
+    init() {
+        this.loadSesiones();
+        this.setupEventListeners();
+    }
     
-    // Cargar datos iniciales
-    await cargarSesiones();
-    await cargarPacientes();
-    await cargarVentas();
-    await cargarBoxes();
-    await cargarProfesionales();
-    await cargarSucursales();
-  
-    // Configurar formulario
-    configurarFormularioSesion();
-  
-    // Configurar búsqueda
-    configurarBusqueda();
+    setupEventListeners() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupSesionForm();
+            this.setupIntensidadesForm();
+        });
+    }
     
-  console.log('✅ Módulo de sesiones inicializado');
-}
-
-function inicializarCalendario() {
-    const calendarWrapper = document.getElementById('calendar-wrapper');
-    if (calendarWrapper) {
-        calendar = new Calendar(calendarWrapper, {
-            initialView: 'week',
-            slotDuration: 30,
-            slotMinTime: '08:00:00',
-            slotMaxTime: '20:00:00'
-        });
-        
-        // Cargar boxes en el calendario
-        calendar.loadBoxes();
-    }
-}
-
-async function cargarSesiones() {
-    try {
-        const data = await sesionesAPI.getAll();
-        sesiones = data;
-        actualizarTablaSesiones();
-        
-        // Actualizar calendario si existe
-        if (calendar) {
-            calendar.events = sesiones;
-            calendar.renderCalendar();
-        }
-    } catch (error) {
-        console.error('Error cargando sesiones:', error);
-        mostrarMensaje('Error cargando sesiones', 'error');
-    }
-}
-
-async function cargarPacientes() {
-    try {
-        const data = await fichasAPI.getAll();
-        const select = document.getElementById('pacienteSesion');
-        select.innerHTML = '<option value="">Seleccionar paciente...</option>';
-        
-        data.forEach(paciente => {
-            if (paciente.estado === 'activo') {
-                const option = document.createElement('option');
-                option.value = paciente.id;
-                option.textContent = `${paciente.nombres} ${paciente.apellidos} (${paciente.rut})`;
-                select.appendChild(option);
-            }
-        });
-  } catch (error) {
-        console.error('Error cargando pacientes:', error);
-    }
-}
-
-async function cargarVentas() {
-    try {
-        const data = await ventasAPI.getAll();
-        const select = document.getElementById('ventaSesion');
-        select.innerHTML = '<option value="">Seleccionar venta...</option>';
-        
-        for (const venta of data) {
-            if (venta.estado === 'pendiente' || venta.estado === 'pagado') {
-                const paciente = await fichasAPI.getById(venta.ficha_id);
-                const sesionesUsadas = venta.cantidad_sesiones - venta.sesiones_restantes;
-                const option = document.createElement('option');
-                option.value = venta.id;
-                option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} - ${paciente?.nombres || 'Paciente'} (${sesionesUsadas}/${venta.cantidad_sesiones})`;
-                select.appendChild(option);
-            }
-        }
-  } catch (error) {
-        console.error('Error cargando ventas:', error);
-    }
-}
-
-async function cargarBoxes() {
-    try {
-        const data = await boxesAPI.getAll();
-        const select = document.getElementById('boxSesion');
-        select.innerHTML = '<option value="">Seleccionar box...</option>';
-        
-        data.forEach(box => {
-            if (box.estado === 'activo') {
-                const option = document.createElement('option');
-                option.value = box.id;
-                option.textContent = box.nombre;
-                select.appendChild(option);
-            }
-        });
-  } catch (error) {
-        console.error('Error cargando boxes:', error);
-    }
-}
-
-async function cargarProfesionales() {
-    try {
-        const data = await profesionalesAPI.getAll();
-        const select = document.getElementById('profesionalSesion');
-        if (select) {
-            select.innerHTML = '<option value="">Seleccionar profesional...</option>';
-            
-            data.forEach(profesional => {
-                if (profesional.estado === 'activo') {
-                    const option = document.createElement('option');
-                    option.value = profesional.id;
-                    option.textContent = `${profesional.nombres} ${profesional.apellidos}`;
-                    select.appendChild(option);
-                }
+    setupSesionForm() {
+        const form = document.getElementById('sesionForm');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.crearSesion();
             });
         }
-      } catch (error) {
-        console.error('Error cargando profesionales:', error);
     }
-}
-
-async function cargarSucursales() {
-    try {
-        const data = await sucursalesAPI.getAll();
-        const select = document.getElementById('sucursalSesion');
-        if (select) {
-            select.innerHTML = '<option value="">Seleccionar sucursal...</option>';
-            
-            data.forEach(sucursal => {
-                if (sucursal.estado === 'activa') {
-                    const option = document.createElement('option');
-                    option.value = sucursal.id;
-                    option.textContent = sucursal.nombre;
-                    select.appendChild(option);
-                }
-            });
+    
+    setupIntensidadesForm() {
+        // Crear formulario de intensidades si no existe
+        const intensidadesContainer = document.getElementById('intensidades-container');
+        if (intensidadesContainer) {
+            this.createIntensidadesForm(intensidadesContainer);
         }
-    } catch (error) {
-        console.error('Error cargando sucursales:', error);
-    }
-}
-
-function configurarFormularioSesion() {
-    const form = document.getElementById('sesionForm');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await guardarSesion();
-        });
     }
     
-    // Configurar cambio de paciente para cargar ventas
-    const pacienteSelect = document.getElementById('pacienteSesion');
-    if (pacienteSelect) {
-        pacienteSelect.addEventListener('change', async (e) => {
-            const pacienteId = e.target.value;
-            if (pacienteId) {
-                await cargarVentasPorPaciente(pacienteId);
-            }
-        });
-    }
-}
-
-async function cargarVentasPorPaciente(pacienteId) {
-    try {
-        const data = await ventasAPI.search(`ficha_id:${pacienteId}`);
-        const select = document.getElementById('ventaSesion');
-        select.innerHTML = '<option value="">Seleccionar venta...</option>';
-        
-        for (const venta of data) {
-            if (venta.sesiones_restantes > 0) {
-                const sesionesUsadas = venta.cantidad_sesiones - venta.sesiones_restantes;
-                const option = document.createElement('option');
-                option.value = venta.id;
-                option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} (${sesionesUsadas}/${venta.cantidad_sesiones})`;
-                select.appendChild(option);
-            }
-        }
-  } catch (error) {
-        console.error('Error cargando ventas del paciente:', error);
-    }
-}
-
-async function guardarSesion() {
-    const form = document.getElementById('sesionForm');
-    const formData = new FormData(form);
-    
-    const sesionData = {
-        venta_id: parseInt(formData.get('ventaSesion')),
-        ficha_id: parseInt(formData.get('pacienteSesion')),
-        box_id: parseInt(formData.get('boxSesion')),
-        profesional_id: parseInt(formData.get('profesionalSesion')) || null,
-        sucursal_id: parseInt(formData.get('sucursalSesion')) || null,
-        numero_sesion: parseInt(formData.get('numeroSesion')) || 1,
-        fecha_inicio: `${formData.get('fechaSesion')}T${formData.get('horaSesion')}:00`,
-        duracion_minutos: parseInt(formData.get('duracionSesion')) || 60,
-        observaciones: formData.get('observacionesSesion') || '',
-        estado: 'agendada'
-    };
-    
-    // Calcular fecha fin
-    const fechaInicio = new Date(sesionData.fecha_inicio);
-    const fechaFin = new Date(fechaInicio.getTime() + (sesionData.duracion_minutos * 60000));
-    sesionData.fecha_fin = fechaFin.toISOString();
-    
-    try {
-        const data = await sesionesAPI.create(sesionData);
-        
-        if (data) {
-            mostrarMensaje('Sesión agendada correctamente', 'success');
-            form.reset();
-            await cargarSesiones();
-  } else {
-            mostrarMensaje('Error al agendar sesión', 'error');
-        }
-    } catch (error) {
-        console.error('Error guardando sesión:', error);
-        mostrarMensaje('Error al guardar sesión', 'error');
-    }
-}
-
-function configurarBusqueda() {
-    const searchInput = document.getElementById('buscarSesion');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            filtrarSesiones(searchTerm);
-        });
-    }
-}
-
-function filtrarSesiones(searchTerm) {
-    const tbody = document.getElementById('cuerpoTablaSesiones');
-    if (!tbody) return;
-    
-    const filteredSesiones = sesiones.filter(sesion => {
-        return sesion.ficha?.nombres?.toLowerCase().includes(searchTerm) ||
-               sesion.ficha?.apellidos?.toLowerCase().includes(searchTerm) ||
-               sesion.venta?.tratamiento?.nombre?.toLowerCase().includes(searchTerm) ||
-               sesion.box?.nombre?.toLowerCase().includes(searchTerm);
-    });
-    
-    actualizarTablaSesiones(filteredSesiones);
-}
-
-function actualizarTablaSesiones(sesionesAMostrar = sesiones) {
-    const tbody = document.getElementById('cuerpoTablaSesiones');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    if (sesionesAMostrar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay sesiones programadas</td></tr>';
-        return;
-    }
-    
-    sesionesAMostrar.forEach(sesion => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${sesion.ficha?.nombres || 'N/A'} ${sesion.ficha?.apellidos || ''}</td>
-            <td>${sesion.venta?.tratamiento?.nombre || 'N/A'}</td>
-            <td>${sesion.box?.nombre || 'N/A'}</td>
-            <td>${formatearFecha(sesion.fecha_inicio)}</td>
-            <td>${formatearHora(sesion.fecha_inicio)}</td>
-            <td>${sesion.duracion_minutos} min</td>
-            <td><span class="status-badge status-${sesion.estado}">${formatearEstado(sesion.estado)}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editarSesion(${sesion.id})">
-                        <i class="fas fa-edit"></i>
+    createIntensidadesForm(container) {
+        container.innerHTML = `
+            <div class="intensidades-form">
+                <h4>⚡ Configuración de Intensidades por Zona</h4>
+                <div class="intensidades-grid" id="intensidades-grid"></div>
+                <div class="intensidades-actions">
+                    <button type="button" class="btn btn-primary" onclick="sesionesModule.guardarIntensidades()">
+                        💾 Guardar Intensidades
                     </button>
-                    <button class="btn btn-sm btn-warning" onclick="reagendarSesion(${sesion.id})">
-                        <i class="fas fa-calendar-alt"></i>
+                    <button type="button" class="btn btn-secondary" onclick="sesionesModule.cargarIntensidadesAnteriores()">
+                        📋 Cargar Intensidades Anteriores
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="cancelarSesion(${sesion.id})">
-                        <i class="fas fa-times"></i>
-                    </button>
-      </div>
-            </td>
+                </div>
+            </div>
         `;
-        tbody.appendChild(row);
-    });
-}
-
-// Funciones de acción de sesiones
-export async function editarSesion(sesionId) {
-    const sesion = sesiones.find(s => s.id === sesionId);
-    if (!sesion) return;
+        
+        this.renderIntensidadesGrid();
+    }
     
-    // Implementar modal de edición
-    console.log('Editar sesión:', sesion);
-    mostrarMensaje('Función de edición en desarrollo', 'info');
-}
-
-export async function reagendarSesion(sesionId) {
-    const sesion = sesiones.find(s => s.id === sesionId);
-    if (!sesion) return;
+    renderIntensidadesGrid() {
+        const grid = document.getElementById('intensidades-grid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        Object.entries(ZONAS_CUERPO_LABELS).forEach(([key, label]) => {
+            const zonaDiv = document.createElement('div');
+            zonaDiv.className = 'intensidad-zona';
+            zonaDiv.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 15px;
+                border: 2px solid #e9ecef;
+                border-radius: 8px;
+                background: white;
+            `;
+            
+            zonaDiv.innerHTML = `
+                <label class="zona-label" style="font-weight: 600; color: #333;">${label}</label>
+                <div class="intensidad-controls">
+                    <label>Intensidad (J/cm²):</label>
+                    <input type="number" 
+                           id="intensidad_${key}" 
+                           class="intensidad-input" 
+                           min="0" 
+                           max="50" 
+                           step="0.1" 
+                           placeholder="0.0"
+                           style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div class="intensidad-controls">
+                    <label>Frecuencia (Hz):</label>
+                    <input type="number" 
+                           id="frecuencia_${key}" 
+                           class="frecuencia-input" 
+                           min="1" 
+                           max="10" 
+                           step="0.1" 
+                           placeholder="1.0"
+                           style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div class="intensidad-controls">
+                    <label>Duración (ms):</label>
+                    <input type="number" 
+                           id="duracion_${key}" 
+                           class="duracion-input" 
+                           min="1" 
+                           max="100" 
+                           step="1" 
+                           placeholder="10"
+                           style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div class="intensidad-controls">
+                    <label>Spot Size (mm):</label>
+                    <select id="spot_${key}" class="spot-select" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="6">6</option>
+                        <option value="8">8</option>
+                        <option value="10">10</option>
+                        <option value="12">12</option>
+                        <option value="15">15</option>
+                        <option value="18">18</option>
+                    </select>
+                </div>
+                <div class="intensidad-controls">
+                    <label>Observaciones:</label>
+                    <textarea id="obs_${key}" 
+                              class="obs-textarea" 
+                              rows="2" 
+                              placeholder="Observaciones específicas..."
+                              style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+                </div>
+            `;
+            
+            grid.appendChild(zonaDiv);
+        });
+        
+        // Aplicar estilos CSS
+        const styles = `
+            .intensidades-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin: 15px 0;
+            }
+            
+            .intensidad-controls {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .intensidad-controls label {
+                font-size: 12px;
+                color: #666;
+                font-weight: 500;
+            }
+            
+            .intensidades-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+                justify-content: center;
+            }
+        `;
+        
+        if (!document.getElementById('intensidades-styles')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'intensidades-styles';
+            styleSheet.textContent = styles;
+            document.head.appendChild(styleSheet);
+        }
+    }
     
-    // Implementar modal de reagendamiento
-    console.log('Reagendar sesión:', sesion);
-    mostrarMensaje('Función de reagendamiento en desarrollo', 'info');
-}
-
-export async function cancelarSesion(sesionId) {
-    const sesion = sesiones.find(s => s.id === sesionId);
-    if (!sesion) return;
-    
-    if (confirm(`¿Estás seguro de que deseas cancelar la sesión?`)) {
+    async crearSesion() {
+        const formData = this.getSesionFormData();
+        
+        if (!formData.paciente || !formData.venta || !formData.box || !formData.fecha || !formData.hora) {
+            alert('Por favor complete todos los campos obligatorios');
+            return;
+        }
+        
         try {
-            const data = await sesionesAPI.update(sesionId, {
-                estado: 'cancelada',
-                motivo_cancelacion: 'Cancelada por el usuario'
+            const response = await fetch('./api.php/sesiones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
             });
             
-            if (data) {
-                mostrarMensaje('Sesión cancelada correctamente', 'success');
-                await cargarSesiones();
-  } else {
-                mostrarMensaje('Error al cancelar sesión', 'error');
+            if (!response.ok) {
+                throw new Error('Error creando sesión');
             }
-  } catch (error) {
-            console.error('Error cancelando sesión:', error);
-            mostrarMensaje('Error al cancelar sesión', 'error');
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Sesión creada exitosamente');
+                this.limpiarFormularioSesion();
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error creando sesión: ' + error.message);
         }
     }
-}
-
-export async function iniciarSesion(sesionId) {
-    const sesion = sesiones.find(s => s.id === sesionId);
-    if (!sesion) return;
     
-    try {
-        const data = await sesionesAPI.update(sesionId, {
-            estado: 'en_curso',
-            fecha_inicio_real: new Date().toISOString()
+    getSesionFormData() {
+        return {
+            paciente_id: document.getElementById('pacienteSesion').value,
+            venta_id: document.getElementById('ventaSesion').value,
+            box_id: document.getElementById('boxSesion').value,
+            fecha: document.getElementById('fechaSesion').value,
+            hora: document.getElementById('horaSesion').value,
+            duracion: document.getElementById('duracionSesion').value,
+            observaciones: document.getElementById('observacionesSesion').value
+        };
+    }
+    
+    async abrirSesion(sesionId) {
+        try {
+            // Obtener datos de la sesión
+            const sesion = await this.getSesion(sesionId);
+            if (!sesion) {
+                alert('No se pudo obtener la información de la sesión');
+                return;
+            }
+            
+            // Mostrar modal de apertura de sesión
+            this.showAbrirSesionModal(sesion);
+            
+        } catch (error) {
+            console.error('Error abriendo sesión:', error);
+            alert('Error abriendo sesión: ' + error.message);
+        }
+    }
+    
+    showAbrirSesionModal(sesion) {
+        const modal = document.createElement('div');
+        modal.className = 'sesion-modal';
+        modal.innerHTML = `
+            <div class="sesion-modal-content">
+                <div class="sesion-modal-header">
+                    <h3>🔓 Abrir Sesión - ${sesion.paciente_nombre}</h3>
+                    <button class="close-btn" onclick="this.closest('.sesion-modal').remove()">×</button>
+                </div>
+                
+                <div class="sesion-modal-body">
+                    <div class="sesion-info">
+                        <p><strong>Paciente:</strong> ${sesion.paciente_nombre}</p>
+                        <p><strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}</p>
+                        <p><strong>Box:</strong> ${sesion.box_nombre}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}</p>
+                        <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
+                    </div>
+                    
+                    <div class="intensidades-section">
+                        <h4>⚡ Intensidades por Zona</h4>
+                        <div id="sesion-intensidades-grid"></div>
+                    </div>
+                    
+                    <div class="sesion-observaciones">
+                        <label>Observaciones de la sesión:</label>
+                        <textarea id="sesion-observaciones" rows="3" placeholder="Observaciones de la sesión actual..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="sesion-modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.sesion-modal').remove()">
+                        ❌ Cancelar
+                    </button>
+                    <button class="btn btn-success" onclick="sesionesModule.confirmarAbrirSesion(${sesion.id})">
+                        ✅ Abrir Sesión
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Cargar intensidades anteriores
+        this.cargarIntensidadesAnteriores(sesion.paciente_id, 'sesion-intensidades-grid');
+    }
+    
+    async confirmarAbrirSesion(sesionId) {
+        const observaciones = document.getElementById('sesion-observaciones').value;
+        const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
+        
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accion: 'abrir',
+                    observaciones: observaciones,
+                    intensidades: intensidades
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error abriendo sesión');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Sesión abierta exitosamente');
+                document.querySelector('.sesion-modal').remove();
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error abriendo sesión: ' + error.message);
+        }
+    }
+    
+    async cerrarSesion(sesionId) {
+        const observaciones = prompt('Observaciones de cierre de sesión:');
+        if (observaciones === null) return; // Usuario canceló
+        
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accion: 'cerrar',
+                    observaciones: observaciones
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error cerrando sesión');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Sesión cerrada exitosamente');
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error cerrando sesión: ' + error.message);
+        }
+    }
+    
+    async guardarIntensidades() {
+        const intensidades = this.getIntensidadesFromForm('intensidades-grid');
+        const pacienteId = document.getElementById('pacienteSesion').value;
+        
+        if (!pacienteId) {
+            alert('Por favor seleccione un paciente');
+            return;
+        }
+        
+        try {
+            const response = await fetch('./api.php/intensidades', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    paciente_id: pacienteId,
+                    intensidades: intensidades,
+                    fecha: new Date().toISOString()
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error guardando intensidades');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Intensidades guardadas exitosamente');
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error guardando intensidades: ' + error.message);
+        }
+    }
+    
+    async cargarIntensidadesAnteriores(pacienteId = null, gridId = 'intensidades-grid') {
+        const paciente = pacienteId || document.getElementById('pacienteSesion').value;
+        
+        if (!paciente) {
+            alert('Por favor seleccione un paciente');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`./api.php/intensidades?paciente_id=${paciente}`);
+            
+            if (!response.ok) {
+                throw new Error('Error cargando intensidades');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success && result.data.length > 0) {
+                // Obtener la última configuración de intensidades
+                const ultimaConfig = result.data[result.data.length - 1];
+                this.aplicarIntensidades(ultimaConfig.intensidades, gridId);
+                alert('✅ Intensidades anteriores cargadas');
+            } else {
+                alert('No se encontraron intensidades anteriores para este paciente');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error cargando intensidades: ' + error.message);
+        }
+    }
+    
+    getIntensidadesFromForm(gridId) {
+        const intensidades = {};
+        
+        Object.keys(ZONAS_CUERPO).forEach(zona => {
+            const intensidad = document.getElementById(`intensidad_${zona}`)?.value;
+            const frecuencia = document.getElementById(`frecuencia_${zona}`)?.value;
+            const duracion = document.getElementById(`duracion_${zona}`)?.value;
+            const spot = document.getElementById(`spot_${zona}`)?.value;
+            const observaciones = document.getElementById(`obs_${zona}`)?.value;
+            
+            if (intensidad || frecuencia || duracion || spot || observaciones) {
+                intensidades[zona] = {
+                    intensidad: parseFloat(intensidad) || 0,
+                    frecuencia: parseFloat(frecuencia) || 1,
+                    duracion: parseInt(duracion) || 10,
+                    spot_size: parseInt(spot) || 8,
+                    observaciones: observaciones || ''
+                };
+            }
         });
         
-        if (data) {
-            mostrarMensaje('Sesión iniciada correctamente', 'success');
-            await cargarSesiones();
-        } else {
-            mostrarMensaje('Error al iniciar sesión', 'error');
-        }
-  } catch (error) {
-        console.error('Error iniciando sesión:', error);
-        mostrarMensaje('Error al iniciar sesión', 'error');
+        return intensidades;
     }
-}
-
-export async function terminarSesion(sesionId) {
-    const sesion = sesiones.find(s => s.id === sesionId);
-    if (!sesion) return;
     
-    try {
-        const data = await sesionesAPI.update(sesionId, {
-            estado: 'completada',
-            fecha_fin_real: new Date().toISOString()
+    aplicarIntensidades(intensidades, gridId) {
+        Object.entries(intensidades).forEach(([zona, config]) => {
+            const intensidadInput = document.getElementById(`intensidad_${zona}`);
+            const frecuenciaInput = document.getElementById(`frecuencia_${zona}`);
+            const duracionInput = document.getElementById(`duracion_${zona}`);
+            const spotSelect = document.getElementById(`spot_${zona}`);
+            const obsTextarea = document.getElementById(`obs_${zona}`);
+            
+            if (intensidadInput) intensidadInput.value = config.intensidad || '';
+            if (frecuenciaInput) frecuenciaInput.value = config.frecuencia || '';
+            if (duracionInput) duracionInput.value = config.duracion || '';
+            if (spotSelect) spotSelect.value = config.spot_size || 8;
+            if (obsTextarea) obsTextarea.value = config.observaciones || '';
         });
-        
-        if (data) {
-            mostrarMensaje('Sesión completada correctamente', 'success');
-            await cargarSesiones();
-        } else {
-            mostrarMensaje('Error al completar sesión', 'error');
+    }
+    
+    async loadSesiones() {
+        try {
+            const response = await fetch('./api.php/sesiones');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.sesiones = result.data;
+                this.renderSesiones();
+            }
+        } catch (error) {
+            console.error('Error cargando sesiones:', error);
         }
-  } catch (error) {
-        console.error('Error terminando sesión:', error);
-        mostrarMensaje('Error al terminar sesión', 'error');
+    }
+    
+    async getSesion(sesionId) {
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error obteniendo sesión:', error);
+            return null;
+        }
+    }
+    
+    renderSesiones() {
+        const tbody = document.getElementById('cuerpoTablaSesiones');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        this.sesiones.forEach(sesion => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${sesion.paciente_nombre || 'N/A'}</td>
+                <td>${sesion.venta_id || 'N/A'}</td>
+                <td>${sesion.box_nombre || 'N/A'}</td>
+                <td>${formatDate(sesion.fecha_planificada)}</td>
+                <td>${sesion.hora_planificada || 'N/A'}</td>
+                <td>${sesion.duracion || 'N/A'} min</td>
+                <td>
+                    <span class="status-badge status-${sesion.estado}">
+                        ${this.getEstadoLabel(sesion.estado)}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        ${this.getActionButtons(sesion)}
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    getEstadoLabel(estado) {
+        const estados = {
+            'programada': 'Programada',
+            'confirmada': 'Confirmada',
+            'en_curso': 'En Curso',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada',
+            'reprogramada': 'Reprogramada'
+        };
+        return estados[estado] || estado;
+    }
+    
+    getActionButtons(sesion) {
+        let buttons = '';
+        
+        switch (sesion.estado) {
+            case 'programada':
+                buttons += `<button class="btn btn-sm btn-success" onclick="sesionesModule.confirmarPaciente(${sesion.id})">✅ Confirmar</button>`;
+                buttons += `<button class="btn btn-sm btn-primary" onclick="sesionesModule.abrirSesion(${sesion.id})">🔓 Abrir</button>`;
+                break;
+            case 'confirmada':
+                buttons += `<button class="btn btn-sm btn-primary" onclick="sesionesModule.abrirSesion(${sesion.id})">🔓 Abrir</button>`;
+                break;
+            case 'en_curso':
+                buttons += `<button class="btn btn-sm btn-success" onclick="sesionesModule.cerrarSesion(${sesion.id})">✅ Cerrar</button>`;
+                break;
+            case 'completada':
+                buttons += `<button class="btn btn-sm btn-info" onclick="sesionesModule.verDetalles(${sesion.id})">👁️ Ver</button>`;
+                break;
+        }
+        
+        buttons += `<button class="btn btn-sm btn-warning" onclick="sesionesModule.reprogramarSesion(${sesion.id})">🔄 Reprogramar</button>`;
+        buttons += `<button class="btn btn-sm btn-danger" onclick="sesionesModule.cancelarSesion(${sesion.id})">❌ Cancelar</button>`;
+        
+        return buttons;
+    }
+    
+    async confirmarPaciente(sesionId) {
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accion: 'confirmar'
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error confirmando paciente');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Paciente confirmado exitosamente');
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error confirmando paciente: ' + error.message);
+        }
+    }
+    
+    async reprogramarSesion(sesionId) {
+        const nuevaFecha = prompt('Nueva fecha (YYYY-MM-DD):');
+        const nuevaHora = prompt('Nueva hora (HH:MM):');
+        
+        if (!nuevaFecha || !nuevaHora) return;
+        
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accion: 'reprogramar',
+                    nueva_fecha: nuevaFecha + ' ' + nuevaHora
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error reprogramando sesión');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Sesión reprogramada exitosamente');
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error reprogramando sesión: ' + error.message);
+        }
+    }
+    
+    async cancelarSesion(sesionId) {
+        if (!confirm('¿Está seguro de que desea cancelar esta sesión?')) return;
+        
+        try {
+            const response = await fetch(`./api.php/sesiones/${sesionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accion: 'cancelar'
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error cancelando sesión');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Sesión cancelada exitosamente');
+                this.loadSesiones();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error cancelando sesión: ' + error.message);
+        }
+    }
+    
+    async verDetalles(sesionId) {
+        const sesion = await this.getSesion(sesionId);
+        if (!sesion) return;
+        
+        const detalles = `
+            <strong>Detalles de la Sesión:</strong><br>
+            <strong>Paciente:</strong> ${sesion.paciente_nombre}<br>
+            <strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}<br>
+            <strong>Box:</strong> ${sesion.box_nombre}<br>
+            <strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}<br>
+            <strong>Hora:</strong> ${sesion.hora_planificada}<br>
+            <strong>Duración:</strong> ${sesion.duracion} minutos<br>
+            <strong>Estado:</strong> ${this.getEstadoLabel(sesion.estado)}<br>
+            <strong>Observaciones:</strong> ${sesion.observaciones || 'Sin observaciones'}
+        `;
+        
+        alert(detalles);
+    }
+    
+    limpiarFormularioSesion() {
+        const form = document.getElementById('sesionForm');
+        if (form) {
+            form.reset();
+        }
     }
 }
 
-// Funciones de utilidad
-function formatearFecha(fecha) {
-    return new Date(fecha).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
+// Exportar instancia global
+export const sesionesModule = new SesionesModule();
 
-function formatearHora(fecha) {
-    return new Date(fecha).toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function formatearEstado(estado) {
-    const estados = {
-        'agendada': 'Agendada',
-        'confirmada': 'Confirmada',
-        'en_curso': 'En Curso',
-        'completada': 'Completada',
-        'cancelada': 'Cancelada',
-        'reagendada': 'Reagendada'
-    };
-    return estados[estado] || estado;
-}
-
-function mostrarMensaje(mensaje, tipo = 'info') {
-    if (window.mostrarMensaje) {
-        window.mostrarMensaje(mensaje, tipo);
-  } else {
-        console.log(`${tipo.toUpperCase()}: ${mensaje}`);
-    }
-}
-
-// Funciones globales para compatibilidad
-window.editarSesion = editarSesion;
-window.reagendarSesion = reagendarSesion;
-window.cancelarSesion = cancelarSesion;
-window.iniciarSesion = iniciarSesion;
-window.terminarSesion = terminarSesion;
+// Hacer disponible globalmente para los botones
+window.sesionesModule = sesionesModule;

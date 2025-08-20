@@ -28,7 +28,14 @@ tipo_ficha_especifica,descripcion,text,YES,,,,
 ficha_especifica,id,bigserial,NO,,YES,,PK
 ficha_especifica,ficha_id,bigint,NO,,,ficha(id),A ficha can have 1..n specific records
 ficha_especifica,tipo_id,bigint,NO,,,tipo_ficha_especifica(id),Which form/template
-ficha_especifica,datos,jsonb,NO,'{}'::jsonb,,,Arbitrary structured data
+ficha_especifica,datos,jsonb,NO,'{}'::jsonb,,,Arbitrary structured data (zonas_cuerpo, intensidades, etc.)
+consentimiento_firma,id,bigserial,NO,,YES,,PK
+consentimiento_firma,ficha_id,bigint,NO,,,ficha(id),One consentimiento per ficha per type
+consentimiento_firma,tipo_consentimiento,varchar(50),NO,,,,"Type: 'depilacion', 'corporal', etc."
+consentimiento_firma,firma_blob,bytea,NO,,,,"Digital signature as binary data"
+consentimiento_firma,tipo_archivo,varchar(10),NO,,,,"File type: 'png', 'jpeg'"
+consentimiento_firma,fecha_firma,timestamptz,NO,now(),,,
+consentimiento_firma,profesional_id,bigint,NO,,,profesional(id),Who witnessed the signature
 ficha_especifica,fecha_creacion,timestamptz,NO,now(),,,
 tratamiento,id,bigserial,NO,,YES,,PK
 tratamiento,nombre,varchar(150),NO,,,,
@@ -39,6 +46,8 @@ pack,tratamiento_id,bigint,NO,,,tratamiento(id),Pack belongs to one tratamiento
 pack,nombre,varchar(150),NO,,,,
 pack,descripcion,text,YES,,,,
 pack,duracion_sesion_min,integer,NO,0,,,Default session duration (minutes)
+pack,zonas_incluidas,jsonb,YES,,,,"Default zones included in pack (for depilation treatments)"
+pack,precio_por_zona,jsonb,YES,,,,"Price per zone for add/remove functionality"
 pack,activo,boolean,NO,true,,,
 evaluacion,id,bigserial,NO,,YES,,PK
 evaluacion,ficha_id,bigint,NO,,,ficha(id),
@@ -99,4 +108,5 @@ sesion,paciente_confirmado,boolean,NO,false,,,Confirmation flag once hour exists
 sesion,abierta_en,timestamptz,YES,,,,Open time (start)
 sesion,cerrada_en,timestamptz,YES,,,,Close time (end)
 sesion,observaciones,text,YES,,,,
+sesion,intensidades_zonas,jsonb,YES,,,,"Intensity settings per body zone for depilation sessions"
 sucursal,-,-,-,-,-,-,-

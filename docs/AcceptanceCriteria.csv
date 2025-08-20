@@ -23,3 +23,9 @@ PRO-002,C1,que necesito agendar,"filtro por profesional, sucursal o box",el sist
 INF-001,C1,que tengo acceso a PostgreSQL,ejecuto el script idempotente,"todas las tablas, índices, FKs, triggers y vistas quedan creadas una sola vez"
 REP-001,C1,que hay ventas y sesiones,abro reporte de progreso,"veo total de sesiones, realizadas y pendientes por venta"
 REP-002,C1,que hay sesiones con ejecución registrada,abro reporte plan vs ejecución,veo desfase en minutos por sesión
+DEP-001,C1,que estoy creando ficha específica de depilación,selecciono zonas del cuerpo,las zonas quedan guardadas en datos JSON
+DEP-002,C1,que el paciente debe firmar consentimiento,uso el pad de firma digital,la firma se guarda en consentimiento_firma.firma_blob
+DEP-006,C1,que el paciente ya firmó consentimiento anteriormente,intento abrir nueva sesión,el sistema verifica y no pide firma nuevamente
+DEP-003,C1,que abro una sesión de depilación,registro intensidades por zona del cuerpo,las intensidades se guardan en sesion.intensidades_zonas
+DEP-004,C1,que tengo un pack con zonas predefinidas,agrego/quito zonas del cuerpo,el precio se recalcula automáticamente
+DEP-005,C1,que el paciente tiene sesiones anteriores,abro nueva sesión de depilación,veo intensidades anteriores por zona

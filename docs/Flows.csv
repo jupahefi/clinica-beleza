@@ -15,3 +15,9 @@ Ejecución,3,Reporte compara fecha_planificada vs fecha_ejecucion para medir des
 Ofertas,1,"Admin configura ofertas: pack_temporal, descuento_manual, combo_packs"
 Ofertas,2,Marca si son combinables y su prioridad; el cálculo aplica en secuencia
 Ofertas,3,Se registran pasos en venta_oferta para auditoría
+Depilación,1,Profesional crea ficha específica de depilación seleccionando zonas del cuerpo
+Depilación,2,Paciente firma consentimiento digital usando pad de firma (una sola vez)
+Depilación,6,Sistema verifica si paciente ya tiene consentimiento firmado antes de pedir firma
+Depilación,3,Sistema calcula precio base + ajustes por zonas agregadas/removidas
+Depilación,4,En sesión, profesional carga intensidades anteriores y ajusta por zona
+Depilación,5,Al cerrar sesión, se guardan intensidades actuales para siguiente sesión

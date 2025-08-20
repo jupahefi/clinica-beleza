@@ -1,6 +1,9 @@
 erDiagram
   FICHA ||--o{ FICHA_ESPECIFICA : tiene
+  FICHA ||--o{ CONSENTIMIENTO_FIRMA : firma
   TIPO_FICHA_ESPECIFICA ||--o{ FICHA_ESPECIFICA : clasifica
+  FICHA_ESPECIFICA ||--o{ ZONA_CUERPO : incluye
+  PROFESIONAL ||--o{ CONSENTIMIENTO_FIRMA : atestigua
 
   TRATAMIENTO ||--o{ PACK : tiene
   FICHA ||--o{ EVALUACION : recibe
@@ -51,6 +54,20 @@ erDiagram
     jsonb datos
     timestamptz fecha_creacion
   }
+  CONSENTIMIENTO_FIRMA {
+    bigserial id PK
+    bigint ficha_id FK
+    varchar tipo_consentimiento
+    bytea firma_blob
+    varchar tipo_archivo
+    timestamptz fecha_firma
+    bigint profesional_id FK
+  }
+  ZONA_CUERPO {
+    varchar codigo PK
+    varchar nombre
+    numeric precio
+  }
 
   TRATAMIENTO {
     bigserial id PK
@@ -65,6 +82,8 @@ erDiagram
     varchar nombre
     text descripcion
     int duracion_sesion_min
+    jsonb zonas_incluidas
+    jsonb precio_por_zona
     boolean activo
   }
 
@@ -173,4 +192,5 @@ erDiagram
     timestamptz abierta_en
     timestamptz cerrada_en
     text observaciones
+    jsonb intensidades_zonas
   }

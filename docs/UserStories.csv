@@ -25,3 +25,9 @@ PRO-002,Profesionales,Recepcionista,filtrar disponibilidad por profesional/sucur
 INF-001,Infraestructura,Administrador,ejecutar script SQL idempotente en PostgreSQL,migrar/crear el esquema completo sin dependencias locales,Alta,Backlog,,Solo servidor; sin fallback offline
 REP-001,Reportes,Gerencia,ver progreso de ventas (realizadas vs pendientes),medir cumplimiento de planes,Alta,Backlog,,Usa vista v_venta_progreso
 REP-002,Reportes,Gerencia,ver planificación vs ejecución por sesión con desfase en minutos,mejorar puntualidad y utilización de recursos,Alta,Backlog,,Usa vista v_plan_vs_ejecucion
+DEP-001,Depilación,Profesional,seleccionar zonas del cuerpo para tratamiento de depilación,definir áreas específicas a tratar,Alta,Backlog,,
+DEP-002,Depilación,Paciente,firmar consentimiento de depilación digitalmente,confirmar aceptación del tratamiento,Alta,Backlog,,Una sola vez por cliente
+DEP-006,Depilación,Sistema,verificar si paciente ya tiene consentimiento firmado,evitar firmas duplicadas,Alta,Backlog,,
+DEP-003,Depilación,Profesional,registrar intensidades por zona del cuerpo en sesión,personalizar tratamiento según zona,Alta,Backlog,,
+DEP-004,Depilación,Sistema,calcular precio al agregar/quitar zonas del cuerpo,ajustar costo según zonas seleccionadas,Alta,Backlog,,
+DEP-005,Depilación,Profesional,cargar intensidades anteriores del paciente por zona,continuar tratamiento con configuraciones previas,Alta,Backlog,,

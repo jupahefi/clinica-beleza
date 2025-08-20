@@ -1,517 +1,605 @@
 /**
- * Módulo de gestión de ventas
- * Maneja todas las operaciones relacionadas con ventas de tratamientos
- * Server-based architecture - Sin modo offline
+ * Módulo de Gestión de Ventas
+ * Maneja ventas con soporte para zonas del cuerpo
  */
 
-import { generarId, formatearPrecio, formatearFecha, mostrarNotificacion } from '../utils.js';
-import { ventasAPI, fichasAPI, tratamientosAPI, packsAPI, ofertasAPI } from '../api-client.js';
+import { TRATAMIENTOS, ZONAS_CUERPO, ZONAS_CUERPO_LABELS, PRECIO_POR_ZONA } from '../constants.js';
+import { formatCurrency } from '../utils.js';
+import { fichasEspecificas } from './fichas-especificas.js';
 
-let ventaActual = null;
-let clienteSeleccionado = null;
-
-/**
- * Inicializa el módulo de ventas
- */
-export async function inicializarVentas() {
-  await cargarTratamientosSelect();
-  await cargarPacksSelect();
-  await cargarOfertasSelect();
-  configurarEventosVentas();
-}
-
-/**
- * Configura los eventos del formulario de ventas
- */
-function configurarEventosVentas() {
-  const clienteSelect = document.getElementById('clienteVenta');
-  const tratamientoSelect = document.getElementById('tratamientoVenta');
-  const packSelect = document.getElementById('packVenta');
-  const sesionesInput = document.getElementById('sesionesVenta');
-  const ofertaInput = document.getElementById('ofertaVenta');
-  
-  if (clienteSelect) {
-    clienteSelect.addEventListener('change', seleccionarCliente);
-  }
-  
-  if (tratamientoSelect) {
-    tratamientoSelect.addEventListener('change', () => {
-      mostrarPacks();
-      calcularPrecioVenta();
-    });
-  }
-  
-  if (packSelect) {
-    packSelect.addEventListener('change', calcularPrecioVenta);
-  }
-  
-  if (sesionesInput) {
-    sesionesInput.addEventListener('input', calcularPrecioVenta);
-  }
-  
-  if (ofertaInput) {
-    ofertaInput.addEventListener('input', calcularPrecioVenta);
-  }
-}
-
-/**
- * Carga los tratamientos en el select
- */
-async function cargarTratamientosSelect() {
-  const select = document.getElementById('tratamientoVenta');
-  if (!select) return;
-  
-  try {
-    const tratamientos = await tratamientosAPI.getAll();
-    
-    select.innerHTML = '<option value="">-- Seleccionar tratamiento --</option>';
-    
-    tratamientos.forEach(tratamiento => {
-      const option = document.createElement('option');
-      option.value = tratamiento.id;
-      option.textContent = `${tratamiento.nombre} - ${formatearPrecio(tratamiento.precio_sesion)}/sesión`;
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error('Error cargando tratamientos:', error);
-    mostrarNotificacion('Error cargando tratamientos', 'error');
-  }
-}
-
-/**
- * Carga los packs en el select
- */
-async function cargarPacksSelect() {
-  const select = document.getElementById('packVenta');
-  if (!select) return;
-  
-  try {
-    const packs = await packsAPI.getAll();
-    
-    select.innerHTML = '<option value="">-- Modalidad por sesiones --</option>';
-    
-    packs.forEach(pack => {
-      const option = document.createElement('option');
-      option.value = pack.id;
-      
-      const precioMostrar = pack.precio_oferta || pack.precio;
-      const textoOferta = pack.precio_oferta ? ` (¡Oferta: ${formatearPrecio(pack.precio_oferta)}!)` : '';
-      
-      option.textContent = `${pack.nombre} - ${formatearPrecio(pack.precio)}${textoOferta}`;
-      
-      if (pack.precio_oferta) {
-        option.style.color = '#e74c3c';
-        option.style.fontWeight = 'bold';
-      }
-      
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error('Error cargando packs:', error);
-    mostrarNotificacion('Error cargando packs', 'error');
-  }
-}
-
-/**
- * Carga las ofertas en el select
- */
-async function cargarOfertasSelect() {
-  const select = document.getElementById('ofertaVenta');
-  if (!select) return;
-  
-  try {
-    const ofertas = await ofertasAPI.getAll();
-    
-    select.innerHTML = '<option value="">-- Sin oferta --</option>';
-    
-    ofertas.forEach(oferta => {
-      const option = document.createElement('option');
-      option.value = oferta.id;
-      option.textContent = `${oferta.nombre} (${oferta.porcentaje_descuento}% desc.)`;
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error('Error cargando ofertas:', error);
-    mostrarNotificacion('Error cargando ofertas', 'error');
-  }
-}
-
-/**
- * Selecciona un cliente para la venta
- */
-async function seleccionarCliente() {
-  const select = document.getElementById('clienteVenta');
-  const clienteId = parseInt(select.value);
-  
-  if (!clienteId) {
-    clienteSeleccionado = null;
-    limpiarHistorialCliente();
-    return;
-  }
-  
-  try {
-    clienteSeleccionado = await fichasAPI.getById(clienteId);
-    if (clienteSeleccionado) {
-      await cargarHistorialCliente();
-    }
-  } catch (error) {
-    console.error('Error seleccionando cliente:', error);
-    mostrarNotificacion('Error cargando datos del cliente', 'error');
-  }
-}
-
-/**
- * Carga el historial de compras del cliente seleccionado
- */
-async function cargarHistorialCliente() {
-  const historialDiv = document.getElementById('historialCliente');
-  
-  if (!clienteSeleccionado) {
-    limpiarHistorialCliente();
-    return;
-  }
-  
-  try {
-    const ventasCliente = await ventasAPI.search(`ficha_id:${clienteSeleccionado.id}`);
-    
-    if (ventasCliente.length === 0) {
-      historialDiv.innerHTML = '<p>Este cliente no tiene compras anteriores</p>';
-      return;
+export class VentasModule {
+    constructor() {
+        this.ventas = [];
+        this.pacientes = [];
+        this.tratamientos = [];
+        this.init();
     }
     
-    let html = '<h4>Historial de Compras:</h4>';
+    init() {
+        this.loadVentas();
+        this.loadPacientes();
+        this.setupEventListeners();
+    }
     
-    ventasCliente.slice().reverse().forEach(venta => {
-      const progreso = venta.cantidad_sesiones - venta.sesiones_restantes;
-      
-      html += `
-        <div class="item">
-          <div class="item-header">
-            <span class="item-title">${venta.tratamiento?.nombre || 'Tratamiento'}</span>
-            <span class="status ${venta.estado === 'pagado' ? 'success' : 'pending'}">${venta.estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span>
-          </div>
-          <div class="item-subtitle">
-            ${formatearFecha(venta.fecha_venta)} - ${formatearPrecio(venta.total_pagado)}<br>
-            Sesiones: ${progreso}/${venta.cantidad_sesiones} completadas<br>
-            ${venta.observaciones ? `Obs: ${venta.observaciones}` : ''}
-          </div>
-        </div>
-      `;
-    });
+    setupEventListeners() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupVentaForm();
+            this.setupTratamientoSelector();
+            this.setupZonasSelector();
+        });
+    }
     
-    historialDiv.innerHTML = html;
-  } catch (error) {
-    console.error('Error cargando historial:', error);
-    historialDiv.innerHTML = '<p>Error cargando historial de compras</p>';
-  }
-}
-
-/**
- * Limpia el historial del cliente
- */
-function limpiarHistorialCliente() {
-  const historialDiv = document.getElementById('historialCliente');
-  if (historialDiv) {
-    historialDiv.innerHTML = 'Selecciona un cliente para ver su historial';
-  }
-}
-
-/**
- * Muestra los packs disponibles para el tratamiento seleccionado
- */
-async function mostrarPacks() {
-  const tratamientoId = document.getElementById('tratamientoVenta').value;
-  const packDiv = document.getElementById('packsDiv');
-  const packSelect = document.getElementById('packVenta');
-  
-  if (!tratamientoId) {
-    packDiv.classList.add('hidden');
-    return;
-  }
-  
-  try {
-    const packs = await packsAPI.search(`tratamiento_id:${tratamientoId}`);
+    setupVentaForm() {
+        const form = document.getElementById('ventaForm');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.crearVenta();
+            });
+        }
+    }
     
-    if (packs.length > 0) {
-      packDiv.classList.remove('hidden');
-      packSelect.innerHTML = '<option value="">-- Modalidad por sesiones --</option>';
-      
-      packs.forEach(pack => {
-        const option = document.createElement('option');
-        option.value = pack.id;
+    setupTratamientoSelector() {
+        const select = document.getElementById('servicioVenta');
+        if (select) {
+            this.populateTratamientosSelect(select);
+            select.addEventListener('change', (e) => {
+                this.onTratamientoChange(e.target.value);
+            });
+        }
+    }
+    
+    setupZonasSelector() {
+        const zonasContainer = document.getElementById('zonas-venta-container');
+        if (zonasContainer) {
+            this.createZonasSelector(zonasContainer);
+        }
+    }
+    
+    populateTratamientosSelect(select) {
+        select.innerHTML = '<option value="">Seleccionar tratamiento...</option>';
         
-        const precioMostrar = pack.precio_oferta || pack.precio;
-        const textoOferta = pack.precio_oferta ? ` (¡Oferta: ${formatearPrecio(pack.precio_oferta)}!)` : '';
+        // Agregar tratamientos faciales
+        const facialGroup = document.createElement('optgroup');
+        facialGroup.label = 'FACIAL';
+        Object.entries(TRATAMIENTOS.FACIAL).forEach(([key, tratamiento]) => {
+            const option = document.createElement('option');
+            option.value = `facial_${key}`;
+            option.textContent = `${tratamiento.nombre} - ${formatCurrency(tratamiento.precio_promo || tratamiento.precio)}`;
+            option.dataset.precio = tratamiento.precio_promo || tratamiento.precio;
+            option.dataset.sesiones = tratamiento.sesiones;
+            option.dataset.zonas = JSON.stringify(tratamiento.zonas || []);
+            facialGroup.appendChild(option);
+        });
+        select.appendChild(facialGroup);
         
-        option.textContent = `${pack.nombre} - ${formatearPrecio(pack.precio)}${textoOferta}`;
+        // Agregar tratamientos capilares
+        const capilarGroup = document.createElement('optgroup');
+        capilarGroup.label = 'CAPILAR';
+        Object.entries(TRATAMIENTOS.CAPILAR).forEach(([key, tratamiento]) => {
+            const option = document.createElement('option');
+            option.value = `capilar_${key}`;
+            option.textContent = `${tratamiento.nombre} - ${formatCurrency(tratamiento.precio_promo || tratamiento.precio)}`;
+            option.dataset.precio = tratamiento.precio_promo || tratamiento.precio;
+            option.dataset.sesiones = tratamiento.sesiones;
+            option.dataset.zonas = JSON.stringify(tratamiento.zonas || []);
+            capilarGroup.appendChild(option);
+        });
+        select.appendChild(capilarGroup);
         
-        if (pack.precio_oferta) {
-          option.style.color = '#e74c3c';
-          option.style.fontWeight = 'bold';
+        // Agregar tratamientos de depilación
+        const depilacionGroup = document.createElement('optgroup');
+        depilacionGroup.label = 'DEPILACIÓN LÁSER';
+        Object.entries(TRATAMIENTOS.DEPILACION).forEach(([key, tratamiento]) => {
+            const option = document.createElement('option');
+            option.value = `depilacion_${key}`;
+            option.textContent = `${tratamiento.nombre} - ${formatCurrency(tratamiento.precio_promo || tratamiento.precio)}`;
+            option.dataset.precio = tratamiento.precio_promo || tratamiento.precio;
+            option.dataset.sesiones = tratamiento.sesiones;
+            option.dataset.zonas = JSON.stringify(tratamiento.zonas || []);
+            depilacionGroup.appendChild(option);
+        });
+        select.appendChild(depilacionGroup);
+    }
+    
+    onTratamientoChange(tratamientoId) {
+        const precioInput = document.getElementById('precioVenta');
+        const sesionesInput = document.getElementById('sesionesVenta');
+        const zonasContainer = document.getElementById('zonas-venta-container');
+        
+        if (!tratamientoId) {
+            precioInput.value = '';
+            sesionesInput.value = '';
+            if (zonasContainer) zonasContainer.style.display = 'none';
+            return;
         }
         
-        packSelect.appendChild(option);
-      });
-    } else {
-      packDiv.classList.add('hidden');
-    }
-  } catch (error) {
-    console.error('Error cargando packs del tratamiento:', error);
-    packDiv.classList.add('hidden');
-  }
-}
-
-/**
- * Calcula el precio de la venta actual
- */
-async function calcularPrecioVenta() {
-  const tratamientoId = document.getElementById('tratamientoVenta').value;
-  const sesiones = parseInt(document.getElementById('sesionesVenta').value) || 1;
-  const ofertaId = document.getElementById('ofertaVenta').value;
-  const packId = document.getElementById('packVenta').value;
-  
-  const resultadoDiv = document.getElementById('resultadoVenta');
-  const precioDiv = document.getElementById('precioFinal');
-  const detalleDiv = document.getElementById('detalleVenta');
-  
-  if (!tratamientoId) {
-    resultadoDiv.classList.add('hidden');
-    ventaActual = null;
-    return;
-  }
-  
-  try {
-    const tratamiento = await tratamientosAPI.getById(tratamientoId);
-    let precio = 0;
-    let detalle = '';
-    let esPack = false;
-    let sesionesTotales = sesiones;
-    let packSeleccionado = null;
-    let ofertaSeleccionada = null;
-    
-    if (packId) {
-      // Modalidad pack
-      packSeleccionado = await packsAPI.getById(packId);
-      precio = packSeleccionado.precio_oferta || packSeleccionado.precio;
-      detalle = `Pack: ${packSeleccionado.nombre}`;
-      esPack = true;
-      sesionesTotales = packSeleccionado.cantidad_sesiones;
-      
-      if (packSeleccionado.precio_oferta) {
-        const descuentoPack = ((packSeleccionado.precio - packSeleccionado.precio_oferta) / packSeleccionado.precio * 100).toFixed(0);
-        detalle += `<br>Ahorro: ${formatearPrecio(packSeleccionado.precio - packSeleccionado.precio_oferta)} (${descuentoPack}% desc.)`;
-      }
-    } else {
-      // Modalidad sesión
-      const precioUnitario = tratamiento.precio_oferta || tratamiento.precio_sesion;
-      precio = sesiones * precioUnitario;
-      
-      if (tratamiento.precio_oferta && sesiones === 1) {
-        detalle = `1 sesión de ${tratamiento.nombre} (precio oferta)`;
-        const ahorroSesion = tratamiento.precio_sesion - tratamiento.precio_oferta;
-        detalle += `<br>Ahorro: ${formatearPrecio(ahorroSesion)}`;
-      } else {
-        detalle = `${sesiones} sesión${sesiones > 1 ? 'es' : ''} de ${tratamiento.nombre}`;
-        if (tratamiento.precio_oferta) {
-          detalle += ` (precio normal)`;
+        const option = document.querySelector(`option[value="${tratamientoId}"]`);
+        if (option) {
+            precioInput.value = option.dataset.precio || '';
+            sesionesInput.value = option.dataset.sesiones || '';
+            
+            // Mostrar selector de zonas si el tratamiento las requiere
+            const zonas = JSON.parse(option.dataset.zonas || '[]');
+            if (zonas.length > 0 && zonasContainer) {
+                this.showZonasSelector(zonas);
+            } else if (zonasContainer) {
+                zonasContainer.style.display = 'none';
+            }
         }
-      }
     }
     
-    const precioSinOfertaVenta = precio;
-    
-    // Aplicar oferta adicional de venta
-    if (ofertaId) {
-      ofertaSeleccionada = await ofertasAPI.getById(ofertaId);
-      const descuento = precio * (ofertaSeleccionada.porcentaje_descuento / 100);
-      precio -= descuento;
-      detalle += `<br>Descuento adicional: ${ofertaSeleccionada.nombre} (${ofertaSeleccionada.porcentaje_descuento}% - ${formatearPrecio(descuento)})`;
+    createZonasSelector(container) {
+        container.innerHTML = `
+            <div class="zonas-venta-section">
+                <h4>🎯 Zonas del Tratamiento</h4>
+                <div class="zonas-info">
+                    <p><strong>Zonas incluidas en el pack:</strong></p>
+                    <div id="zonas-pack" class="zonas-pack"></div>
+                </div>
+                
+                <div class="zonas-customization">
+                    <h5>Personalizar Zonas</h5>
+                    <div class="zonas-grid" id="zonas-venta-grid"></div>
+                    <div class="zonas-summary" id="zonas-venta-summary"></div>
+                </div>
+            </div>
+        `;
+        
+        container.style.display = 'none';
     }
     
-    // Guardar datos de la venta actual para confirmar después
-    ventaActual = {
-      fichaId: clienteSeleccionado?.id,
-      tratamientoId,
-      tratamientoNombre: tratamiento.nombre,
-      packId: packId || null,
-      packNombre: packSeleccionado?.nombre,
-      ofertaId: ofertaId || null,
-      ofertaNombre: ofertaSeleccionada?.nombre,
-      cantidadSesiones: sesionesTotales,
-      sesionesRestantes: sesionesTotales,
-      precioFinal: precio,
-      precioSinOferta: precioSinOfertaVenta,
-      esPack,
-      detalle,
-      duracionSesion: tratamiento.duracion_sesion,
-      frecuenciaSugerida: tratamiento.frecuencia_sugerida
-    };
+    showZonasSelector(zonasPack) {
+        const container = document.getElementById('zonas-venta-container');
+        if (!container) return;
+        
+        container.style.display = 'block';
+        
+        // Mostrar zonas del pack
+        const zonasPackDiv = document.getElementById('zonas-pack');
+        if (zonasPackDiv) {
+            zonasPackDiv.innerHTML = zonasPack.map(zona => 
+                `<span class="zona-tag">${ZONAS_CUERPO_LABELS[zona]}</span>`
+            ).join('');
+        }
+        
+        // Crear grid de zonas personalizables
+        this.createZonasVentaGrid(zonasPack);
+        
+        // Aplicar estilos
+        this.applyZonasStyles();
+    }
     
-    precioDiv.textContent = formatearPrecio(precio);
-    detalleDiv.innerHTML = detalle;
-    resultadoDiv.classList.remove('hidden');
+    createZonasVentaGrid(zonasPack) {
+        const grid = document.getElementById('zonas-venta-grid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        Object.entries(ZONAS_CUERPO_LABELS).forEach(([key, label]) => {
+            const isIncluded = zonasPack.includes(key);
+            const precio = PRECIO_POR_ZONA[key];
+            
+            const zonaDiv = document.createElement('div');
+            zonaDiv.className = 'zona-venta-item';
+            zonaDiv.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px;
+                border: 2px solid ${isIncluded ? '#28a745' : '#e9ecef'};
+                border-radius: 8px;
+                background: ${isIncluded ? '#d4edda' : 'white'};
+                cursor: pointer;
+                transition: all 0.3s ease;
+            `;
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `venta_zona_${key}`;
+            checkbox.checked = isIncluded;
+            checkbox.dataset.zona = key;
+            checkbox.dataset.precio = precio;
+            checkbox.dataset.included = isIncluded;
+            
+            const labelElement = document.createElement('label');
+            labelElement.htmlFor = `venta_zona_${key}`;
+            labelElement.textContent = label;
+            labelElement.style.cursor = 'pointer';
+            labelElement.style.fontWeight = '500';
+            
+            const precioSpan = document.createElement('span');
+            precioSpan.textContent = formatCurrency(precio);
+            precioSpan.style.cssText = `
+                margin-left: auto;
+                font-size: 14px;
+                color: ${isIncluded ? '#155724' : '#666'};
+                font-weight: 600;
+            `;
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.textContent = isIncluded ? '✓ Incluida' : '+ Agregar';
+            statusSpan.style.cssText = `
+                font-size: 12px;
+                color: ${isIncluded ? '#155724' : '#666'};
+                font-weight: 500;
+            `;
+            
+            zonaDiv.appendChild(checkbox);
+            zonaDiv.appendChild(labelElement);
+            zonaDiv.appendChild(precioSpan);
+            zonaDiv.appendChild(statusSpan);
+            
+            // Event listeners
+            checkbox.addEventListener('change', () => this.updateZonasVenta());
+            zonaDiv.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    this.updateZonasVenta();
+                }
+            });
+            
+            grid.appendChild(zonaDiv);
+        });
+        
+        this.updateZonasVenta();
+    }
     
-    return ventaActual;
-  } catch (error) {
-    console.error('Error calculando precio:', error);
-    mostrarNotificacion('Error calculando precio de venta', 'error');
-    return null;
-  }
+    updateZonasVenta() {
+        const checkboxes = document.querySelectorAll('input[data-zona]:checked');
+        const zonasSeleccionadas = Array.from(checkboxes).map(cb => ({
+            zona: cb.dataset.zona,
+            label: ZONAS_CUERPO_LABELS[cb.dataset.zona],
+            precio: parseInt(cb.dataset.precio),
+            included: cb.dataset.included === 'true'
+        }));
+        
+        const precioBase = parseFloat(document.getElementById('precioVenta').value) || 0;
+        const zonasPack = this.getZonasFromSelectedTratamiento();
+        
+        // Calcular ajustes de precio
+        const zonasExtra = zonasSeleccionadas.filter(z => !zonasPack.includes(z.zona));
+        const zonasRemovidas = zonasPack.filter(z => !zonasSeleccionadas.some(zs => zs.zona === z));
+        
+        const precioExtra = zonasExtra.reduce((sum, z) => sum + z.precio, 0);
+        const precioDescuento = zonasRemovidas.reduce((sum, z) => sum + (PRECIO_POR_ZONA[z] || 0), 0);
+        
+        const precioFinal = precioBase + precioExtra - precioDescuento;
+        
+        // Actualizar precio
+        document.getElementById('precioVenta').value = precioFinal;
+        
+        // Mostrar resumen
+        const summaryDiv = document.getElementById('zonas-venta-summary');
+        if (summaryDiv) {
+            let summary = `<strong>Resumen de Zonas:</strong><br>`;
+            summary += `• Zonas seleccionadas: ${zonasSeleccionadas.length}<br>`;
+            
+            if (zonasExtra.length > 0) {
+                summary += `• Zonas adicionales: ${zonasExtra.map(z => z.label).join(', ')} (+${formatCurrency(precioExtra)})<br>`;
+            }
+            
+            if (zonasRemovidas.length > 0) {
+                summary += `• Zonas removidas: ${zonasRemovidas.map(z => ZONAS_CUERPO_LABELS[z]).join(', ')} (-${formatCurrency(precioDescuento)})<br>`;
+            }
+            
+            summary += `• Precio final: ${formatCurrency(precioFinal)}`;
+            
+            summaryDiv.innerHTML = summary;
+        }
+        
+        // Actualizar estilos de los items
+        this.updateZonasVentaStyles();
+    }
+    
+    updateZonasVentaStyles() {
+        const items = document.querySelectorAll('.zona-venta-item');
+        items.forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            const isChecked = checkbox.checked;
+            const isIncluded = checkbox.dataset.included === 'true';
+            
+            if (isChecked) {
+                item.style.borderColor = '#28a745';
+                item.style.background = '#d4edda';
+                item.querySelector('span:last-child').style.color = '#155724';
+                item.querySelector('span:last-child').textContent = isIncluded ? '✓ Incluida' : '✓ Agregada';
+            } else {
+                item.style.borderColor = '#e9ecef';
+                item.style.background = 'white';
+                item.querySelector('span:last-child').style.color = '#666';
+                item.querySelector('span:last-child').textContent = isIncluded ? '✗ Removida' : '+ Agregar';
+            }
+        });
+    }
+    
+    getZonasFromSelectedTratamiento() {
+        const select = document.getElementById('servicioVenta');
+        const option = select.selectedOptions[0];
+        if (option && option.dataset.zonas) {
+            return JSON.parse(option.dataset.zonas);
+        }
+        return [];
+    }
+    
+    applyZonasStyles() {
+        const styles = `
+            .zonas-venta-section {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .zonas-pack {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin: 10px 0;
+            }
+            
+            .zona-tag {
+                background: #28a745;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            
+            .zonas-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 10px;
+                margin: 15px 0;
+            }
+            
+            .zonas-summary {
+                background: white;
+                padding: 10px;
+                border-radius: 6px;
+                border: 1px solid #e9ecef;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+        `;
+        
+        if (!document.getElementById('zonas-venta-styles')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'zonas-venta-styles';
+            styleSheet.textContent = styles;
+            document.head.appendChild(styleSheet);
+        }
+    }
+    
+    async crearVenta() {
+        const formData = this.getVentaFormData();
+        
+        if (!formData.paciente || !formData.servicio || !formData.precio || !formData.fecha) {
+            alert('Por favor complete todos los campos obligatorios');
+            return;
+        }
+        
+        // Obtener zonas seleccionadas
+        const zonasSeleccionadas = this.getZonasSeleccionadas();
+        
+        // Verificar si necesita consentimiento (para depilación)
+        if (this.requiresConsentimiento(formData.servicio)) {
+            await this.showConsentimiento(formData, zonasSeleccionadas);
+        } else {
+            await this.saveVenta(formData, zonasSeleccionadas);
+        }
+    }
+    
+    getVentaFormData() {
+        return {
+            paciente_id: document.getElementById('pacienteVenta').value,
+            servicio: document.getElementById('servicioVenta').value,
+            precio: parseFloat(document.getElementById('precioVenta').value),
+            fecha: document.getElementById('fechaVenta').value,
+            observaciones: document.getElementById('observacionesVenta').value
+        };
+    }
+    
+    getZonasSeleccionadas() {
+        const checkboxes = document.querySelectorAll('input[data-zona]:checked');
+        return Array.from(checkboxes).map(cb => cb.dataset.zona);
+    }
+    
+    requiresConsentimiento(servicio) {
+        return servicio.startsWith('depilacion_');
+    }
+    
+    async showConsentimiento(formData, zonasSeleccionadas) {
+        fichasEspecificas.showConsentimiento(
+            async (signatureData) => {
+                // Consentimiento aceptado
+                await this.saveVenta(formData, zonasSeleccionadas, signatureData);
+            },
+            () => {
+                // Consentimiento rechazado
+                alert('La venta no se puede completar sin el consentimiento firmado.');
+            }
+        );
+    }
+    
+    async saveVenta(formData, zonasSeleccionadas, consentimiento = null) {
+        const ventaData = {
+            ...formData,
+            zonas: zonasSeleccionadas,
+            consentimiento: consentimiento,
+            fecha_creacion: new Date().toISOString()
+        };
+        
+        try {
+            const response = await fetch('./api.php/ventas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ventaData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error creando venta');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Venta creada exitosamente');
+                this.limpiarFormularioVenta();
+                this.loadVentas();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error creando venta: ' + error.message);
+        }
+    }
+    
+    async loadVentas() {
+        try {
+            const response = await fetch('./api.php/ventas');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.ventas = result.data;
+                this.renderVentas();
+            }
+        } catch (error) {
+            console.error('Error cargando ventas:', error);
+        }
+    }
+    
+    async loadPacientes() {
+        try {
+            const response = await fetch('./api.php/pacientes');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.pacientes = result.data;
+                this.populatePacientesSelect();
+            }
+        } catch (error) {
+            console.error('Error cargando pacientes:', error);
+        }
+    }
+    
+    populatePacientesSelect() {
+        const select = document.getElementById('pacienteVenta');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Seleccionar paciente...</option>';
+        
+        this.pacientes.forEach(paciente => {
+            const option = document.createElement('option');
+            option.value = paciente.id;
+            option.textContent = `${paciente.nombres} ${paciente.apellidos}`;
+            select.appendChild(option);
+        });
+    }
+    
+    renderVentas() {
+        const tbody = document.getElementById('cuerpoTablaVentas');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        this.ventas.forEach(venta => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${venta.paciente_nombre || 'N/A'}</td>
+                <td>${venta.servicio_nombre || 'N/A'}</td>
+                <td>${formatCurrency(venta.precio)}</td>
+                <td>${formatDate(venta.fecha)}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-info" onclick="ventasModule.verDetalles(${venta.id})">👁️ Ver</button>
+                        <button class="btn btn-sm btn-warning" onclick="ventasModule.editarVenta(${venta.id})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="ventasModule.eliminarVenta(${venta.id})">🗑️ Eliminar</button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    async verDetalles(ventaId) {
+        try {
+            const response = await fetch(`./api.php/ventas/${ventaId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                const venta = result.data;
+                const detalles = `
+                    <strong>Detalles de la Venta:</strong><br>
+                    <strong>Paciente:</strong> ${venta.paciente_nombre}<br>
+                    <strong>Servicio:</strong> ${venta.servicio_nombre}<br>
+                    <strong>Precio:</strong> ${formatCurrency(venta.precio)}<br>
+                    <strong>Fecha:</strong> ${formatDate(venta.fecha)}<br>
+                    <strong>Zonas:</strong> ${venta.zonas ? venta.zonas.map(z => ZONAS_CUERPO_LABELS[z]).join(', ') : 'N/A'}<br>
+                    <strong>Observaciones:</strong> ${venta.observaciones || 'Sin observaciones'}
+                `;
+                
+                alert(detalles);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error obteniendo detalles de la venta');
+        }
+    }
+    
+    async editarVenta(ventaId) {
+        // Implementar edición de venta
+        alert('Funcionalidad de edición en desarrollo');
+    }
+    
+    async eliminarVenta(ventaId) {
+        if (!confirm('¿Está seguro de que desea eliminar esta venta?')) return;
+        
+        try {
+            const response = await fetch(`./api.php/ventas/${ventaId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error eliminando venta');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Venta eliminada exitosamente');
+                this.loadVentas();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error eliminando venta: ' + error.message);
+        }
+    }
+    
+    limpiarFormularioVenta() {
+        const form = document.getElementById('ventaForm');
+        if (form) {
+            form.reset();
+        }
+        
+        // Ocultar selector de zonas
+        const zonasContainer = document.getElementById('zonas-venta-container');
+        if (zonasContainer) {
+            zonasContainer.style.display = 'none';
+        }
+    }
 }
 
-/**
- * Valida los datos de la venta
- */
-function validarVenta() {
-  const errores = [];
-  
-  if (!clienteSeleccionado) {
-    errores.push('Debe seleccionar un cliente');
-  }
-  
-  if (!ventaActual) {
-    errores.push('Debe configurar los detalles de la venta');
-  }
-  
-  const sesiones = parseInt(document.getElementById('sesionesVenta').value);
-  if (sesiones < 1 || sesiones > 50) {
-    errores.push('La cantidad de sesiones debe estar entre 1 y 50');
-  }
-  
-  return errores;
-}
+// Exportar instancia global
+export const ventasModule = new VentasModule();
 
-/**
- * Confirma y guarda la venta
- */
-export async function confirmarVenta() {
-  const errores = validarVenta();
-  
-  if (errores.length > 0) {
-    mostrarNotificacion(`Errores en la venta:\n${errores.join('\n')}`, 'error');
-    return false;
-  }
-  
-  const observaciones = document.getElementById('observacionesVenta').value.trim();
-  
-  const ventaData = {
-    ficha_id: ventaActual.fichaId,
-    tratamiento_id: ventaActual.tratamientoId,
-    pack_id: ventaActual.packId,
-    cantidad_sesiones: ventaActual.cantidadSesiones,
-    sesiones_restantes: ventaActual.sesionesRestantes,
-    precio_unitario: ventaActual.precioSinOferta / ventaActual.cantidadSesiones,
-    precio_total: ventaActual.precioSinOferta,
-    descuento_manual_pct: 0, // Se puede agregar campo en el formulario
-    descuento_aplicado_total: ventaActual.precioSinOferta - ventaActual.precioFinal,
-    total_pagado: ventaActual.precioFinal,
-    observaciones,
-    fecha_venta: new Date().toISOString(),
-    estado: 'pendiente'
-  };
-  
-  try {
-    const ventaGuardada = await ventasAPI.create(ventaData);
-    
-    // Si hay oferta aplicada, guardar en venta_oferta
-    if (ventaActual.ofertaId) {
-      const ofertaData = {
-        venta_id: ventaGuardada.id,
-        oferta_id: ventaActual.ofertaId,
-        secuencia: 1,
-        porc_descuento: ventaActual.ofertaNombre.porcentaje_descuento,
-        monto_descuento: ventaActual.precioSinOferta - ventaActual.precioFinal
-      };
-      
-      // Aquí se guardaría en la tabla venta_oferta
-      // await ventaOfertaAPI.create(ofertaData);
-    }
-    
-    // Limpiar formulario
-    limpiarFormularioVenta();
-    
-    // Actualizar historial
-    if (clienteSeleccionado) {
-      await cargarHistorialCliente();
-    }
-    
-    mostrarNotificacion('Venta registrada exitosamente', 'success');
-    
-    // Preguntar si quiere ir a gestión de pagos
-    if (confirm('Venta creada exitosamente. ¿Desea registrar un pago ahora?')) {
-      // Aquí podrías cambiar a la vista de pagos
-      window.cambiarVista('pagos');
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error al registrar venta:', error);
-    mostrarNotificacion(`Error al registrar venta: ${error.message}`, 'error');
-    return false;
-  }
-}
-
-/**
- * Limpia el formulario de venta
- */
-function limpiarFormularioVenta() {
-  document.getElementById('tratamientoVenta').value = '';
-  document.getElementById('sesionesVenta').value = '1';
-  document.getElementById('ofertaVenta').value = '';
-  document.getElementById('observacionesVenta').value = '';
-  
-  document.getElementById('packsDiv').classList.add('hidden');
-  document.getElementById('resultadoVenta').classList.add('hidden');
-  
-  ventaActual = null;
-}
-
-/**
- * Obtiene la venta actual en preparación
- */
-export function obtenerVentaActual() {
-  return ventaActual;
-}
-
-/**
- * Obtiene el cliente seleccionado
- */
-export function obtenerClienteSeleccionado() {
-  return clienteSeleccionado;
-}
-
-/**
- * Calcula el precio de un tratamiento específico
- */
-export async function calcularPrecioTratamiento(tratamientoId, sesiones = 1, packId = null, ofertaId = null) {
-  try {
-    const tratamiento = await tratamientosAPI.getById(tratamientoId);
-    if (!tratamiento) return null;
-    
-    let precio = 0;
-    let sesionesTotales = sesiones;
-    
-    if (packId) {
-      const pack = await packsAPI.getById(packId);
-      precio = pack.precio_oferta || pack.precio;
-      sesionesTotales = pack.cantidad_sesiones;
-    } else {
-      precio = sesiones * (tratamiento.precio_oferta || tratamiento.precio_sesion);
-    }
-    
-    // Aplicar oferta adicional
-    if (ofertaId) {
-      const oferta = await ofertasAPI.getById(ofertaId);
-      precio -= precio * (oferta.porcentaje_descuento / 100);
-    }
-    
-    return {
-      precio,
-      sesionesTotales,
-      tratamiento: tratamiento.nombre
-    };
-  } catch (error) {
-    console.error('Error calculando precio tratamiento:', error);
-    return null;
-  }
-}
+// Hacer disponible globalmente para los botones
+window.ventasModule = ventasModule;

@@ -5,3 +5,6 @@ BR-003,Oferta,Descuentos se aplican en orden de prioridad y pueden ser combinabl
 BR-004,Pack,Cada pack define duracion_sesion_min para sugerir slots,Campo pack.duracion_sesion_min
 BR-005,Agenda,"Una sesión requiere sucursal, box y profesional",FK obligatorias en sesion
 BR-006,Infraestructura,No existe modo offline ni fallback local; todo en servidor,Arquitectura server-based; operaciones transaccionales en PostgreSQL
+BR-007,Depilación,Todos los packs de depilación requieren al menos una zona del cuerpo,Campo pack.zonas_incluidas obligatorio para tratamientos de depilación
+BR-008,Firma Digital,El consentimiento de depilación requiere firma digital del paciente,Almacenado en consentimiento_firma.firma_blob como BLOB
+BR-009,Intensidades,Las sesiones de depilación deben registrar intensidades por zona del cuerpo,Almacenado en sesion.intensidades_zonas como JSON
