@@ -184,6 +184,9 @@ export const fichasAPI = {
     // Buscar fichas
     search: (busqueda = '') => get('fichas', { busqueda }),
     
+    // Obtener todas las fichas
+    getAll: () => get('fichas'),
+    
     // Obtener ficha por ID
     getById: (id) => get(`fichas/${id}`),
     
@@ -306,6 +309,9 @@ export const agendaAPI = {
 export const ofertasAPI = {
     // Obtener ofertas aplicables
     getAplicables: () => get('ofertas'),
+    
+    // Obtener todas las ofertas
+    getAll: () => get('ofertas'),
     
     // Obtener oferta por ID
     getById: (id) => get(`ofertas/${id}`),
