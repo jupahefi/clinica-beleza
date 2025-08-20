@@ -50,20 +50,60 @@ class ClinicaBelezaApp {
     }
     
     setupNavigation() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const view = link.dataset.view;
                 this.switchView(view);
+                
+                // Actualizar la URL sin recargar la página
+                history.pushState({ view }, '', `#${view}`);
+            });
         });
-    });
-    
-        // Activar vista inicial
-        this.switchView('fichas');
+        
+        // Manejar el botón atrás/adelante del navegador
+        window.addEventListener('popstate', (e) => {
+            if (e.state && e.state.view) {
+                this.switchView(e.state.view);
+            } else {
+                // Si no hay estado, usar el hash de la URL
+                const hash = window.location.hash.slice(1);
+                if (hash) {
+                    this.switchView(hash);
+                } else {
+                    this.switchView('fichas');
+                }
+            }
+        });
+        
+        // Manejar enlaces del footer también
+        const footerLinks = document.querySelectorAll('.footer-links a');
+        footerLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = link.getAttribute('href').slice(1); // Remover el #
+                this.switchView(view);
+                
+                // Actualizar la URL sin recargar la página
+                history.pushState({ view }, '', `#${view}`);
+            });
+        });
+        
+        // Activar vista inicial basada en la URL
+        const hash = window.location.hash.slice(1);
+        const initialView = hash || 'fichas';
+        this.switchView(initialView);
+        
+        // Actualizar la URL si no hay hash
+        if (!hash) {
+            history.replaceState({ view: initialView }, '', `#${initialView}`);
+        }
     }
     
     switchView(viewName) {
+        console.log(`🔄 Cambiando a vista: ${viewName}`);
+        
         // Ocultar todas las vistas
         const views = document.querySelectorAll('.view-section');
         views.forEach(view => {
@@ -75,6 +115,9 @@ class ClinicaBelezaApp {
         if (targetView) {
             targetView.classList.add('active');
             this.currentView = viewName;
+            console.log(`✅ Vista ${viewName} activada`);
+        } else {
+            console.error(`❌ Vista ${viewName} no encontrada`);
         }
         
         // Actualizar navegación
