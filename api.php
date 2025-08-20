@@ -27,6 +27,11 @@ try {
     $path = parse_url($request, PHP_URL_PATH);
     $pathSegments = explode('/', trim($path, '/'));
     
+    // Debug temporal
+    error_log("DEBUG: REQUEST_URI = " . $request);
+    error_log("DEBUG: PATH = " . $path);
+    error_log("DEBUG: PATH_SEGMENTS = " . print_r($pathSegments, true));
+    
     // Encontrar el índice de api.php en los segmentos
     $apiIndex = array_search('api.php', $pathSegments);
     if ($apiIndex !== false) {
@@ -36,6 +41,9 @@ try {
         $endpoint = $pathSegments[0] ?? '';
         $id = $pathSegments[1] ?? null;
     }
+    
+    error_log("DEBUG: ENDPOINT = " . $endpoint);
+    error_log("DEBUG: ID = " . ($id ?? 'null'));
     
     $method = $_SERVER['REQUEST_METHOD'];
     $data = json_decode(file_get_contents('php://input'), true);
