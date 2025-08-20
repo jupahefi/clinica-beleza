@@ -27,3 +27,22 @@ export const ZONAS_TRATAMIENTO = [
   { value: 'ingles', label: 'Inglés' },
   { value: 'otro', label: 'Otro' }
 ];
+
+export const FICHAS_ESPECIFICAS = [
+  {
+    id: 'depilacion',
+    label: 'Depilación',
+    campos: [
+      { name: 'zonas_tratadas', label: 'Zonas tratadas', type: 'textarea', rows: 2 },
+      { name: 'observaciones_medicas', label: 'Observaciones médicas', type: 'textarea', rows: 2 }
+    ]
+  },
+  {
+    id: 'corporal',
+    label: 'Corporal/Facial',
+    campos: [
+      { name: 'tratamientos_previos', label: 'Tratamientos previos', type: 'textarea', rows: 2 },
+      { name: 'objetivo_estetico', label: 'Objetivo estético', type: 'textarea', rows: 2 }
+    ]
+  }
+];

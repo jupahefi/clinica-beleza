@@ -5,7 +5,7 @@
 
 import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
 import { fichasAPI, tiposFichaEspecificaAPI, fichasEspecificasAPI } from '../api-client.js';
-import { TIPOS_PIEL, ZONAS_TRATAMIENTO } from '../constants.js';
+import { TIPOS_PIEL, ZONAS_TRATAMIENTO, FICHAS_ESPECIFICAS } from '../constants.js';
 
 let pacienteActual = null;
 
@@ -120,9 +120,10 @@ async function cargarPacienteSeleccionado() {
     // Cargar datos básicos
     document.getElementById('nombrePaciente').value = paciente.nombres || '';
     document.getElementById('rutPaciente').value = paciente.rut || '';
-    document.getElementById('edadPaciente').value = paciente.edad || '';
+    document.getElementById('fechaNacimiento').value = paciente.fecha_nacimiento || '';
     document.getElementById('telefonoPaciente').value = paciente.telefono || '';
     document.getElementById('emailPaciente').value = paciente.email || '';
+    document.getElementById('direccionPaciente').value = paciente.direccion || '';
     document.getElementById('observacionesPaciente').value = paciente.observaciones || '';
   
     // Cargar fichas específicas
@@ -162,14 +163,10 @@ function cargarDatosFichaEspecifica(tipo, datos) {
   
   if (tipo === 'depilacion') {
     document.getElementById('zonasDepilacion').value = datos.zonas || '';
-    document.getElementById('tipoPiel').value = datos.tipoPiel || '';
-    document.getElementById('medicamentos').value = datos.medicamentos || '';
     document.getElementById('observacionesMedicas').value = datos.observacionesMedicas || '';
   } else if (tipo === 'corporal') {
     document.getElementById('tratamientosPrevios').value = datos.tratamientosPrevios || '';
     document.getElementById('objetivoEstetico').value = datos.objetivoEstetico || '';
-    document.getElementById('zonaTratamiento').value = datos.zonaTratamiento || '';
-    document.getElementById('expectativas').value = datos.expectativas || '';
   }
 }
 
@@ -178,8 +175,8 @@ function cargarDatosFichaEspecifica(tipo, datos) {
  */
 function limpiarFormularioPaciente() {
   const campos = [
-    'nombrePaciente', 'rutPaciente', 'edadPaciente', 
-    'telefonoPaciente', 'emailPaciente', 'observacionesPaciente'
+    'nombrePaciente', 'rutPaciente', 'fechaNacimiento', 
+    'telefonoPaciente', 'emailPaciente', 'direccionPaciente', 'observacionesPaciente'
   ];
   
   campos.forEach(campo => {
@@ -201,8 +198,8 @@ function limpiarFormularioPaciente() {
  * Limpia los campos de las fichas específicas
  */
 function limpiarFichasEspecificas() {
-  const camposDepilacion = ['zonasDepilacion', 'tipoPiel', 'medicamentos', 'observacionesMedicas'];
-  const camposCorporal = ['tratamientosPrevios', 'objetivoEstetico', 'zonaTratamiento', 'expectativas'];
+  const camposDepilacion = ['zonasDepilacion', 'observacionesMedicas'];
+  const camposCorporal = ['tratamientosPrevios', 'objetivoEstetico'];
   
   [...camposDepilacion, ...camposCorporal].forEach(campo => {
     const elemento = document.getElementById(campo);
@@ -627,8 +624,6 @@ function obtenerDatosFichasEspecificas() {
     fichasSeleccionadas.push('depilacion');
     fichasData.fichaDepilacion = {
       zonas: document.getElementById('zonasDepilacion').value.trim(),
-      tipoPiel: document.getElementById('tipoPiel').value,
-      medicamentos: document.getElementById('medicamentos').value.trim(),
       observacionesMedicas: document.getElementById('observacionesMedicas').value.trim()
     };
   }
@@ -638,9 +633,7 @@ function obtenerDatosFichasEspecificas() {
     fichasSeleccionadas.push('corporal');
     fichasData.fichaCorporal = {
       tratamientosPrevios: document.getElementById('tratamientosPrevios').value.trim(),
-      objetivoEstetico: document.getElementById('objetivoEstetico').value.trim(),
-      zonaTratamiento: document.getElementById('zonaTratamiento').value,
-      expectativas: document.getElementById('expectativas').value.trim()
+      objetivoEstetico: document.getElementById('objetivoEstetico').value.trim()
     };
   }
   
@@ -668,8 +661,11 @@ export async function guardarPacienteFormulario() {
     id: pacienteActual?.id,
     nombres: document.getElementById('nombrePaciente').value.trim(),
     rut: formatearRut(document.getElementById('rutPaciente').value.trim()),
+    fecha_nacimiento: document.getElementById('fechaNacimiento').value,
     telefono: document.getElementById('telefonoPaciente').value.trim(),
     email: document.getElementById('emailPaciente').value.trim(),
+    direccion: document.getElementById('direccionPaciente').value.trim(),
+    observaciones: document.getElementById('observacionesPaciente').value.trim(),
     ...datosEspecificos
   };
   
@@ -711,4 +707,39 @@ export async function buscarPacientes(termino) {
  */
 export function obtenerPacienteActual() {
   return pacienteActual;
+}
+
+/**
+ * Muestra/oculta las fichas específicas según los checkboxes seleccionados
+ */
+export function toggleFichasEspecificas() {
+  const fichaDepilacion = document.getElementById('fichaDepilacionCard');
+  const fichaCorporal = document.getElementById('fichaCorporalCard');
+  
+  const depilacionChecked = document.getElementById('fichaDepilacion')?.checked;
+  const corporalChecked = document.getElementById('fichaCorporal')?.checked;
+  
+  // Mostrar/ocultar ficha de depilación
+  if (fichaDepilacion) {
+    if (depilacionChecked) {
+      fichaDepilacion.classList.remove('hidden');
+    } else {
+      fichaDepilacion.classList.add('hidden');
+      // Limpiar campos cuando se oculta
+      document.getElementById('zonasDepilacion').value = '';
+      document.getElementById('observacionesMedicas').value = '';
+    }
+  }
+  
+  // Mostrar/ocultar ficha corporal
+  if (fichaCorporal) {
+    if (corporalChecked) {
+      fichaCorporal.classList.remove('hidden');
+    } else {
+      fichaCorporal.classList.add('hidden');
+      // Limpiar campos cuando se oculta
+      document.getElementById('tratamientosPrevios').value = '';
+      document.getElementById('objetivoEstetico').value = '';
+    }
+  }
 }

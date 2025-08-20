@@ -114,6 +114,51 @@
                                 <label for="observacionesPaciente">Observaciones</label>
                                 <textarea id="observacionesPaciente" rows="3"></textarea>
                             </div>
+                            
+                            <!-- Fichas Específicas -->
+                            <div class="form-group">
+                                <label>Fichas Específicas</label>
+                                <div class="fichas-especificas-checkboxes">
+                                    <div class="ficha-checkbox-item">
+                                        <input type="checkbox" id="fichaDepilacion" name="fichasEspecificas">
+                                        <label for="fichaDepilacion">Depilación</label>
+                                    </div>
+                                    <div class="ficha-checkbox-item">
+                                        <input type="checkbox" id="fichaCorporal" name="fichasEspecificas">
+                                        <label for="fichaCorporal">Corporal/Facial</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenedores de fichas específicas -->
+                            <div id="fichaDepilacionCard" class="ficha-especifica-container hidden">
+                                <h3>Ficha de Depilación</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="zonasDepilacion">Zonas tratadas</label>
+                                        <textarea id="zonasDepilacion" rows="2"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="observacionesMedicas">Observaciones médicas</label>
+                                        <textarea id="observacionesMedicas" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="fichaCorporalCard" class="ficha-especifica-container hidden">
+                                <h3>Ficha Corporal/Facial</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="tratamientosPrevios">Tratamientos previos</label>
+                                        <textarea id="tratamientosPrevios" rows="2"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="objetivoEstetico">Objetivo estético</label>
+                                        <textarea id="objetivoEstetico" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save"></i> Guardar Paciente

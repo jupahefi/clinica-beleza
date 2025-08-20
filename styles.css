@@ -673,6 +673,99 @@ body {
         width: 100%;
         font-size: 16px;
     }
+
+    /* Ajustar fichas específicas para móvil */
+    .fichas-especificas-checkboxes {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .ficha-checkbox-item {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .ficha-especifica-container {
+        padding: 1rem;
+        margin-top: 0.75rem;
+    }
+}
+
+/* Fichas Específicas */
+.fichas-especificas-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ficha-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--light-gray);
+    border: 2px solid #E9ECEF;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ficha-checkbox-item:hover {
+    border-color: var(--calypso-pastel);
+    background: rgba(127, 179, 211, 0.1);
+}
+
+.ficha-checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.ficha-checkbox-item input[type="checkbox"]:checked + label {
+    color: var(--calypso-dark);
+    font-weight: 600;
+}
+
+.ficha-checkbox-item label {
+    cursor: pointer;
+    font-weight: 500;
+    margin: 0;
+}
+
+.ficha-especifica-container {
+    background: var(--light-gray);
+    border: 2px solid var(--calypso-light);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    animation: slideDown 0.3s ease;
+}
+
+.ficha-especifica-container h3 {
+    color: var(--calypso-dark);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ficha-especifica-container h3::before {
+    content: '📋';
+    font-size: 1.2rem;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Utility Classes */

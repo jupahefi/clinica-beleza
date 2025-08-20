@@ -294,6 +294,7 @@ function exponerFuncionesGlobales() {
     // Funciones de módulos
   window.toggleFichasEspecificas = toggleFichasEspecificas;
     window.guardarPacienteFormulario = guardarPacienteFormulario;
+    window.limpiarFormularioPaciente = limpiarFormularioPaciente;
   window.confirmarVenta = confirmarVenta;
   window.registrarPago = registrarPago;
   window.iniciarSesion = iniciarSesion;
