@@ -831,6 +831,7 @@ CREATE PROCEDURE sp_crear_ficha(
     OUT p_ficha_id BIGINT
 )
 BEGIN
+    DECLARE v_existing_id BIGINT DEFAULT NULL;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -839,10 +840,19 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email)
-    VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email);
+    -- Verificar si ya existe una ficha con el mismo código o email
+    SELECT id INTO v_existing_id FROM ficha WHERE codigo = p_codigo OR email = p_email LIMIT 1;
     
-    SET p_ficha_id = LAST_INSERT_ID();
+    IF v_existing_id IS NOT NULL THEN
+        -- Si ya existe, devolver el ID existente
+        SET p_ficha_id = v_existing_id;
+    ELSE
+        -- Si no existe, crear nueva ficha
+        INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email)
+        VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email);
+        
+        SET p_ficha_id = LAST_INSERT_ID();
+    END IF;
     
     COMMIT;
 END$$

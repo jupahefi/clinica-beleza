@@ -133,9 +133,38 @@ try {
     }
     
 } catch (Exception $e) {
-    error_log("Error en API: " . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Error interno del servidor: ' . $e->getMessage()]);
+    // Capturar errores de MySQL y otros errores de base de datos
+    $errorMessage = $e->getMessage();
+    $errorCode = $e->getCode();
+    
+    // Log del error para debugging
+    error_log("Error en API: " . $errorMessage . " (Code: " . $errorCode . ")");
+    
+    // Determinar el código HTTP apropiado
+    $httpCode = 500;
+    if (strpos($errorMessage, 'Duplicate entry') !== false) {
+        $httpCode = 409; // Conflict
+    } elseif (strpos($errorMessage, 'foreign key constraint') !== false) {
+        $httpCode = 400; // Bad Request
+    } elseif (strpos($errorMessage, 'doesn\'t exist') !== false) {
+        $httpCode = 404; // Not Found
+    } elseif (strpos($errorMessage, 'SQLSTATE[23000]') !== false) {
+        $httpCode = 400; // Bad Request (constraint violation)
+    } elseif (strpos($errorMessage, 'SQLSTATE[42000]') !== false) {
+        $httpCode = 400; // Bad Request (syntax error)
+    }
+    
+    http_response_code($httpCode);
+    
+    // Devolver error en formato consistente para el frontend
+    echo json_encode([
+        'success' => false, 
+        'error' => $errorMessage,
+        'error_code' => $errorCode,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'endpoint' => $endpoint ?? 'unknown',
+        'method' => $method ?? 'unknown'
+    ]);
 }
 
 // =============================================================================
@@ -216,7 +245,7 @@ function handleFichas($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            // Crear ficha
+            // Crear ficha - los errores se capturan en el try-catch global
             $result = $db->executeRaw("CALL sp_crear_ficha(?, ?, ?, ?, ?, ?, @ficha_id)", [
                 $data['codigo'], $data['nombres'], $data['apellidos'],
                 $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null

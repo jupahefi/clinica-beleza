@@ -45,6 +45,7 @@ class ClinicaBelezaApp {
         this.setupMobileMenu();
         this.setupSearchFunctionality();
         this.setupGlobalEventListeners();
+        this.setupGlobalErrorHandling();
         await this.loadInitialData();
         this.showWelcomeMessage();
     }
@@ -241,6 +242,40 @@ class ClinicaBelezaApp {
                 this.modules.reportes.filtrarHistorial(e.target.value);
             });
         }
+    }
+    
+    setupGlobalErrorHandling() {
+        // Capturar errores no manejados de la API
+        window.addEventListener('unhandledrejection', (event) => {
+            const error = event.reason;
+            
+            // Si es un error de la API, mostrar información detallada
+            if (error.apiError) {
+                console.error('🚨 Error de API:', error.apiError);
+                
+                // Mostrar toast con información del error
+                showMessage(
+                    `Error: ${error.apiError.message}\n` +
+                    `Endpoint: ${error.apiError.endpoint}\n` +
+                    `Método: ${error.apiError.method}\n` +
+                    `Código: ${error.apiError.code || 'N/A'}`,
+                    'error'
+                );
+            } else {
+                // Error genérico
+                console.error('🚨 Error no manejado:', error);
+                showMessage(`Error: ${error.message || 'Error desconocido'}`, 'error');
+            }
+            
+            // Prevenir que el error se propague
+            event.preventDefault();
+        });
+        
+        // Capturar errores de JavaScript
+        window.addEventListener('error', (event) => {
+            console.error('🚨 Error de JavaScript:', event.error);
+            showMessage(`Error de JavaScript: ${event.error?.message || 'Error desconocido'}`, 'error');
+        });
     }
     
     async loadInitialData() {

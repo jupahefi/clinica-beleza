@@ -35,6 +35,25 @@ function getEnv(key, defaultValue = '') {
 }
 
 /**
+ * Función helper para manejar errores de la API
+ */
+function handleApiError(result) {
+    if (!result.success) {
+        // Crear un error más descriptivo con toda la información del servidor
+        const error = new Error(result.error || 'Error en la petición');
+        error.apiError = {
+            message: result.error,
+            code: result.error_code,
+            timestamp: result.timestamp,
+            endpoint: result.endpoint,
+            method: result.method
+        };
+        throw error;
+    }
+    return result.data;
+}
+
+/**
  * Función principal para hacer peticiones HTTP con reintentos
  */
 async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
@@ -95,12 +114,7 @@ async function get(endpoint, params = {}) {
     
     const response = await fetchWithRetry(url.toString());
     const data = await response.json();
-    
-    if (!data.success) {
-        throw new Error(data.error || 'Error en la petición');
-    }
-    
-    return data.data;
+    return handleApiError(data);
 }
 
 /**
@@ -117,12 +131,7 @@ async function post(endpoint, data = {}) {
     });
     
     const result = await response.json();
-    
-    if (!result.success) {
-        throw new Error(result.error || 'Error en la petición');
-    }
-    
-    return result.data;
+    return handleApiError(result);
 }
 
 /**
@@ -139,12 +148,7 @@ async function put(endpoint, data = {}) {
     });
     
     const result = await response.json();
-    
-    if (!result.success) {
-        throw new Error(result.error || 'Error en la petición');
-    }
-    
-    return result.data;
+    return handleApiError(result);
 }
 
 /**
@@ -160,12 +164,7 @@ async function del(endpoint) {
     });
     
     const result = await response.json();
-    
-    if (!result.success) {
-        throw new Error(result.error || 'Error en la petición');
-    }
-    
-    return result.data;
+    return handleApiError(result);
 }
 
 /**
