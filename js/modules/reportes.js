@@ -6,401 +6,384 @@
 
 import { reportesAPI, mostrarNotificacion } from '../api-client.js';
 
-let reportes = [];
-
-/**
- * Inicializa el módulo de reportes
- */
-export async function inicializarReportes() {
-    configurarEventosReportes();
-    await cargarReportesDisponibles();
-}
-
-/**
- * Configura los eventos del módulo de reportes
- */
-function configurarEventosReportes() {
-    // Configurar botones de generación de reportes
-    const btnProgresoVentas = document.getElementById('btnProgresoVentas');
-    if (btnProgresoVentas) {
-        btnProgresoVentas.addEventListener('click', () => generarReporteProgresoVentas());
+export class ReportesModule {
+    constructor() {
+        this.reportes = [];
+        this.init();
     }
     
-    const btnPlanVsEjecucion = document.getElementById('btnPlanVsEjecucion');
-    if (btnPlanVsEjecucion) {
-        btnPlanVsEjecucion.addEventListener('click', () => generarReportePlanVsEjecucion());
+    async init() {
+        this.configurarEventosReportes();
+        await this.cargarReportesDisponibles();
     }
     
-    const btnDisponibilidadProfesionales = document.getElementById('btnDisponibilidadProfesionales');
-    if (btnDisponibilidadProfesionales) {
-        btnDisponibilidadProfesionales.addEventListener('click', () => generarReporteDisponibilidadProfesionales());
+    configurarEventosReportes() {
+        // Configurar botones de generación de reportes
+        const btnProgresoVentas = document.getElementById('btnProgresoVentas');
+        if (btnProgresoVentas) {
+            btnProgresoVentas.addEventListener('click', () => this.generarReporteProgresoVentas());
+        }
+        
+        const btnPlanVsEjecucion = document.getElementById('btnPlanVsEjecucion');
+        if (btnPlanVsEjecucion) {
+            btnPlanVsEjecucion.addEventListener('click', () => this.generarReportePlanVsEjecucion());
+        }
+        
+        const btnDisponibilidadProfesionales = document.getElementById('btnDisponibilidadProfesionales');
+        if (btnDisponibilidadProfesionales) {
+            btnDisponibilidadProfesionales.addEventListener('click', () => this.generarReporteDisponibilidadProfesionales());
+        }
+        
+        const btnOfertasAplicadas = document.getElementById('btnOfertasAplicadas');
+        if (btnOfertasAplicadas) {
+            btnOfertasAplicadas.addEventListener('click', () => this.generarReporteOfertasAplicadas());
+        }
     }
     
-    const btnOfertasAplicadas = document.getElementById('btnOfertasAplicadas');
-    if (btnOfertasAplicadas) {
-        btnOfertasAplicadas.addEventListener('click', () => generarReporteOfertasAplicadas());
-    }
-}
-
-/**
- * Carga los reportes disponibles
- */
-async function cargarReportesDisponibles() {
-    try {
-        // Aquí se podrían cargar reportes predefinidos o configuraciones
-        console.log('Reportes disponibles cargados');
-    } catch (error) {
-        console.error('Error cargando reportes disponibles:', error);
-        mostrarNotificacion('Error cargando reportes disponibles', 'error');
-    }
-}
-
-/**
- * Genera el reporte de progreso de ventas (REP-001)
- */
-export async function generarReporteProgresoVentas() {
-    try {
-        mostrarLoading('Generando reporte de progreso de ventas...');
-        
-        const reporte = await reportesAPI.getProgresoVentas();
-        
-        if (reporte) {
-            mostrarReporteProgresoVentas(reporte);
-            mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
-        } else {
-            mostrarNotificacion('Error al generar reporte de progreso de ventas', 'error');
+    async cargarReportesDisponibles() {
+        try {
+            // Aquí se podrían cargar reportes predefinidos o configuraciones
+            console.log('Reportes disponibles cargados');
+        } catch (error) {
+            console.error('Error cargando reportes disponibles:', error);
+            mostrarNotificacion('Error cargando reportes disponibles', 'error');
         }
-    } catch (error) {
-        console.error('Error generando reporte de progreso de ventas:', error);
-        mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-    } finally {
-        ocultarLoading();
     }
-}
-
-/**
- * Genera el reporte de plan vs ejecución (REP-002)
- */
-export async function generarReportePlanVsEjecucion() {
-    try {
-        mostrarLoading('Generando reporte de plan vs ejecución...');
-        
-        const reporte = await reportesAPI.getPlanVsEjecucion();
-        
-        if (reporte) {
-            mostrarReportePlanVsEjecucion(reporte);
-            mostrarNotificacion('Reporte de plan vs ejecución generado correctamente', 'success');
-        } else {
-            mostrarNotificacion('Error al generar reporte de plan vs ejecución', 'error');
-        }
-    } catch (error) {
-        console.error('Error generando reporte de plan vs ejecución:', error);
-        mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-    } finally {
-        ocultarLoading();
-    }
-}
-
-/**
- * Genera el reporte de disponibilidad de profesionales (PRO-002)
- */
-export async function generarReporteDisponibilidadProfesionales() {
-    try {
-        mostrarLoading('Generando reporte de disponibilidad de profesionales...');
-        
-        // Obtener parámetros del formulario
-        const profesionalId = document.getElementById('profesionalReporte')?.value;
-        const sucursalId = document.getElementById('sucursalReporte')?.value;
-        const boxId = document.getElementById('boxReporte')?.value;
-        const fecha = document.getElementById('fechaReporte')?.value;
-        
-        const reporte = await reportesAPI.getDisponibilidadProfesionales({
-            profesional_id: profesionalId,
-            sucursal_id: sucursalId,
-            box_id: boxId,
-            fecha: fecha
-        });
-        
-        if (reporte) {
-            mostrarReporteDisponibilidadProfesionales(reporte);
-            mostrarNotificacion('Reporte de disponibilidad generado correctamente', 'success');
-        } else {
-            mostrarNotificacion('Error al generar reporte de disponibilidad', 'error');
-        }
-    } catch (error) {
-        console.error('Error generando reporte de disponibilidad:', error);
-        mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-    } finally {
-        ocultarLoading();
-    }
-}
-
-/**
- * Genera el reporte de ofertas aplicadas (OFE-004)
- */
-export async function generarReporteOfertasAplicadas() {
-    try {
-        mostrarLoading('Generando reporte de ofertas aplicadas...');
-        
-        const ventaId = document.getElementById('ventaReporte')?.value;
-        
-        if (!ventaId) {
-            mostrarNotificacion('Debe seleccionar una venta para el reporte', 'error');
-            return;
-        }
-        
-        const reporte = await reportesAPI.getOfertasAplicadas(ventaId);
-        
-        if (reporte) {
-            mostrarReporteOfertasAplicadas(reporte);
-            mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
-        } else {
-            mostrarNotificacion('Error al generar reporte de ofertas aplicadas', 'error');
-        }
-    } catch (error) {
-        console.error('Error generando reporte de ofertas aplicadas:', error);
-        mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
-    } finally {
-        ocultarLoading();
-    }
-}
-
-/**
- * Muestra el reporte de progreso de ventas
- */
-function mostrarReporteProgresoVentas(reporte) {
-    const container = document.getElementById('reporteProgresoVentas');
-    if (!container) return;
     
-    let html = `
-        <div class="reporte-container">
-            <h3>Reporte de Progreso de Ventas</h3>
-            <div class="reporte-stats">
-                <div class="stat-card">
-                    <h4>Total Ventas</h4>
-                    <p class="stat-value">${reporte.total_ventas || 0}</p>
+    async generarReporteProgresoVentas() {
+        try {
+            this.mostrarLoading('Generando reporte de progreso de ventas...');
+            
+            const reporte = await reportesAPI.getProgresoVentas();
+            
+            if (reporte) {
+                this.mostrarReporteProgresoVentas(reporte);
+                mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
+            } else {
+                mostrarNotificacion('Error al generar reporte de progreso de ventas', 'error');
+            }
+        } catch (error) {
+            console.error('Error generando reporte de progreso de ventas:', error);
+            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
+        } finally {
+            this.ocultarLoading();
+        }
+    }
+    
+    async generarReportePlanVsEjecucion() {
+        try {
+            this.mostrarLoading('Generando reporte de plan vs ejecución...');
+            
+            const reporte = await reportesAPI.getPlanVsEjecucion();
+            
+            if (reporte) {
+                this.mostrarReportePlanVsEjecucion(reporte);
+                mostrarNotificacion('Reporte de plan vs ejecución generado correctamente', 'success');
+            } else {
+                mostrarNotificacion('Error al generar reporte de plan vs ejecución', 'error');
+            }
+        } catch (error) {
+            console.error('Error generando reporte de plan vs ejecución:', error);
+            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
+        } finally {
+            this.ocultarLoading();
+        }
+    }
+    
+    async generarReporteDisponibilidadProfesionales() {
+        try {
+            this.mostrarLoading('Generando reporte de disponibilidad de profesionales...');
+            
+            const reporte = await reportesAPI.getDisponibilidadProfesionales();
+            
+            if (reporte) {
+                this.mostrarReporteDisponibilidadProfesionales(reporte);
+                mostrarNotificacion('Reporte de disponibilidad generado correctamente', 'success');
+            } else {
+                mostrarNotificacion('Error al generar reporte de disponibilidad', 'error');
+            }
+        } catch (error) {
+            console.error('Error generando reporte de disponibilidad:', error);
+            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
+        } finally {
+            this.ocultarLoading();
+        }
+    }
+    
+    async generarReporteOfertasAplicadas() {
+        try {
+            this.mostrarLoading('Generando reporte de ofertas aplicadas...');
+            
+            const reporte = await reportesAPI.getOfertasAplicadas();
+            
+            if (reporte) {
+                this.mostrarReporteOfertasAplicadas(reporte);
+                mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
+            } else {
+                mostrarNotificacion('Error al generar reporte de ofertas aplicadas', 'error');
+            }
+        } catch (error) {
+            console.error('Error generando reporte de ofertas aplicadas:', error);
+            mostrarNotificacion('Error al generar reporte: ' + error.message, 'error');
+        } finally {
+            this.ocultarLoading();
+        }
+    }
+    
+    mostrarReporteProgresoVentas(reporte) {
+        const container = document.getElementById('reporteProgresoVentas');
+        if (!container) return;
+        
+        let html = `
+            <div class="reporte-container">
+                <h3>📊 Reporte de Progreso de Ventas</h3>
+                <div class="reporte-stats">
+                    <div class="stat-card">
+                        <h4>Ventas Totales</h4>
+                        <p class="stat-value">${reporte.ventasTotales || 0}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Monto Total</h4>
+                        <p class="stat-value">$${this.formatearNumero(reporte.montoTotal || 0)}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Promedio por Venta</h4>
+                        <p class="stat-value">$${this.formatearNumero(reporte.promedioPorVenta || 0)}</p>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <h4>Ventas Completadas</h4>
-                    <p class="stat-value">${reporte.ventas_completadas || 0}</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Progreso General</h4>
-                    <p class="stat-value">${((reporte.ventas_completadas / reporte.total_ventas) * 100).toFixed(1)}%</p>
+                <div class="reporte-chart">
+                    <canvas id="chartProgresoVentas"></canvas>
                 </div>
             </div>
-            <div class="reporte-detalle">
-                <h4>Detalle por Tratamiento</h4>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Tratamiento</th>
-                            <th>Total Sesiones</th>
-                            <th>Sesiones Completadas</th>
-                            <th>Progreso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
+        `;
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+        
+        // Aquí se podría agregar la lógica para crear gráficos con Chart.js
+        this.crearGraficoProgresoVentas(reporte);
+    }
     
-    if (reporte.detalle_tratamientos) {
-        reporte.detalle_tratamientos.forEach(tratamiento => {
-            const progreso = ((tratamiento.sesiones_completadas / tratamiento.total_sesiones) * 100).toFixed(1);
-            html += `
-                <tr>
-                    <td>${tratamiento.nombre}</td>
-                    <td>${tratamiento.total_sesiones}</td>
-                    <td>${tratamiento.sesiones_completadas}</td>
-                    <td>${progreso}%</td>
-                </tr>
+    mostrarReportePlanVsEjecucion(reporte) {
+        const container = document.getElementById('reportePlanVsEjecucion');
+        if (!container) return;
+        
+        let html = `
+            <div class="reporte-container">
+                <h3>📈 Reporte Plan vs Ejecución</h3>
+                <div class="reporte-table">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Métrica</th>
+                                <th>Planificado</th>
+                                <th>Ejecutado</th>
+                                <th>Diferencia</th>
+                                <th>% Cumplimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        if (reporte.metricas) {
+            reporte.metricas.forEach(metrica => {
+                const diferencia = metrica.ejecutado - metrica.planificado;
+                const porcentaje = metrica.planificado > 0 ? ((metrica.ejecutado / metrica.planificado) * 100).toFixed(1) : 0;
+                
+                html += `
+                    <tr>
+                        <td>${metrica.nombre}</td>
+                        <td>${this.formatearNumero(metrica.planificado)}</td>
+                        <td>${this.formatearNumero(metrica.ejecutado)}</td>
+                        <td class="${diferencia >= 0 ? 'text-success' : 'text-danger'}">${this.formatearNumero(diferencia)}</td>
+                        <td>${porcentaje}%</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+    
+    mostrarReporteDisponibilidadProfesionales(reporte) {
+        const container = document.getElementById('reporteDisponibilidadProfesionales');
+        if (!container) return;
+        
+        let html = `
+            <div class="reporte-container">
+                <h3>👥 Reporte de Disponibilidad de Profesionales</h3>
+                <div class="profesionales-grid">
+        `;
+        
+        if (reporte.profesionales) {
+            reporte.profesionales.forEach(profesional => {
+                const disponibilidad = profesional.disponibilidad || 0;
+                const colorClase = disponibilidad >= 80 ? 'success' : disponibilidad >= 60 ? 'warning' : 'danger';
+                
+                html += `
+                    <div class="profesional-card">
+                        <h4>${profesional.nombre}</h4>
+                        <p><strong>Especialidad:</strong> ${profesional.especialidad}</p>
+                        <p><strong>Disponibilidad:</strong> <span class="text-${colorClase}">${disponibilidad}%</span></p>
+                        <p><strong>Sesiones Programadas:</strong> ${profesional.sesionesProgramadas || 0}</p>
+                        <p><strong>Horas Disponibles:</strong> ${profesional.horasDisponibles || 0}</p>
+                    </div>
+                `;
+            });
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+    
+    mostrarReporteOfertasAplicadas(reporte) {
+        const container = document.getElementById('reporteOfertasAplicadas');
+        if (!container) return;
+        
+        let html = `
+            <div class="reporte-container">
+                <h3>🎯 Reporte de Ofertas Aplicadas</h3>
+                <div class="ofertas-stats">
+                    <div class="stat-card">
+                        <h4>Ofertas Aplicadas</h4>
+                        <p class="stat-value">${reporte.totalOfertas || 0}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Descuento Total</h4>
+                        <p class="stat-value">$${this.formatearNumero(reporte.descuentoTotal || 0)}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Promedio Descuento</h4>
+                        <p class="stat-value">${reporte.promedioDescuento || 0}%</p>
+                    </div>
+                </div>
+                <div class="ofertas-detalle">
+                    <h4>Detalle por Oferta</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Oferta</th>
+                                <th>Veces Aplicada</th>
+                                <th>Descuento Total</th>
+                                <th>Promedio Descuento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        if (reporte.detalleOfertas) {
+            reporte.detalleOfertas.forEach(oferta => {
+                html += `
+                    <tr>
+                        <td>${oferta.nombre}</td>
+                        <td>${oferta.vecesAplicada}</td>
+                        <td>$${this.formatearNumero(oferta.descuentoTotal)}</td>
+                        <td>${oferta.promedioDescuento}%</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+    
+    crearGraficoProgresoVentas(reporte) {
+        // Aquí se implementaría la lógica para crear gráficos con Chart.js
+        // Por ahora solo un placeholder
+        const canvas = document.getElementById('chartProgresoVentas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Gráfico de Progreso de Ventas', canvas.width / 2, canvas.height / 2);
+        }
+    }
+    
+    formatearNumero(numero) {
+        return new Intl.NumberFormat('es-CL').format(numero);
+    }
+    
+    mostrarLoading(mensaje) {
+        // Implementar loading spinner
+        const loadingDiv = document.getElementById('loadingReportes');
+        if (loadingDiv) {
+            loadingDiv.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">${mensaje}</p>
+                </div>
             `;
-        });
+            loadingDiv.style.display = 'block';
+        }
     }
     
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    container.style.display = 'block';
-}
-
-/**
- * Muestra el reporte de plan vs ejecución
- */
-function mostrarReportePlanVsEjecucion(reporte) {
-    const container = document.getElementById('reportePlanVsEjecucion');
-    if (!container) return;
-    
-    let html = `
-        <div class="reporte-container">
-            <h3>Reporte Plan vs Ejecución</h3>
-            <div class="reporte-stats">
-                <div class="stat-card">
-                    <h4>Planificado</h4>
-                    <p class="stat-value">${reporte.total_planificado || 0}</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Ejecutado</h4>
-                    <p class="stat-value">${reporte.total_ejecutado || 0}</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Eficiencia</h4>
-                    <p class="stat-value">${((reporte.total_ejecutado / reporte.total_planificado) * 100).toFixed(1)}%</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    container.style.display = 'block';
-}
-
-/**
- * Muestra el reporte de disponibilidad de profesionales
- */
-function mostrarReporteDisponibilidadProfesionales(reporte) {
-    const container = document.getElementById('reporteDisponibilidadProfesionales');
-    if (!container) return;
-    
-    let html = `
-        <div class="reporte-container">
-            <h3>Reporte de Disponibilidad de Profesionales</h3>
-            <div class="reporte-detalle">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Profesional</th>
-                            <th>Sucursal</th>
-                            <th>Box</th>
-                            <th>Fecha</th>
-                            <th>Horarios Disponibles</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
-    
-    if (reporte.disponibilidad) {
-        reporte.disponibilidad.forEach(disp => {
-            html += `
-                <tr>
-                    <td>${disp.profesional_nombre}</td>
-                    <td>${disp.sucursal_nombre}</td>
-                    <td>${disp.box_nombre}</td>
-                    <td>${formatearFecha(disp.fecha)}</td>
-                    <td>${disp.horarios_disponibles}</td>
-                </tr>
-            `;
-        });
+    ocultarLoading() {
+        const loadingDiv = document.getElementById('loadingReportes');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
     }
     
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    container.style.display = 'block';
-}
-
-/**
- * Muestra el reporte de ofertas aplicadas
- */
-function mostrarReporteOfertasAplicadas(reporte) {
-    const container = document.getElementById('reporteOfertasAplicadas');
-    if (!container) return;
-    
-    let html = `
-        <div class="reporte-container">
-            <h3>Reporte de Ofertas Aplicadas</h3>
-            <div class="reporte-info">
-                <p><strong>Venta:</strong> ${reporte.venta_info || 'N/A'}</p>
-                <p><strong>Cliente:</strong> ${reporte.cliente_info || 'N/A'}</p>
-                <p><strong>Total Descuento:</strong> ${formatearPrecio(reporte.total_descuento || 0)}</p>
-            </div>
-            <div class="reporte-detalle">
-                <h4>Ofertas Aplicadas</h4>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Secuencia</th>
-                            <th>Oferta</th>
-                            <th>Porcentaje</th>
-                            <th>Monto Descuento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
-    
-    if (reporte.ofertas_aplicadas) {
-        reporte.ofertas_aplicadas.forEach(oferta => {
-            html += `
-                <tr>
-                    <td>${oferta.secuencia}</td>
-                    <td>${oferta.oferta_nombre}</td>
-                    <td>${oferta.porc_descuento}%</td>
-                    <td>${formatearPrecio(oferta.monto_descuento)}</td>
-                </tr>
-            `;
-        });
+    async exportarReporte(tipoReporte, formato = 'csv') {
+        try {
+            this.mostrarLoading(`Exportando reporte ${tipoReporte}...`);
+            
+            const reporte = await reportesAPI.exportar(tipoReporte, formato);
+            
+            if (reporte) {
+                this.descargarArchivo(reporte, `reporte_${tipoReporte}.${formato}`);
+                mostrarNotificacion(`Reporte ${tipoReporte} exportado correctamente`, 'success');
+            } else {
+                mostrarNotificacion(`Error al exportar reporte ${tipoReporte}`, 'error');
+            }
+        } catch (error) {
+            console.error(`Error exportando reporte ${tipoReporte}:`, error);
+            mostrarNotificacion(`Error al exportar reporte: ${error.message}`, 'error');
+        } finally {
+            this.ocultarLoading();
+        }
     }
     
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    container.style.display = 'block';
-}
-
-/**
- * Formatea una fecha
- */
-function formatearFecha(fecha) {
-    return new Date(fecha).toLocaleDateString('es-ES');
-}
-
-/**
- * Formatea un precio
- */
-function formatearPrecio(precio) {
-    return new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP'
-    }).format(precio);
-}
-
-/**
- * Muestra un indicador de carga
- */
-function mostrarLoading(mensaje) {
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.textContent = mensaje;
-        loading.style.display = 'block';
+    descargarArchivo(contenido, nombreArchivo) {
+        const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', nombreArchivo);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
 
-/**
- * Oculta el indicador de carga
- */
-function ocultarLoading() {
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.style.display = 'none';
-    }
-}
-
-// Funciones globales para compatibilidad
-window.generarReporteProgresoVentas = generarReporteProgresoVentas;
-window.generarReportePlanVsEjecucion = generarReportePlanVsEjecucion;
-window.generarReporteDisponibilidadProfesionales = generarReporteDisponibilidadProfesionales;
-window.generarReporteOfertasAplicadas = generarReporteOfertasAplicadas;
+// Exportar instancia global
+export const reportesModule = new ReportesModule();
