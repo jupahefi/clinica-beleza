@@ -146,7 +146,7 @@ function handleRoot($db) {
     echo json_encode([
         'success' => true,
         'message' => 'API Clínica Beleza - Passthrough a Stored Procedures',
-        'version' => '2.0.0',
+        'version' => getenv('APP_VERSION') ?: '2.0.0',
         'architecture' => 'Server-based (sin modo offline)',
         'endpoints' => [
             'fichas', 'evaluaciones', 'ventas', 'sesiones', 'agenda',
@@ -160,13 +160,13 @@ function handleConfig($db) {
     echo json_encode([
         'success' => true,
         'config' => [
-            'API_URL' => $_ENV['API_URL'] ?? 'https://clinica-beleza.equalitech.xyz',
-            'API_TIMEOUT' => $_ENV['API_TIMEOUT'] ?? 10000,
-            'API_RETRIES' => $_ENV['API_RETRIES'] ?? 3,
-            'APP_NAME' => $_ENV['APP_NAME'] ?? 'Clínica Beleza',
-            'APP_VERSION' => $_ENV['APP_VERSION'] ?? '2.0.0',
-            'CACHE_TTL' => $_ENV['CACHE_TTL'] ?? 300,
-            'CACHE_ENABLED' => $_ENV['CACHE_ENABLED'] ?? true
+            'API_URL' => getenv('API_URL') ?: 'https://clinica-beleza.equalitech.xyz',
+            'API_TIMEOUT' => getenv('API_TIMEOUT') ?: 10000,
+            'API_RETRIES' => getenv('API_RETRIES') ?: 3,
+            'APP_NAME' => getenv('APP_NAME') ?: 'Clínica Beleza',
+            'APP_VERSION' => getenv('APP_VERSION') ?: '2.0.0',
+            'CACHE_TTL' => getenv('CACHE_TTL') ?: 300,
+            'CACHE_ENABLED' => getenv('CACHE_ENABLED') ?: true
         ]
     ]);
 }
@@ -180,7 +180,7 @@ function handleHealth($db) {
             'status' => 'healthy',
             'timestamp' => date('Y-m-d H:i:s'),
             'database' => 'connected',
-            'api_version' => $_ENV['APP_VERSION'] ?? '2.0.0'
+            'api_version' => getenv('APP_VERSION') ?: '2.0.0'
         ];
         
         echo json_encode(['success' => true, 'data' => $health]);
