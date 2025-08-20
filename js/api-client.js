@@ -161,10 +161,16 @@ export async function checkConnection() {
     try {
         const response = await fetch(`${API_CONFIG.baseUrl}/api.php/health`);
         const data = await response.json();
-        return data.success;
+        return {
+            connected: data.success,
+            error: data.success ? null : (data.data?.error || 'Error desconocido')
+        };
     } catch (error) {
         console.error('❌ Error verificando conexión:', error);
-        return false;
+        return {
+            connected: false,
+            error: error.message || 'Error de conexión'
+        };
     }
 }
 
