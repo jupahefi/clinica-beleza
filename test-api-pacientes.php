@@ -15,11 +15,10 @@ $baseUrl = 'https://clinica-beleza.equalitech.xyz/api.php';
 
 // Datos del formulario (igual que envía el frontend)
 $data = [
-    'codigo' => 'TEST' . date('YmdHis'), // Código único para el test
     'nombres' => 'Test API',
     'apellidos' => 'Paciente',
     'telefono' => '912345678',
-    'email' => 'testapi' . date('YmdHis') . '@test.com',
+    'email' => 'testapi@test.com',
     'fecha_nacimiento' => '1990-01-01',
     'direccion' => 'Test API Address',
     'observaciones' => 'Test API observaciones'
@@ -32,14 +31,12 @@ foreach ($data as $key => $value) {
 }
 echo "\n";
 
-// Crear contexto para la petición POST con mejor manejo de errores
+// Crear contexto para la petición POST
 $options = [
     'http' => [
         'method' => 'POST',
         'header' => 'Content-Type: application/json',
-        'content' => json_encode($data),
-        'ignore_errors' => true, // Importante: capturar errores HTTP
-        'timeout' => 30
+        'content' => json_encode($data)
     ]
 ];
 
@@ -48,51 +45,17 @@ $context = stream_context_create($options);
 // Hacer la petición
 $response = file_get_contents($baseUrl . '/fichas', false, $context);
 
-// Obtener headers de respuesta
-$responseHeaders = $http_response_header ?? [];
-
-echo "📥 Respuesta del servidor:\n";
-foreach ($responseHeaders as $header) {
-    echo "   $header\n";
-}
-echo "\n";
-
-// Verificar si hay error HTTP
-$httpCode = 0;
-foreach ($responseHeaders as $header) {
-    if (preg_match('/^HTTP\/\d\.\d\s+(\d+)/', $header, $matches)) {
-        $httpCode = (int)$matches[1];
-        break;
-    }
-}
-
-echo "🔍 Código HTTP: $httpCode\n";
-
 if ($response === false) {
     echo "❌ Error: No se pudo conectar a la API\n";
-    exit(1);
-}
-
-// Si es un error HTTP, mostrar el contenido del error
-if ($httpCode >= 400) {
-    echo "❌ Error HTTP $httpCode\n";
-    echo "📄 Contenido del error:\n";
-    echo $response . "\n\n";
-    
-    // Intentar decodificar como JSON
-    $errorData = json_decode($response, true);
-    if ($errorData) {
-        echo "📋 Error JSON decodificado:\n";
-        print_r($errorData);
-    }
     exit(1);
 }
 
 // Decodificar respuesta
 $result = json_decode($response, true);
 
-echo "📄 Contenido de la respuesta:\n";
-echo $response . "\n\n";
+echo "📥 Respuesta de la API:\n";
+echo "Status: " . $http_response_header[0] . "\n";
+echo "Response: " . $response . "\n\n";
 
 // Verificar resultado
 if ($result && isset($result['success'])) {
