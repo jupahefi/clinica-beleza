@@ -4,7 +4,8 @@
  * Server-based architecture - Sin modo offline
  */
 
-import { reportesAPI, mostrarNotificacion } from '../api-client.js';
+import { reportesAPI } from '../api-client.js';
+import { mostrarNotificacion } from '../utils.js';
 
 export class ReportesModule {
     constructor() {

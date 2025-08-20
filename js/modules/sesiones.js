@@ -235,7 +235,7 @@ export class SesionesModule {
         const formData = this.getSesionFormData();
         
         if (!formData.paciente_id || !formData.venta_id || !formData.fecha_planificada || !formData.hora_planificada) {
-            alert('Por favor complete todos los campos obligatorios');
+            mostrarNotificacion('Por favor complete todos los campos obligatorios', 'error');
             return;
         }
         
@@ -243,15 +243,15 @@ export class SesionesModule {
             const response = await sesionesAPI.create(formData);
             
             if (response.success) {
-                alert('✅ Sesión creada exitosamente');
+                mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
                 this.limpiarFormularioSesion();
                 await this.loadSesiones(); // Recargar sesiones y actualizar calendario
             } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
   } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error creando sesión: ' + error.message);
+            mostrarNotificacion('❌ Error creando sesión: ' + error.message, 'error');
         }
     }
     

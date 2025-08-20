@@ -4,7 +4,8 @@
  * Server-based architecture - Sin modo offline
  */
 
-import { boxesAPI, sucursalesAPI, mostrarNotificacion } from '../api-client.js';
+import { boxesAPI, sucursalesAPI } from '../api-client.js';
+import { mostrarNotificacion } from '../utils.js';
 
 export class BoxesModule {
     constructor() {

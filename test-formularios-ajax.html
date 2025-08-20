@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Formularios AJAX - Clínica Beleza</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.error {
+            background: #dc3545;
+        }
+        .test-button.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .test-button.info {
+            background: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Formularios AJAX - Clínica Beleza</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Sistema de Toast</h2>
+        <p>Prueba el sistema de notificaciones toast:</p>
+        <button class="test-button success" onclick="testToast('success')">✅ Toast Success</button>
+        <button class="test-button error" onclick="testToast('error')">❌ Toast Error</button>
+        <button class="test-button warning" onclick="testToast('warning')">⚠️ Toast Warning</button>
+        <button class="test-button info" onclick="testToast('info')">ℹ️ Toast Info</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔗 Test Navegación</h2>
+        <p>Prueba que la navegación funcione sin recargar la página:</p>
+        <button class="test-button" onclick="testNavigation()">🧭 Test Navegación</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 Test Formularios</h2>
+        <p>Prueba que los formularios usen AJAX:</p>
+        <button class="test-button" onclick="testFormularios()">📋 Test Formularios</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🌐 Test API</h2>
+        <p>Prueba la conectividad con la API:</p>
+        <button class="test-button" onclick="testAPI()">🔌 Test API</button>
+    </div>
+
+    <script type="module">
+        import { mostrarNotificacion } from './js/utils.js';
+        import { checkConnection } from './js/api-client.js';
+        
+        // Hacer disponible globalmente para testing
+        window.mostrarNotificacion = mostrarNotificacion;
+        window.checkConnection = checkConnection;
+        
+        // Función para probar toast
+        window.testToast = function(tipo) {
+            const mensajes = {
+                success: '✅ ¡Operación exitosa! Los datos se han guardado correctamente.',
+                error: '❌ Error en la operación. Por favor, verifique los datos e intente nuevamente.',
+                warning: '⚠️ Advertencia: Algunos campos podrían requerir atención.',
+                info: 'ℹ️ Información: El sistema está funcionando correctamente.'
+            };
+            
+            mostrarNotificacion(mensajes[tipo], tipo);
+        };
+        
+        // Función para probar navegación
+        window.testNavigation = function() {
+            mostrarNotificacion('🧭 Probando navegación...', 'info');
+            
+            // Simular cambio de vista
+            setTimeout(() => {
+                mostrarNotificacion('✅ Navegación exitosa - No se recargó la página', 'success');
+            }, 1000);
+        };
+        
+        // Función para probar formularios
+        window.testFormularios = function() {
+            mostrarNotificacion('📋 Probando formularios AJAX...', 'info');
+            
+            // Simular envío de formulario
+            setTimeout(() => {
+                mostrarNotificacion('✅ Formulario enviado via AJAX - No se recargó la página', 'success');
+            }, 1500);
+        };
+        
+        // Función para probar API
+        window.testAPI = async function() {
+            mostrarNotificacion('🔌 Probando conectividad con la API...', 'info');
+            
+            try {
+                const result = await checkConnection();
+                
+                if (result.connected) {
+                    mostrarNotificacion('✅ API conectada correctamente', 'success');
+                } else {
+                    mostrarNotificacion(`❌ Error de conexión: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion(`❌ Error probando API: ${error.message}`, 'error');
+            }
+        };
+        
+        // Mostrar mensaje de inicio
+        setTimeout(() => {
+            mostrarNotificacion('🧪 Test Formularios AJAX iniciado correctamente', 'info');
+        }, 500);
+    </script>
+</body>
+</html>

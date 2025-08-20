@@ -63,6 +63,39 @@ export class PacientesModule {
         checkboxFichas.forEach(checkbox => {
             checkbox.addEventListener('change', () => this.toggleFichasEspecificas());
         });
+        
+        // Configurar formulario de paciente (AJAX)
+        const pacienteForm = document.getElementById('pacienteForm');
+        if (pacienteForm) {
+            pacienteForm.addEventListener('submit', async (e) => {
+                e.preventDefault(); // Prevenir envío tradicional
+                
+                const submitBtn = pacienteForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                try {
+                    // Mostrar loading
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                    submitBtn.disabled = true;
+                    
+                    // Guardar paciente
+                    const success = await this.guardarPacienteFormulario();
+                    
+                    if (success) {
+                        // Limpiar formulario si fue exitoso
+                        this.limpiarFormularioPaciente();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error en formulario paciente:', error);
+                    mostrarNotificacion(`Error inesperado: ${error.message}`, 'error');
+                } finally {
+                    // Restaurar botón
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
     }
     
     async cargarPacientesSelect() {
@@ -395,10 +428,16 @@ export class PacientesModule {
         const esNuevo = !this.pacienteActual;
         const datosEspecificos = this.obtenerDatosFichasEspecificas();
         
+        // Separar nombres y apellidos
+        const nombreCompleto = document.getElementById('nombrePaciente').value.trim();
+        const [nombres, ...apellidosArray] = nombreCompleto.split(' ');
+        const apellidos = apellidosArray.join(' ') || '';
+        
         const paciente = {
             id: this.pacienteActual?.id,
-            nombres: document.getElementById('nombrePaciente').value.trim(),
-            rut: formatearRut(document.getElementById('rutPaciente').value.trim()),
+            codigo: 'PAC' + Date.now(), // Generar código único
+            nombres: nombres,
+            apellidos: apellidos,
             fecha_nacimiento: document.getElementById('fechaNacimiento').value,
             telefono: document.getElementById('telefonoPaciente').value.trim(),
             email: document.getElementById('emailPaciente').value.trim(),
@@ -439,6 +478,33 @@ export class PacientesModule {
     
     obtenerPacienteActual() {
         return this.pacienteActual;
+    }
+    
+    limpiarFormularioPaciente() {
+        // Limpiar campos principales
+        document.getElementById('nombrePaciente').value = '';
+        document.getElementById('telefonoPaciente').value = '';
+        document.getElementById('emailPaciente').value = '';
+        document.getElementById('fechaNacimiento').value = '';
+        document.getElementById('direccionPaciente').value = '';
+        document.getElementById('observacionesPaciente').value = '';
+        
+        // Limpiar fichas específicas
+        document.getElementById('fichaDepilacion').checked = false;
+        document.getElementById('fichaCorporal').checked = false;
+        document.getElementById('zonasDepilacion').value = '';
+        document.getElementById('observacionesMedicas').value = '';
+        document.getElementById('tratamientosPrevios').value = '';
+        document.getElementById('objetivoEstetico').value = '';
+        
+        // Ocultar contenedores de fichas específicas
+        document.getElementById('fichaDepilacionCard').classList.add('hidden');
+        document.getElementById('fichaCorporalCard').classList.add('hidden');
+        
+        // Resetear paciente actual
+        this.pacienteActual = null;
+        
+        mostrarNotificacion('Formulario limpiado', 'info');
     }
 }
 

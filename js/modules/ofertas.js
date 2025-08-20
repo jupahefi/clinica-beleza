@@ -4,7 +4,8 @@
  * Server-based architecture - Sin modo offline
  */
 
-import { ofertasAPI, ofertasComboAPI, mostrarNotificacion } from '../api-client.js';
+import { ofertasAPI, ofertasComboAPI } from '../api-client.js';
+import { mostrarNotificacion } from '../utils.js';
 
 export class OfertasModule {
     constructor() {

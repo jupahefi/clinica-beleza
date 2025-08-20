@@ -472,8 +472,10 @@ export const reportesAPI = {
  * Mostrar notificación (compatibilidad)
  */
 export function mostrarNotificacion(mensaje, tipo = 'info') {
-    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
-    // Aquí se puede integrar con el sistema de notificaciones del frontend
+    // Importar desde utils.js para usar la implementación real
+    import('../utils.js').then(utils => {
+        utils.mostrarNotificacion(mensaje, tipo);
+    });
 }
 
 /**

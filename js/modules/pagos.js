@@ -32,6 +32,34 @@ export class PagosModule {
         if (fechaInput) {
             fechaInput.value = fechaActualInput();
         }
+        
+        // Configurar formulario de pago (AJAX)
+        const pagoForm = document.getElementById('pagoForm');
+        if (pagoForm) {
+            pagoForm.addEventListener('submit', async (e) => {
+                e.preventDefault(); // Prevenir envío tradicional
+                
+                const submitBtn = pagoForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                try {
+                    // Mostrar loading
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+                    submitBtn.disabled = true;
+                    
+                    // Registrar pago
+                    await this.registrarPago();
+                    
+                } catch (error) {
+                    console.error('Error en formulario pago:', error);
+                    mostrarNotificacion(`Error inesperado: ${error.message}`, 'error');
+                } finally {
+                    // Restaurar botón
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
     }
     
     async cargarVentasPendientes() {

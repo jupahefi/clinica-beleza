@@ -392,6 +392,11 @@ class ClinicaBelezaApp {
             showMessage('Error importando datos: ' + error.message, 'error');
         }
     }
+    
+    // Método para obtener módulos
+    getModule(moduleName) {
+        return this.modules[moduleName];
+    }
 }
 
 // Inicializar aplicación cuando el DOM esté listo

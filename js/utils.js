@@ -476,8 +476,87 @@ export function debounce(func, wait) {
  * Muestra notificación/alerta personalizada
  */
 export function mostrarNotificacion(mensaje, tipo = 'info') {
-  // Por simplicidad usamos alert, pero se puede expandir a un sistema de notificaciones
-  alert(mensaje);
+  // Crear contenedor de notificaciones si no existe
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 400px;
+    `;
+    document.body.appendChild(container);
+  }
+  
+  // Crear toast
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    background: ${tipo === 'error' ? '#f8d7da' : tipo === 'success' ? '#d4edda' : tipo === 'warning' ? '#fff3cd' : '#d1ecf1'};
+    color: ${tipo === 'error' ? '#721c24' : tipo === 'success' ? '#155724' : tipo === 'warning' ? '#856404' : '#0c5460'};
+    border: 1px solid ${tipo === 'error' ? '#f5c6cb' : tipo === 'success' ? '#c3e6cb' : tipo === 'warning' ? '#ffeaa7' : '#bee5eb'};
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    max-width: 100%;
+    word-wrap: break-word;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+  `;
+  
+  // Icono según tipo
+  const iconos = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+  
+  toast.innerHTML = `
+    <div style="display: flex; align-items: flex-start; gap: 10px;">
+      <span style="font-size: 16px;">${iconos[tipo] || iconos.info}</span>
+      <div style="flex: 1;">
+        <div style="white-space: pre-line;">${mensaje}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        padding: 0;
+        margin-left: 10px;
+      ">×</button>
+    </div>
+  `;
+  
+  container.appendChild(toast);
+  
+  // Animar entrada
+  setTimeout(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(0)';
+  }, 10);
+  
+  // Auto-remover después de 5 segundos (excepto errores que duran más)
+  const duracion = tipo === 'error' ? 8000 : 5000;
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.remove();
+      }
+    }, 300);
+  }, duracion);
 }
 
 /**

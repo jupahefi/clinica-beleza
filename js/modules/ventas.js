@@ -378,7 +378,7 @@ export class VentasModule {
         const formData = this.getVentaFormData();
         
         if (!formData.paciente || !formData.servicio || !formData.precio || !formData.fecha) {
-            alert('Por favor complete todos los campos obligatorios');
+            mostrarNotificacion('Por favor complete todos los campos obligatorios', 'error');
             return;
         }
         
@@ -420,7 +420,7 @@ export class VentasModule {
             },
             () => {
                 // Consentimiento rechazado
-                alert('La venta no se puede completar sin el consentimiento firmado.');
+                mostrarNotificacion('La venta no se puede completar sin el consentimiento firmado.', 'error');
             }
         );
     }
@@ -437,15 +437,15 @@ export class VentasModule {
             const response = await ventasAPI.create(ventaData);
             
             if (response.success) {
-                alert('✅ Venta creada exitosamente');
+                mostrarNotificacion('✅ Venta creada exitosamente', 'success');
                 this.limpiarFormularioVenta();
                 this.loadVentas();
             } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error creando venta: ' + error.message);
+            mostrarNotificacion('❌ Error creando venta: ' + error.message, 'error');
         }
     }
     
