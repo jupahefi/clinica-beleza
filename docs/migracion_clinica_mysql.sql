@@ -3,6 +3,10 @@
 -- MySQL migration - v2 (Sistema de Login + Campos Requeridos)
 -- =============================================================================
 
+-- ---------- DROP DATABASE (DESARROLLO/TESTING) ----------
+DROP DATABASE IF EXISTS clinica_estetica;
+-- MANTENER COMENTADO PARA PRODUCCIÓN
+
 -- ---------- Helper: create database if not exists ----------
 CREATE DATABASE IF NOT EXISTS clinica_estetica;
 USE clinica_estetica;
