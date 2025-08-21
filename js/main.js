@@ -53,6 +53,7 @@ class ClinicaBelezaApp {
         this.setupGlobalEventListeners();
         this.setupGlobalErrorHandling();
         this.setupUserInterface();
+        this.setupGlobalFunctions();
         await this.loadInitialData();
         this.showWelcomeMessage();
     }
@@ -358,6 +359,15 @@ class ClinicaBelezaApp {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.logout());
         }
+    }
+
+    setupGlobalFunctions() {
+        // Configurar función global para confirmar venta
+        window.confirmarVenta = () => {
+            if (this.modules.ventas && this.modules.ventas.confirmarVenta) {
+                this.modules.ventas.confirmarVenta();
+            }
+        };
     }
     
     updateUserInfo() {
