@@ -100,17 +100,21 @@ class ClinicaBelezaApp {
 }
 
     setupNavigation() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
+        console.log('🧭 Configurando navegación...');
+        const navLinks = document.querySelectorAll('.nav-link');
+        console.log('🔗 Enlaces encontrados:', navLinks.length);
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const view = link.dataset.view;
+                console.log('🖱️ Clic en enlace:', view);
                 this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
+                console.log('📍 URL actualizada:', window.location.hash);
+            });
         });
-    });
     
         // Manejar el botón atrás/adelante del navegador
         window.addEventListener('popstate', (e) => {
@@ -156,12 +160,15 @@ class ClinicaBelezaApp {
         
         // Ocultar todas las vistas
         const views = document.querySelectorAll('.view-section');
+        console.log('📋 Vistas encontradas:', views.length);
         views.forEach(view => {
             view.classList.remove('active');
+            console.log('👁️ Vista oculta:', view.id);
         });
         
         // Mostrar vista seleccionada
         const targetView = document.getElementById(viewName);
+        console.log('🎯 Vista objetivo:', targetView);
         if (targetView) {
             targetView.classList.add('active');
             this.currentView = viewName;
@@ -184,29 +191,37 @@ class ClinicaBelezaApp {
     }
     
     loadViewData(viewName) {
+        console.log(`📊 Cargando datos para vista: ${viewName}`);
         switch (viewName) {
             case 'fichas':
+                console.log('📋 Cargando datos de fichas...');
                 this.modules.pacientes.cargarPacientes();
                 break;
             case 'ventas':
+                console.log('💰 Cargando datos de ventas...');
                 this.modules.ventas.loadVentas();
                 this.modules.ventas.loadPacientes();
                 break;
             case 'pagos':
+                console.log('💳 Cargando datos de pagos...');
                 this.modules.pagos.loadPagos();
                 this.modules.pagos.loadPacientes();
                 break;
             case 'sesiones':
+                console.log('📅 Cargando datos de sesiones...');
                 this.modules.sesiones.loadSesiones();
                 this.modules.sesiones.loadPacientes();
                 break;
             case 'boxes':
+                console.log('📦 Cargando datos de boxes...');
                 this.modules.boxes.cargarBoxes();
                 break;
             case 'ofertas':
+                console.log('🎯 Cargando datos de ofertas...');
                 this.modules.ofertas.cargarOfertas();
                 break;
             case 'reportes':
+                console.log('📊 Cargando datos de reportes...');
                 this.modules.reportes.cargarReportesDisponibles();
                 break;
         }
@@ -498,10 +513,13 @@ class ClinicaBelezaApp {
 
 // Inicializar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM cargado, inicializando aplicación...');
     window.clinicaApp = new ClinicaBelezaApp();
     
     // Hacer disponible globalmente para debugging
     window.app = window.clinicaApp;
+    
+    console.log('✅ Aplicación inicializada:', window.clinicaApp);
     
     // Mostrar estadísticas iniciales después de 2 segundos
     setTimeout(() => {

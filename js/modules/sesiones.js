@@ -17,9 +17,17 @@ export class SesionesModule {
     }
     
     async init() {
-        this.setupEventListeners();
-        this.initCalendar();
-        await this.loadSesiones();
+        console.log('🚀 Inicializando módulo de sesiones...');
+        try {
+            this.setupEventListeners();
+            console.log('✅ Event listeners configurados');
+            this.initCalendar();
+            console.log('✅ Calendario inicializado');
+            await this.loadSesiones();
+            console.log('✅ Sesiones cargadas');
+        } catch (error) {
+            console.error('❌ Error inicializando módulo de sesiones:', error);
+        }
     }
     
     initCalendar() {
@@ -457,10 +465,14 @@ export class SesionesModule {
     }
     
     async loadSesiones() {
+        console.log('📋 Cargando sesiones...');
         try {
             this.sesiones = await sesionesAPI.getAll();
+            console.log('✅ Sesiones obtenidas:', this.sesiones.length);
             this.renderSesiones();
+            console.log('✅ Sesiones renderizadas');
             this.updateCalendarEvents(); // Actualizar calendario
+            console.log('✅ Calendario actualizado');
         } catch (error) {
             console.error('Error cargando sesiones:', error);
             const errorMessage = error.message || 'Error desconocido cargando sesiones';
@@ -481,11 +493,17 @@ export class SesionesModule {
     }
     
     renderSesiones() {
-    const tbody = document.getElementById('cuerpoTablaSesiones');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
+        console.log('🎨 Renderizando sesiones...');
+        const tbody = document.getElementById('cuerpoTablaSesiones');
+        console.log('📋 Tbody encontrado:', tbody);
+        if (!tbody) {
+            console.error('❌ No se encontró el tbody para sesiones');
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        console.log('📊 Renderizando', this.sesiones.length, 'sesiones');
+        
         this.sesiones.forEach(sesion => {
         const row = document.createElement('tr');
         row.innerHTML = `
