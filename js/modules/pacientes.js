@@ -497,6 +497,9 @@ export class PacientesModule {
     ...datosEspecificos
   };
   
+  // Log para debugging
+  console.log('📤 Datos del paciente a enviar:', paciente);
+  
   try {
     let pacienteGuardado;
     if (esNuevo) {

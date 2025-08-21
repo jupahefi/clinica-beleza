@@ -1015,6 +1015,9 @@ CREATE PROCEDURE sp_crear_ficha(
     IN p_rut VARCHAR(20),
     IN p_telefono VARCHAR(50),
     IN p_email VARCHAR(120),
+    IN p_fecha_nacimiento DATE,
+    IN p_direccion TEXT,
+    IN p_observaciones TEXT,
     OUT p_ficha_id BIGINT
 )
 BEGIN
@@ -1035,8 +1038,8 @@ BEGIN
         SET p_ficha_id = v_existing_id;
     ELSE
         -- Si no existe, crear nueva ficha
-        INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email)
-        VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email);
+        INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email, fecha_nacimiento, direccion, observaciones)
+        VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email, p_fecha_nacimiento, p_direccion, p_observaciones);
         
         SET p_ficha_id = LAST_INSERT_ID();
     END IF;

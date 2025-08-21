@@ -39,6 +39,16 @@ function getEnv(key, defaultValue = '') {
  */
 function handleApiError(result) {
     if (!result.success) {
+        // Log detallado del error para debugging
+        console.error('🚨 Error del API:', {
+            error: result.error,
+            code: result.error_code,
+            timestamp: result.timestamp,
+            endpoint: result.endpoint,
+            method: result.method,
+            fullResponse: result
+        });
+        
         // Crear un error más descriptivo con toda la información del servidor
         const error = new Error(result.error || 'Error en la petición');
         error.apiError = {
@@ -74,6 +84,22 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
+            // Log del error HTTP para debugging
+            console.error('🚨 Error HTTP:', {
+                status: response.status,
+                statusText: response.statusText,
+                url: url,
+                method: options.method || 'GET'
+            });
+            
+            // Intentar obtener el cuerpo de la respuesta para más detalles
+            try {
+                const errorBody = await response.text();
+                console.error('🚨 Cuerpo del error:', errorBody);
+            } catch (e) {
+                console.error('🚨 No se pudo leer el cuerpo del error');
+            }
+            
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         

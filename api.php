@@ -263,9 +263,10 @@ function handleFichas($db, $method, $id, $data) {
             
         case 'POST':
             // Crear ficha - los errores se capturan en el try-catch global
-            $result = $db->executeRaw("CALL sp_crear_ficha(?, ?, ?, ?, ?, ?, @ficha_id)", [
+            $result = $db->executeRaw("CALL sp_crear_ficha(?, ?, ?, ?, ?, ?, ?, ?, ?, @ficha_id)", [
                 $data['codigo'], $data['nombres'], $data['apellidos'],
-                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null
+                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null,
+                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? ''
             ]);
             $fichaId = $db->selectOne("SELECT @ficha_id as id")['id'];
             echo json_encode(['success' => true, 'data' => ['id' => $fichaId]]);
@@ -273,9 +274,10 @@ function handleFichas($db, $method, $id, $data) {
             
         case 'PUT':
             // Actualizar ficha
-            $result = $db->update("UPDATE ficha SET codigo = ?, nombres = ?, apellidos = ?, rut = ?, telefono = ?, email = ? WHERE id = ?", [
+            $result = $db->update("UPDATE ficha SET codigo = ?, nombres = ?, apellidos = ?, rut = ?, telefono = ?, email = ?, fecha_nacimiento = ?, direccion = ?, observaciones = ? WHERE id = ?", [
                 $data['codigo'], $data['nombres'], $data['apellidos'],
-                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null, $id
+                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null,
+                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? '', $id
             ]);
             echo json_encode(['success' => true, 'data' => ['updated' => $result]]);
             break;
