@@ -326,6 +326,8 @@
                     const data = await response.json();
                     
                     if (data.success) {
+                        console.log('🎉 Login exitoso, datos recibidos:', data.data);
+                        
                         // Guardar datos de sesión
                         localStorage.setItem('authToken', data.data.token);
                         localStorage.setItem('userData', JSON.stringify(data.data.usuario));
@@ -333,10 +335,16 @@
                             localStorage.setItem('profesionalData', JSON.stringify(data.data.profesional));
                         }
                         
+                        console.log('💾 Datos guardados en localStorage:');
+                        console.log('Token:', localStorage.getItem('authToken'));
+                        console.log('UserData:', localStorage.getItem('userData'));
+                        console.log('ProfesionalData:', localStorage.getItem('profesionalData'));
+                        
                         this.showAlert('¡Inicio de sesión exitoso! Redirigiendo...', 'success');
                         
                         // Redirigir al dashboard
                         setTimeout(() => {
+                            console.log('🔄 Redirigiendo a index.html...');
                             window.location.href = '/index.html';
                         }, 1000);
                         

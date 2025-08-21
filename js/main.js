@@ -61,14 +61,28 @@ class ClinicaBelezaApp {
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('userData');
         
+        console.log('🔍 Verificando autenticación...');
+        console.log('Token:', token ? 'Presente' : 'Ausente');
+        console.log('UserData:', userData);
+        
         if (!token || !userData) {
+            console.log('❌ No hay token o userData');
             return false;
         }
         
         try {
             const user = JSON.parse(userData);
-            // Verificar que el usuario esté activo y tenga un rol válido
-            if (!user.activo || !user.rol) {
+            console.log('👤 Usuario parseado:', user);
+            
+            // Verificar que el usuario tenga un rol válido
+            if (!user.rol) {
+                console.log('❌ Usuario sin rol válido');
+                return false;
+            }
+            
+            // Verificar que el usuario esté activo (si el campo existe)
+            if (user.hasOwnProperty('activo') && !user.activo) {
+                console.log('❌ Usuario inactivo');
                 return false;
             }
             
@@ -76,9 +90,10 @@ class ClinicaBelezaApp {
             this.currentUser = user;
             this.currentUser.profesional = JSON.parse(localStorage.getItem('profesionalData') || 'null');
             
+            console.log('✅ Autenticación exitosa');
             return true;
         } catch (error) {
-            console.error('Error verificando autenticación:', error);
+            console.error('❌ Error verificando autenticación:', error);
             return false;
         }
     }
