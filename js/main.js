@@ -330,11 +330,17 @@ class ClinicaBelezaApp {
     // Método para mostrar estadísticas rápidas
     async showQuickStats() {
         try {
+            // Obtener datos actualizados de cada módulo
+            const pacientes = this.modules.pacientes.pacientes || [];
+            const ventas = this.modules.ventas?.ventas || [];
+            const pagos = this.modules.pagos?.pagos || [];
+            const sesiones = this.modules.sesiones?.sesiones || [];
+            
             const stats = {
-                pacientes: this.modules.pacientes.pacientes?.length || 0,
-                ventas: this.modules.ventas.ventas?.length || 0,
-                pagos: this.modules.pagos.pagos?.length || 0,
-                sesiones: this.modules.sesiones.sesiones?.length || 0
+                pacientes: pacientes.length,
+                ventas: ventas.length,
+                pagos: pagos.length,
+                sesiones: sesiones.length
             };
             
             const statsMessage = `

@@ -10,12 +10,20 @@ import { TIPOS_PIEL, ZONAS_TRATAMIENTO, FICHAS_ESPECIFICAS } from '../constants.
 export class PacientesModule {
     constructor() {
         this.pacienteActual = null;
+        this.pacientes = []; // Array para almacenar la lista de pacientes
         this.init();
     }
     
     init() {
         this.cargarPacientesSelect();
         this.configurarEventosPacientes();
+        
+        // Actualizar estadísticas después de cargar pacientes
+        setTimeout(() => {
+            if (window.clinicaApp) {
+                window.clinicaApp.showQuickStats();
+            }
+        }, 1000);
     }
     
     configurarEventosPacientes() {
@@ -64,6 +72,12 @@ export class PacientesModule {
             checkbox.addEventListener('change', () => this.toggleFichasEspecificas());
         });
         
+        // Configurar búsqueda de pacientes
+        const buscarInput = document.getElementById('buscarPaciente');
+        if (buscarInput) {
+            buscarInput.addEventListener('input', (e) => this.buscarPacientesEnTabla(e.target.value));
+        }
+        
         // Configurar formulario de paciente (AJAX)
         const pacienteForm = document.getElementById('pacienteForm');
         if (pacienteForm) {
@@ -104,6 +118,9 @@ export class PacientesModule {
             const response = await fichasAPI.getAll();
             const pacientes = response.data || response;
             
+            // Guardar la lista de pacientes en la instancia
+            this.pacientes = pacientes;
+            
             selects.forEach(select => {
                 if (!select) return;
                 
@@ -120,6 +137,10 @@ export class PacientesModule {
                     select.appendChild(option);
                 });
             });
+            
+            // Actualizar también la tabla de pacientes registrados
+            this.actualizarTablaPacientes();
+            
         } catch (error) {
             console.error('Error cargando pacientes:', error);
             mostrarNotificacion('Error cargando pacientes', 'error');
@@ -133,6 +154,32 @@ export class PacientesModule {
     async loadPacientes() {
         // Alias para compatibilidad con main.js
         return this.cargarPacientes();
+    }
+    
+    actualizarTablaPacientes() {
+        const tbody = document.getElementById('cuerpoTablaPacientes');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        this.pacientes.forEach(paciente => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${paciente.nombres} ${paciente.apellidos}</td>
+                <td>${paciente.telefono || '-'}</td>
+                <td>${paciente.email || '-'}</td>
+                <td>${paciente.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-CL') : '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="window.clinicaApp.getModule('pacientes').editarPaciente(${paciente.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="window.clinicaApp.getModule('pacientes').eliminarPaciente(${paciente.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
     
     async cargarPacienteSeleccionado() {
@@ -452,6 +499,11 @@ export class PacientesModule {
             
             await this.cargarPacientesSelect();
             
+            // Actualizar estadísticas
+            if (window.clinicaApp) {
+                window.clinicaApp.showQuickStats();
+            }
+            
             const mensaje = esNuevo ? 'Paciente creado exitosamente' : 'Paciente actualizado exitosamente';
             mostrarNotificacion(mensaje, 'success');
             
@@ -470,8 +522,48 @@ export class PacientesModule {
         return await fichasAPI.search(termino);
     }
     
+    buscarPacientesEnTabla(termino) {
+        const tbody = document.getElementById('cuerpoTablaPacientes');
+        if (!tbody) return;
+        
+        const filas = tbody.querySelectorAll('tr');
+        
+        filas.forEach(fila => {
+            const texto = fila.textContent.toLowerCase();
+            const coincide = texto.includes(termino.toLowerCase());
+            fila.style.display = coincide ? '' : 'none';
+        });
+    }
+    
     obtenerPacienteActual() {
         return this.pacienteActual;
+    }
+    
+    async editarPaciente(id) {
+        try {
+            const paciente = await fichasAPI.getById(id);
+            this.pacienteActual = paciente;
+            this.llenarFormularioPaciente(paciente);
+            mostrarNotificacion('Paciente cargado para edición', 'info');
+        } catch (error) {
+            console.error('Error cargando paciente para edición:', error);
+            mostrarNotificacion('Error cargando paciente', 'error');
+        }
+    }
+    
+    async eliminarPaciente(id) {
+        if (!confirm('¿Está seguro de que desea eliminar este paciente?')) {
+            return;
+        }
+        
+        try {
+            await fichasAPI.delete(id);
+            await this.cargarPacientesSelect(); // Esto también actualizará la tabla
+            mostrarNotificacion('Paciente eliminado exitosamente', 'success');
+        } catch (error) {
+            console.error('Error eliminando paciente:', error);
+            mostrarNotificacion('Error eliminando paciente', 'error');
+        }
     }
     
     limpiarFormularioPaciente() {
