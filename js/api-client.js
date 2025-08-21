@@ -93,23 +93,17 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
             });
             
             // Intentar obtener el cuerpo de la respuesta para más detalles
+            const errorBody = await response.text();
+            console.error('🚨 Cuerpo del error:', errorBody);
+            
+            // Intentar parsear el JSON para obtener el error específico de la DB
             try {
-                const errorBody = await response.text();
-                console.error('🚨 Cuerpo del error:', errorBody);
-                
-                // Intentar parsear el JSON para obtener el error específico de la DB
-                try {
-                    const errorData = JSON.parse(errorBody);
-                    // Mostrar el JSON completo del error
-                    throw new Error(errorBody);
-                } catch (parseError) {
-                    // Si no es JSON válido, usar el texto como está
-                    throw new Error(errorBody);
-                }
-                
-            } catch (e) {
-                console.error('🚨 No se pudo leer el cuerpo del error');
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorData = JSON.parse(errorBody);
+                // Mostrar el JSON completo del error
+                throw new Error(errorBody);
+            } catch (parseError) {
+                // Si no es JSON válido, usar el texto como está
+                throw new Error(errorBody);
             }
         }
         
