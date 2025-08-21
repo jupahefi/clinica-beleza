@@ -38,6 +38,12 @@ class ClinicaBelezaApp {
     }
     
     async init() {
+        // Verificar autenticación primero
+        if (!this.checkAuthentication()) {
+            window.location.href = '/login.html';
+            return;
+        }
+        
         // Inicializar cliente API primero
         initializeApiClient();
         
@@ -46,30 +52,57 @@ class ClinicaBelezaApp {
         this.setupSearchFunctionality();
         this.setupGlobalEventListeners();
         this.setupGlobalErrorHandling();
+        this.setupUserInterface();
         await this.loadInitialData();
         this.showWelcomeMessage();
     }
     
+    checkAuthentication() {
+        const token = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('userData');
+        
+        if (!token || !userData) {
+            return false;
+        }
+        
+        try {
+            const user = JSON.parse(userData);
+            // Verificar que el usuario esté activo y tenga un rol válido
+            if (!user.activo || !user.rol) {
+                return false;
+            }
+            
+            // Guardar datos del usuario en la aplicación
+            this.currentUser = user;
+            this.currentUser.profesional = JSON.parse(localStorage.getItem('profesionalData') || 'null');
+            
+            return true;
+        } catch (error) {
+            console.error('Error verificando autenticación:', error);
+            return false;
+        }
+    }
+    
     setupNavigation() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
                 const view = link.dataset.view;
                 this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
-            });
         });
-        
+    });
+    
         // Manejar el botón atrás/adelante del navegador
         window.addEventListener('popstate', (e) => {
             if (e.state && e.state.view) {
                 this.switchView(e.state.view);
             } else {
                 // Si no hay estado, usar el hash de la URL
-                const hash = window.location.hash.slice(1);
+        const hash = window.location.hash.slice(1);
                 if (hash) {
                     this.switchView(hash);
                 } else {
@@ -92,7 +125,7 @@ class ClinicaBelezaApp {
         });
         
         // Activar vista inicial basada en la URL
-        const hash = window.location.hash.slice(1);
+    const hash = window.location.hash.slice(1);
         const initialView = hash || 'fichas';
         this.switchView(initialView);
         
@@ -299,6 +332,39 @@ class ClinicaBelezaApp {
             console.error('❌ Error crítico cargando datos iniciales:', error);
             showMessage('Error cargando datos iniciales', 'error');
         }
+    }
+    
+    setupUserInterface() {
+        // Mostrar información del usuario
+        this.updateUserInfo();
+        
+        // Configurar botón de logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
+    }
+    
+    updateUserInfo() {
+        const userInfo = document.getElementById('userInfo');
+        if (userInfo && this.currentUser) {
+            const roleText = this.currentUser.rol === 'admin' ? 'Administrador' : 'Profesional';
+            const name = this.currentUser.profesional ? 
+                `${this.currentUser.profesional.nombre} ${this.currentUser.profesional.apellidos}` : 
+                this.currentUser.username;
+            
+            userInfo.textContent = `${name} (${roleText})`;
+        }
+    }
+    
+    logout() {
+        // Limpiar datos de sesión
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('profesionalData');
+        
+        // Redirigir al login
+        window.location.href = '/login.html';
     }
     
     showWelcomeMessage() {

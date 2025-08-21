@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Clínica Estética - Esquema base
--- MySQL migration - v1
+-- MySQL migration - v2 (Sistema de Login + Campos Requeridos)
 -- =============================================================================
 
 -- ---------- Helper: create database if not exists ----------
@@ -140,9 +140,9 @@ DELIMITER ;
 CREATE TABLE IF NOT EXISTS sucursal (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(120) NOT NULL,
-  direccion VARCHAR(200),
-  telefono VARCHAR(50),
-  email VARCHAR(120),
+  direccion VARCHAR(200) NOT NULL,
+  telefono VARCHAR(50) NOT NULL,
+  email VARCHAR(120) NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -152,7 +152,7 @@ CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
 CREATE TABLE IF NOT EXISTS zona_cuerpo (
   codigo VARCHAR(50) PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
-  categoria VARCHAR(50),
+  categoria VARCHAR(50) NOT NULL,
   precio_base DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
@@ -185,58 +185,58 @@ INSERT IGNORE INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, 
 ('DEPILACION', 'Depilación láser y tratamientos corporales', TRUE, 45, 30, TRUE);
 
 -- Insertar packs de tratamientos FACIAL
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, 39900, 24900, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, 250000, 199000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinámica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, 299000, NULL, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, 199000, 149900, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, 450000, 390000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnología Plasmática Párpados', 'Tratamiento plasmático para párpados', 45, 1, 350000, 250000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, 189000, 139900, TRUE);
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, 39900, 24900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, 250000, 199000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinámica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, 299000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, 199000, 149900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, 450000, 390000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnología Plasmática Párpados', 'Tratamiento plasmático para párpados', 45, 1, 350000, 250000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, 189000, 139900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
 
 -- Insertar packs de tratamientos CAPILAR
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, 579000, 499000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, 579000, 499000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulación Capilar', 'Fotobiomodulación para el cabello', 60, 6, 579000, 499000, TRUE);
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulación Capilar', 'Fotobiomodulación para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
 
 -- Insertar packs de tratamientos DEPILACION
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilación láser cuerpo completo', 120, 6, 499000, NULL, TRUE, 
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilación láser cuerpo completo', 120, 6, 499000, 499000, '2024-01-01', '2024-12-31', TRUE, 
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilación láser cuerpo completo sin rostro', 90, 6, 399000, NULL, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilación láser cuerpo completo sin rostro', 90, 6, 399000, 399000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilación láser rostro completo', 45, 8, 149900, NULL, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilación láser rostro completo', 45, 8, 149900, 149900, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
  JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilación láser full body: piernas, brazos, axilas, rebaje, interglúteo', 75, 6, 259000, 199000, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilación láser full body: piernas, brazos, axilas, rebaje, interglúteo', 75, 6, 259000, 199000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilación láser semi full: piernas, axilas, rebaje, interglúteo', 60, 6, 199000, 159000, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilación láser semi full: piernas, axilas, rebaje, interglúteo', 60, 6, 199000, 159000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilación láser bikini full: rebaje e interglúteo', 30, 6, 99000, 79900, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilación láser bikini full: rebaje e interglúteo', 30, 6, 99000, 79900, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilación láser bikini full con axilas', 35, 6, 120000, 99000, TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilación láser bikini full con axilas', 35, 6, 120000, 99000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000));
 
 -- Insertar precios de tratamientos (para tratamientos sin pack específico)
-INSERT IGNORE INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, activo) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 39900, 24900, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 579000, 499000, TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 499000, NULL, TRUE);
+INSERT IGNORE INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 39900, 24900, '2024-01-01', '2024-12-31', TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 579000, 499000, '2024-01-01', '2024-12-31', TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 499000, 499000, '2024-01-01', '2024-12-31', TRUE);
 
 -- Insertar tipos de fichas específicas
-INSERT IGNORE INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento) VALUES
-('DEPILACION', 'Ficha específica para depilación láser', TRUE, 'Consentimiento informado para depilación láser'),
-('CORPORAL', 'Ficha específica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales'),
-('FACIAL', 'Ficha específica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales'),
-('CAPILAR', 'Ficha específica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares');
+INSERT IGNORE INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos) VALUES
+('DEPILACION', 'Ficha específica para depilación láser', TRUE, 'Consentimiento informado para depilación láser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text')),
+('CORPORAL', 'Ficha específica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text')),
+('FACIAL', 'Ficha específica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text')),
+('CAPILAR', 'Ficha específica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'));
 
 -- Insertar sucursal por defecto
 INSERT IGNORE INTO sucursal (nombre, direccion, telefono, email, activo) VALUES
@@ -244,37 +244,45 @@ INSERT IGNORE INTO sucursal (nombre, direccion, telefono, email, activo) VALUES
 
 -- Insertar boxes por defecto
 INSERT IGNORE INTO box (sucursal_id, nombre, descripcion, activo) VALUES
-((SELECT id FROM sucursal LIMIT 1), 'Box 1', 'Box principal para tratamientos', TRUE),
-((SELECT id FROM sucursal LIMIT 1), 'Box 2', 'Box secundario para tratamientos', TRUE),
-((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box para depilación', TRUE);
+((SELECT id FROM sucursal LIMIT 1), 'Box 1', 'Box principal para tratamientos faciales y corporales', TRUE),
+((SELECT id FROM sucursal LIMIT 1), 'Box 2', 'Box secundario para tratamientos especializados', TRUE),
+((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box exclusivo para depilación láser', TRUE);
+
+-- Insertar usuarios por defecto
+INSERT IGNORE INTO usuario (username, password_hash, email, rol, activo) VALUES
+('juan.herrera', '$2y$10$NgKGj0dk8VdWeuXclKEcH.7llW48dIGlNl5b2ScRFlA1RtkS.fLi.', 'juan.herrera@programadores.org', 'admin', TRUE),
+('maria.gonzalez', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'maria.gonzalez@clinica-beleza.cl', 'profesional', TRUE),
+('ana.rodriguez', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ana.rodriguez@clinica-beleza.cl', 'profesional', TRUE),
+('carmen.silva', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'carmen.silva@clinica-beleza.cl', 'profesional', TRUE);
 
 -- Insertar profesionales por defecto
-INSERT IGNORE INTO profesional (nombre, apellidos, rut, telefono, email, tipo_profesional, bio, activo) VALUES
-('María', 'González', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesióloga', 'Especialista en tratamientos faciales y corporales', TRUE),
-('Ana', 'Rodríguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Técnico Estético', 'Especialista en depilación láser', TRUE),
-('Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetóloga', 'Especialista en tratamientos capilares', TRUE);
+INSERT IGNORE INTO profesional (usuario_id, nombre, apellidos, rut, telefono, email, tipo_profesional, bio, foto_url, especialidad, titulo_profesional, numero_colegio, fecha_nacimiento, direccion, estado_civil, grupo_sanguineo, contacto_emergencia, telefono_emergencia, activo) VALUES
+((SELECT id FROM usuario WHERE username = 'juan.herrera'), 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador', 'Administrador del sistema y desarrollador principal. Especialista en gestión de clínicas estéticas y sistemas de información médica.', '/assets/profesionales/juan-herrera.jpg', 'Administración y Desarrollo', 'Ingeniero en Informática', 'ADM-00001', '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'María Herrera', '+56 9 8888 8888', TRUE),
+((SELECT id FROM usuario WHERE username = 'maria.gonzalez'), 'María', 'González', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesióloga', 'Especialista en tratamientos faciales y corporales con más de 8 años de experiencia. Certificada en técnicas avanzadas de radiofrecuencia y criolipolisis.', '/assets/profesionales/maria-gonzalez.jpg', 'Tratamientos Faciales y Corporales', 'Kinesióloga', 'KIN-12345', '1985-03-15', 'Av. Providencia 1234, Providencia, Santiago', 'Casada', 'O+', 'Carlos González', '+56 9 8765 4321', TRUE),
+((SELECT id FROM usuario WHERE username = 'ana.rodriguez'), 'Ana', 'Rodríguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Técnico Estético', 'Especialista en depilación láser con certificación internacional. Experta en todos los tipos de piel y zonas corporales.', '/assets/profesionales/ana-rodriguez.jpg', 'Depilación Láser', 'Técnico Estético', 'TEC-67890', '1990-07-22', 'Calle Las Condes 567, Las Condes, Santiago', 'Soltera', 'A+', 'María Rodríguez', '+56 9 1111 2222', TRUE),
+((SELECT id FROM usuario WHERE username = 'carmen.silva'), 'Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetóloga', 'Especialista en tratamientos capilares y regenerativos. Certificada en PRP y fotobiomodulación para el cabello.', '/assets/profesionales/carmen-silva.jpg', 'Tratamientos Capilares', 'Cosmetóloga', 'COS-11111', '1988-11-08', 'Av. Vitacura 890, Vitacura, Santiago', 'Divorciada', 'B+', 'Pedro Silva', '+56 9 3333 4444', TRUE);
 
 -- Insertar ofertas de packs (promociones)
-INSERT IGNORE INTO oferta (nombre, tipo, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad) VALUES
+INSERT IGNORE INTO oferta (nombre, tipo, descripcion, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad) VALUES
 -- Ofertas FACIAL
-('Promo Limpieza Facial', 'pack_temporal', 37.5, NULL, NULL, TRUE, TRUE, 1),
-('Promo Radiofrecuencia Facial', 'pack_temporal', 20.4, NULL, NULL, TRUE, TRUE, 1),
-('Promo Criolipolisis Facial', 'pack_temporal', 25.1, NULL, NULL, TRUE, TRUE, 1),
-('Promo Plasma Rico en Plaquetas', 'pack_temporal', 24.7, NULL, NULL, TRUE, TRUE, 1),
-('Promo Radiofrecuencia Fraccionada', 'pack_temporal', 13.3, NULL, NULL, TRUE, TRUE, 1),
-('Promo Tecnología Plasmática', 'pack_temporal', 28.6, NULL, NULL, TRUE, TRUE, 1),
-('Promo Pink Glow', 'pack_temporal', 26.0, NULL, NULL, TRUE, TRUE, 1),
+('Promo Limpieza Facial', 'pack_temporal', 'Descuento especial en limpieza facial profunda', 37.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Radiofrecuencia Facial', 'pack_temporal', 'Descuento en radiofrecuencia facial reafirmante', 20.4, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Criolipolisis Facial', 'pack_temporal', 'Descuento en criolipolisis facial dinámica', 25.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Plasma Rico en Plaquetas', 'pack_temporal', 'Descuento en tratamiento con PRP', 24.7, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Radiofrecuencia Fraccionada', 'pack_temporal', 'Descuento en radiofrecuencia fraccionada + vitamina C', 13.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Tecnología Plasmática', 'pack_temporal', 'Descuento en tecnología plasmática para párpados', 28.6, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Pink Glow', 'pack_temporal', 'Descuento en Pink Glow con ultrasonido', 26.0, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 
 -- Ofertas CAPILAR
-('Promo Carboxiterapia Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
-('Promo PRP Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
-('Promo Fotobiomodulación Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
+('Promo Carboxiterapia Capilar', 'pack_temporal', 'Descuento en carboxiterapia para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo PRP Capilar', 'pack_temporal', 'Descuento en PRP para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Fotobiomodulación Capilar', 'pack_temporal', 'Descuento en fotobiomodulación para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 
 -- Ofertas DEPILACION
-('Promo Full Body', 'pack_temporal', 23.2, NULL, NULL, TRUE, TRUE, 1),
-('Promo Semi Full', 'pack_temporal', 20.1, NULL, NULL, TRUE, TRUE, 1),
-('Promo Bikini Full', 'pack_temporal', 19.3, NULL, NULL, TRUE, TRUE, 1),
-('Promo Bikini Full + Axilas', 'pack_temporal', 17.5, NULL, NULL, TRUE, TRUE, 1);
+('Promo Full Body', 'pack_temporal', 'Descuento en depilación láser full body', 23.2, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Semi Full', 'pack_temporal', 'Descuento en depilación láser semi full', 20.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Bikini Full', 'pack_temporal', 'Descuento en depilación láser bikini full', 19.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Bikini Full + Axilas', 'pack_temporal', 'Descuento en depilación láser bikini full + axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1);
 
 -- Asociar ofertas con packs FACIAL
 INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
@@ -317,25 +325,52 @@ CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   sucursal_id BIGINT NOT NULL,
   nombre VARCHAR(80) NOT NULL,
-  descripcion TEXT,
+  descripcion TEXT NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
 
+CREATE TABLE IF NOT EXISTS usuario (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  email VARCHAR(120) NOT NULL UNIQUE,
+  rol VARCHAR(20) NOT NULL DEFAULT 'profesional', -- 'admin', 'profesional', 'recepcionista'
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  ultimo_login TIMESTAMP NULL,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CALL AddIndexIfNotExists('ux_usuario_username', 'usuario', 'username', TRUE);
+CALL AddIndexIfNotExists('ux_usuario_email', 'usuario', 'email', TRUE);
+
 CREATE TABLE IF NOT EXISTS profesional (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id BIGINT NOT NULL,
   nombre VARCHAR(150) NOT NULL,
-  apellidos VARCHAR(150),
-  rut VARCHAR(20),
-  telefono VARCHAR(50),
-  email VARCHAR(120),
+  apellidos VARCHAR(150) NOT NULL,
+  rut VARCHAR(20) NOT NULL UNIQUE,
+  telefono VARCHAR(50) NOT NULL,
+  email VARCHAR(120) NOT NULL UNIQUE,
   tipo_profesional VARCHAR(80) NOT NULL,
-  bio TEXT,
-  foto_url TEXT,
+  bio TEXT NOT NULL,
+  foto_url TEXT NOT NULL,
+  especialidad VARCHAR(100) NOT NULL,
+  titulo_profesional VARCHAR(150) NOT NULL,
+  numero_colegio VARCHAR(50) NOT NULL,
+  fecha_nacimiento DATE NOT NULL,
+  direccion TEXT NOT NULL,
+  estado_civil VARCHAR(20) NOT NULL,
+  grupo_sanguineo VARCHAR(5) NOT NULL,
+  contacto_emergencia VARCHAR(150) NOT NULL,
+  telefono_emergencia VARCHAR(50) NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
-  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ficha (
@@ -343,12 +378,12 @@ CREATE TABLE IF NOT EXISTS ficha (
   codigo VARCHAR(40) NOT NULL,
   nombres VARCHAR(120) NOT NULL,
   apellidos VARCHAR(120) NOT NULL,
-  rut VARCHAR(20),
-  telefono VARCHAR(50),
-  email VARCHAR(120),
-  fecha_nacimiento DATE,
-  direccion TEXT,
-  observaciones TEXT,
+  rut VARCHAR(20) NOT NULL,
+  telefono VARCHAR(50) NOT NULL,
+  email VARCHAR(120) NOT NULL UNIQUE,
+  fecha_nacimiento DATE NOT NULL,
+  direccion TEXT NOT NULL,
+  observaciones TEXT NOT NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -359,44 +394,79 @@ CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
-  descripcion TEXT,
+  descripcion TEXT NOT NULL,
   requiere_consentimiento BOOLEAN NOT NULL DEFAULT FALSE,
-  template_consentimiento TEXT
+  template_consentimiento TEXT NOT NULL
 );
 
 CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
 
-CREATE TABLE IF NOT EXISTS ficha_especifica (
+CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ficha_id BIGINT NOT NULL,
+  profesional_id BIGINT NOT NULL,
+  tratamiento_id BIGINT NOT NULL,
+  pack_id BIGINT,
+  precio_sugerido DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  sesiones_sugeridas INT NOT NULL DEFAULT 1,
+  observaciones TEXT NOT NULL,
+  recomendaciones TEXT NOT NULL,
+  estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+  fecha_evaluacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  descripcion TEXT NOT NULL,
+  requiere_consentimiento BOOLEAN NOT NULL DEFAULT FALSE,
+  template_consentimiento TEXT,
+  campos_requeridos JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS ficha_especifica (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  evaluacion_id BIGINT NOT NULL,
   tipo_id BIGINT NOT NULL,
   datos JSON NOT NULL DEFAULT (JSON_OBJECT()),
-  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  consentimiento_firmado BOOLEAN NOT NULL DEFAULT FALSE,
+  observaciones TEXT NOT NULL,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS consentimiento_firma (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ficha_id BIGINT NOT NULL,
-  ficha_especifica_id BIGINT,
-  tipo_consentimiento VARCHAR(50) NOT NULL, -- 'depilacion', 'corporal', etc.
-  firma_blob LONGBLOB NOT NULL,
-  tipo_archivo VARCHAR(10) NOT NULL, -- 'png', 'jpeg'
-  fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ficha_especifica_id BIGINT NOT NULL,
   profesional_id BIGINT NOT NULL,
-  observaciones TEXT,
+  tipo_consentimiento VARCHAR(50) NOT NULL,
+  firma_blob LONGBLOB NOT NULL,
+  tipo_archivo VARCHAR(10) NOT NULL,
+  contenido_leido TEXT NOT NULL,
+  fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  observaciones TEXT NOT NULL,
   UNIQUE KEY uk_ficha_tipo_consentimiento (ficha_id, tipo_consentimiento)
 );
 
-CALL AddIndexIfNotExists('ix_ficha_especifica_ficha', 'ficha_especifica', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_evaluacion_ficha', 'evaluacion', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_evaluacion_profesional', 'evaluacion', 'profesional_id', FALSE);
+CALL AddIndexIfNotExists('ix_evaluacion_tratamiento', 'evaluacion', 'tratamiento_id', FALSE);
+CALL AddIndexIfNotExists('ix_evaluacion_pack', 'evaluacion', 'pack_id', FALSE);
+CALL AddIndexIfNotExists('ix_ficha_especifica_evaluacion', 'ficha_especifica', 'evaluacion_id', FALSE);
 CALL AddIndexIfNotExists('ix_ficha_especifica_tipo', 'ficha_especifica', 'tipo_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
-  descripcion TEXT,
+  descripcion TEXT NOT NULL,
   requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE,
+  tipo_ficha_requerida VARCHAR(50),
   duracion_sesion_min INT NOT NULL DEFAULT 0,
-  frecuencia_recomendada_dias INT,
+  frecuencia_recomendada_dias INT NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -407,9 +477,9 @@ CREATE TABLE IF NOT EXISTS precio_tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tratamiento_id BIGINT NOT NULL,
   precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  precio_oferta DECIMAL(12,2),
-  fecha_inicio_oferta DATE,
-  fecha_fin_oferta DATE,
+  precio_oferta DECIMAL(12,2) NOT NULL,
+  fecha_inicio_oferta DATE NOT NULL,
+  fecha_fin_oferta DATE NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -420,47 +490,37 @@ CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tratamiento_id BIGINT NOT NULL,
   nombre VARCHAR(150) NOT NULL,
-  descripcion TEXT,
+  descripcion TEXT NOT NULL,
   duracion_sesion_min INT NOT NULL DEFAULT 0,
   sesiones_incluidas INT NOT NULL DEFAULT 1,
-  zonas_incluidas JSON,
-  precio_por_zona JSON,
+  zonas_incluidas JSON NOT NULL,
+  precio_por_zona JSON NOT NULL,
   precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  precio_oferta DECIMAL(12,2),
-  fecha_inicio_oferta DATE,
-  fecha_fin_oferta DATE,
+  precio_oferta DECIMAL(12,2) NOT NULL,
+  fecha_inicio_oferta DATE NOT NULL,
+  fecha_fin_oferta DATE NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, nombre', TRUE);
 
-CREATE TABLE IF NOT EXISTS evaluacion (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  ficha_id BIGINT NOT NULL,
-  tratamiento_id BIGINT NOT NULL,
-  pack_id BIGINT,
-  profesional_id BIGINT NOT NULL,
-  precio_sugerido DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  sesiones_sugeridas INT NOT NULL DEFAULT 1,
-  observaciones TEXT,
-  fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
 
-CALL AddIndexIfNotExists('ix_eval_ficha', 'evaluacion', 'ficha_id', FALSE);
-CALL AddIndexIfNotExists('ix_eval_tratamiento', 'evaluacion', 'tratamiento_id', FALSE);
-CALL AddIndexIfNotExists('ix_eval_pack', 'evaluacion', 'pack_id', FALSE);
+
+
 
 CREATE TABLE IF NOT EXISTS oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
   tipo VARCHAR(40) NOT NULL, -- 'pack_temporal'|'descuento_manual'|'combo_packs'
-  porc_descuento DECIMAL(5,2),
-  fecha_inicio DATE,
-  fecha_fin DATE,
+  descripcion TEXT NOT NULL,
+  porc_descuento DECIMAL(5,2) NOT NULL,
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE NOT NULL,
   combinable BOOLEAN NOT NULL DEFAULT TRUE,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
-  prioridad INT NOT NULL DEFAULT 0
+  prioridad INT NOT NULL DEFAULT 0,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_oferta_nombre', 'oferta', 'nombre', TRUE);
@@ -501,21 +561,24 @@ CALL AddIndexIfNotExists('ux_oferta_combo_pack', 'oferta_combo_pack', 'oferta_co
 CREATE TABLE IF NOT EXISTS venta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ficha_id BIGINT NOT NULL,
-  evaluacion_id BIGINT,
+  evaluacion_id BIGINT NOT NULL,
+  ficha_especifica_id BIGINT NOT NULL,
   tratamiento_id BIGINT NOT NULL,
   pack_id BIGINT,
   cantidad_sesiones INT NOT NULL DEFAULT 1,
   precio_lista DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  descuento_manual_pct DECIMAL(5,2),
-  descuento_aplicado_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descuento_manual_pct DECIMAL(5,2) DEFAULT 0,
+  descuento_aplicado_total DECIMAL(12,2) DEFAULT 0,
   total_pagado DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  estado VARCHAR(30) NOT NULL DEFAULT 'pendiente', -- pendiente|pagado|anulado
-  observaciones TEXT,
+  estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+  observaciones TEXT NOT NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ix_venta_ficha', 'venta', 'ficha_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_evaluacion', 'venta', 'evaluacion_id', FALSE);
+CALL AddIndexIfNotExists('ix_venta_ficha_especifica', 'venta', 'ficha_especifica_id', FALSE);
 CALL AddIndexIfNotExists('ix_venta_tratamiento', 'venta', 'tratamiento_id', FALSE);
 CALL AddIndexIfNotExists('ix_venta_pack', 'venta', 'pack_id', FALSE);
 
@@ -524,7 +587,7 @@ CREATE TABLE IF NOT EXISTS pago (
   venta_id BIGINT NOT NULL,
   monto_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   estado VARCHAR(30) NOT NULL DEFAULT 'pendiente', -- pendiente|pagado|anulado
-  observaciones TEXT,
+  observaciones TEXT NOT NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -535,8 +598,8 @@ CREATE TABLE IF NOT EXISTS pago_detalle (
   pago_id BIGINT NOT NULL,
   monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   metodo_pago VARCHAR(50) NOT NULL,
-  referencia VARCHAR(100),
-  observaciones TEXT,
+  referencia VARCHAR(100) NOT NULL,
+  observaciones TEXT NOT NULL,
   fecha_pago TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -560,16 +623,16 @@ CREATE TABLE IF NOT EXISTS sesion (
   sucursal_id BIGINT NOT NULL,
   box_id BIGINT NOT NULL,
   profesional_id BIGINT NOT NULL,
-  google_calendar_event_id VARCHAR(255),
+  google_calendar_event_id VARCHAR(255) NOT NULL,
   fecha_planificada TIMESTAMP NOT NULL,
-  fecha_ejecucion TIMESTAMP NULL,
+  fecha_ejecucion TIMESTAMP NOT NULL,
   estado VARCHAR(30) NOT NULL DEFAULT 'planificada', -- planificada|confirmada|realizada|no_show|cancelada
   paciente_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
-  abierta_en TIMESTAMP NULL,
-  cerrada_en TIMESTAMP NULL,
-  observaciones TEXT,
-  intensidades_zonas JSON,
-  datos_sesion JSON,
+  abierta_en TIMESTAMP NOT NULL,
+  cerrada_en TIMESTAMP NOT NULL,
+  observaciones TEXT NOT NULL,
+  intensidades_zonas JSON NOT NULL,
+  datos_sesion JSON NOT NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -585,9 +648,14 @@ CALL AddIndexIfNotExists('ix_sesion_estado', 'sesion', 'estado', FALSE);
 -- ---------- Add foreign keys ----------
 
 -- Add foreign keys
+CALL AddForeignKeyIfNotExists('profesional', 'fk_profesional_usuario', 'usuario_id', 'usuario', 'id');
 CALL AddForeignKeyIfNotExists('box', 'fk_box_sucursal', 'sucursal_id', 'sucursal', 'id');
 
-CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_evaluacion_ficha', 'ficha_id', 'ficha', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_evaluacion_profesional', 'profesional_id', 'profesional', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_evaluacion_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
+CALL AddForeignKeyIfNotExists('evaluacion', 'fk_evaluacion_pack', 'pack_id', 'pack', 'id');
+CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_evaluacion', 'evaluacion_id', 'evaluacion', 'id');
 CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_tipo', 'tipo_id', 'tipo_ficha_especifica', 'id');
 
 CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_ficha', 'ficha_id', 'ficha', 'id');
@@ -598,10 +666,7 @@ CALL AddForeignKeyIfNotExists('precio_tratamiento', 'fk_precio_tratamiento_trata
 
 CALL AddForeignKeyIfNotExists('pack', 'fk_pack_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 
-CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_ficha', 'ficha_id', 'ficha', 'id');
-CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
-CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_pack', 'pack_id', 'pack', 'id');
-CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_profesional', 'profesional_id', 'profesional', 'id');
+
 
 CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_oferta', 'oferta_id', 'oferta', 'id');
 CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_pack', 'pack_id', 'pack', 'id');
@@ -615,7 +680,8 @@ CALL AddForeignKeyIfNotExists('oferta_combo_pack', 'fk_oferta_combo_pack_combo',
 CALL AddForeignKeyIfNotExists('oferta_combo_pack', 'fk_oferta_combo_pack_pack', 'pack_id', 'pack', 'id');
 
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_ficha', 'ficha_id', 'ficha', 'id');
-CALL AddForeignKeyIfNotExists('venta', 'fk_venta_eval', 'evaluacion_id', 'evaluacion', 'id');
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_evaluacion', 'evaluacion_id', 'evaluacion', 'id');
+CALL AddForeignKeyIfNotExists('venta', 'fk_venta_ficha_especifica', 'ficha_especifica_id', 'ficha_especifica', 'id');
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_pack', 'pack_id', 'pack', 'id');
 
@@ -661,34 +727,40 @@ CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_descuento_ad
 
 -- ---------- Triggers ----------
 
--- If tratamiento requires specific form, venta must reference a matching evaluacion with a ficha_especifica on same ficha.
--- Enforced via trigger for strong consistency.
+-- Validar que la venta tenga evaluación y ficha específica requeridas
+-- La evaluación es obligatoria para todas las ventas
+-- La ficha específica nace en la evaluación
 
 DELIMITER $$
 
-CREATE TRIGGER trg_venta_requiere_ficha_especifica
+CREATE TRIGGER trg_venta_requiere_evaluacion_ficha_especifica
 BEFORE INSERT ON venta
 FOR EACH ROW
 BEGIN
-  DECLARE req BOOLEAN;
   DECLARE eval_ficha BIGINT;
+  DECLARE eval_id BIGINT;
+  DECLARE ficha_esp_id BIGINT;
   
-  SELECT requiere_ficha_especifica INTO req FROM tratamiento WHERE id = NEW.tratamiento_id;
+  -- Validar que la evaluación existe y pertenece a la misma ficha
+  SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
+  IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluación debe existir y pertenecer a la misma ficha';
+  END IF;
   
-  IF req THEN
-    IF NEW.evaluacion_id IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tratamiento requiere evaluación y ficha específica';
-    END IF;
-
-    SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
-    IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluación debe pertenecer a la misma ficha';
-    END IF;
-
-    -- Ensure ficha_especifica exists for that ficha (at least one)
-    IF NOT EXISTS (SELECT 1 FROM ficha_especifica WHERE ficha_id = NEW.ficha_id) THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica requerida no existe para la ficha';
-    END IF;
+  -- Validar que la ficha específica existe y pertenece a la evaluación
+  SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
+  IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica debe existir y pertenecer a la evaluación';
+  END IF;
+  
+  -- Validar que la ficha específica pertenece a la misma ficha
+  SELECT fe.id INTO ficha_esp_id 
+  FROM ficha_especifica fe
+  JOIN evaluacion e ON fe.evaluacion_id = e.id
+  WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
+  
+  IF ficha_esp_id IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica debe pertenecer a la evaluación de la misma ficha';
   END IF;
 END$$
 
@@ -1136,12 +1208,13 @@ BEGIN
 END$$
 DELIMITER ;
 
--- FIC-003: Agregar ficha específica
+-- FIC-003: Agregar ficha específica desde evaluación
 DELIMITER $$
 CREATE PROCEDURE sp_agregar_ficha_especifica(
-    IN p_ficha_id BIGINT,
+    IN p_evaluacion_id BIGINT,
     IN p_tipo_id BIGINT,
     IN p_datos JSON,
+    IN p_observaciones TEXT,
     OUT p_ficha_especifica_id BIGINT
 )
 BEGIN
@@ -1153,8 +1226,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO ficha_especifica (ficha_id, tipo_id, datos)
-    VALUES (p_ficha_id, p_tipo_id, p_datos);
+    INSERT INTO ficha_especifica (evaluacion_id, tipo_id, datos, observaciones)
+    VALUES (p_evaluacion_id, p_tipo_id, p_datos, p_observaciones);
     
     SET p_ficha_especifica_id = LAST_INSERT_ID();
     
@@ -1168,12 +1241,13 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_crear_evaluacion(
     IN p_ficha_id BIGINT,
+    IN p_profesional_id BIGINT,
     IN p_tratamiento_id BIGINT,
     IN p_pack_id BIGINT,
-    IN p_profesional_id BIGINT,
     IN p_precio_sugerido DECIMAL(12,2),
     IN p_sesiones_sugeridas INT,
     IN p_observaciones TEXT,
+    IN p_recomendaciones TEXT,
     OUT p_evaluacion_id BIGINT
 )
 BEGIN
@@ -1185,8 +1259,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO evaluacion (ficha_id, tratamiento_id, pack_id, profesional_id, precio_sugerido, sesiones_sugeridas, observaciones)
-    VALUES (p_ficha_id, p_tratamiento_id, p_pack_id, p_profesional_id, p_precio_sugerido, p_sesiones_sugeridas, p_observaciones);
+    INSERT INTO evaluacion (ficha_id, profesional_id, tratamiento_id, pack_id, precio_sugerido, sesiones_sugeridas, observaciones, recomendaciones, estado)
+    VALUES (p_ficha_id, p_profesional_id, p_tratamiento_id, p_pack_id, p_precio_sugerido, p_sesiones_sugeridas, p_observaciones, p_recomendaciones, 'COMPLETADA');
     
     SET p_evaluacion_id = LAST_INSERT_ID();
     
@@ -1201,6 +1275,7 @@ DELIMITER $$
 CREATE PROCEDURE sp_crear_venta(
     IN p_ficha_id BIGINT,
     IN p_evaluacion_id BIGINT,
+    IN p_ficha_especifica_id BIGINT,
     IN p_tratamiento_id BIGINT,
     IN p_pack_id BIGINT,
     IN p_cantidad_sesiones INT,
@@ -1217,8 +1292,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO venta (ficha_id, evaluacion_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
-    VALUES (p_ficha_id, p_evaluacion_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
+    VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
     
     SET p_venta_id = LAST_INSERT_ID();
     
@@ -1871,10 +1946,12 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_guardar_firma_digital(
     IN p_ficha_id BIGINT,
+    IN p_ficha_especifica_id BIGINT,
+    IN p_profesional_id BIGINT,
     IN p_tipo_consentimiento VARCHAR(50),
     IN p_firma_blob LONGBLOB,
     IN p_tipo_archivo VARCHAR(10),
-    IN p_profesional_id BIGINT
+    IN p_contenido_leido TEXT
 )
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1885,11 +1962,12 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO consentimiento_firma (ficha_id, tipo_consentimiento, firma_blob, tipo_archivo, profesional_id)
-    VALUES (p_ficha_id, p_tipo_consentimiento, p_firma_blob, p_tipo_archivo, p_profesional_id)
+    INSERT INTO consentimiento_firma (ficha_id, ficha_especifica_id, profesional_id, tipo_consentimiento, firma_blob, tipo_archivo, contenido_leido, observaciones)
+    VALUES (p_ficha_id, p_ficha_especifica_id, p_profesional_id, p_tipo_consentimiento, p_firma_blob, p_tipo_archivo, p_contenido_leido, 'Firma digital guardada')
     ON DUPLICATE KEY UPDATE
         firma_blob = p_firma_blob,
         tipo_archivo = p_tipo_archivo,
+        contenido_leido = p_contenido_leido,
         fecha_firma = CURRENT_TIMESTAMP,
         profesional_id = p_profesional_id;
     
@@ -2257,29 +2335,25 @@ DELIMITER ;
 -- NOTA IMPORTANTE: TODA LA LÓGICA DE NEGOCIO ESTÁ EN LA BASE DE DATOS
 -- =============================================================================
 -- 
--- Esta migración implementa todas las reglas de negocio definidas en los documentos:
--- - BusinessRules.csv: BR-001 a BR-006 implementadas con triggers y constraints
--- - UserStories.csv: Todas las validaciones y cálculos automáticos
--- - AcceptanceCriteria.csv: Validaciones automáticas en triggers
--- - Flows.csv: Flujos implementados con triggers y vistas
+-- Esta migración implementa el proceso correcto del negocio:
+-- 
+-- FLUJO CORRECTO:
+-- 1. FICHA GENERAL (libre) - se puede crear en cualquier momento
+-- 2. EVALUACIÓN (obligatoria) - se agenda o se hace inmediatamente
+-- 3. FICHA ESPECÍFICA (nace en la evaluación) - depilación o corporal
+-- 4. VENTA (requiere evaluación y ficha específica) - con validaciones
+-- 5. CONSENTIMIENTO (solo para depilación) - con firma digital
+-- 
+-- CAMBIOS PRINCIPALES:
+-- ✓ EVALUACIÓN es obligatoria para todas las ventas
+-- ✓ FICHA_ESPECÍFICA nace en la evaluación (no antes)
+-- ✓ VENTA requiere tanto evaluación como ficha específica
+-- ✓ CONSENTIMIENTO vinculado a ficha específica de depilación
+-- ✓ Trigger trg_venta_requiere_evaluacion_ficha_especifica
+-- ✓ Campos actualizados según ERD.mmd
 -- 
 -- La API debe ser un simple passthrough a la base de datos.
 -- NO implementar lógica de negocio en la API.
--- 
--- Reglas implementadas:
--- ✓ BR-001: Trigger trg_venta_requiere_ficha_especifica
--- ✓ BR-002: Trigger trg_sesion_numero_en_rango + constraint
--- ✓ BR-003: Triggers de cálculo automático de descuentos
--- ✓ BR-004: Campo pack.duracion_sesion_min
--- ✓ BR-005: FK obligatorias en sesion
--- ✓ BR-006: Arquitectura server-based (sin modo offline)
--- ✓ BR-007: Tabla zona_cuerpo y campos pack.zonas_incluidas, pack.precio_por_zona
--- ✓ BR-008: Campo sesion.intensidades_zonas para tracking de intensidades
--- ✓ BR-009: Firma digital almacenada en consentimiento_firma.firma_blob
--- ✓ BR-010: Gestión de precios por tratamiento y pack
--- ✓ BR-011: Sistema de ofertas múltiples (pack, tratamiento, combo)
--- ✓ BR-012: Gestión completa de pagos con detalles
--- ✓ BR-013: Integración con Google Calendar (google_calendar_event_id)
 -- 
 -- Vistas disponibles para consultas complejas:
 -- ✓ v_venta_progreso: Progreso de sesiones por venta

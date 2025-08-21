@@ -115,6 +115,41 @@ body {
     width: 100%;
 }
 
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 2rem;
+    padding-left: 2rem;
+    border-left: 1px solid var(--light-gray);
+}
+
+.user-info {
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    font-weight: 500;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: var(--dark-gray);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-btn:hover {
+    background: var(--light-gray);
+    color: var(--calypso-pastel);
+    transform: scale(1.1);
+}
+
 .hamburger {
   display: none;
     flex-direction: column;
@@ -523,6 +558,16 @@ body {
 
     .nav-menu.active {
         left: 0;
+    }
+    
+    .user-menu {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid var(--light-gray);
+        padding-top: 1rem;
+        margin-top: 1rem;
+        justify-content: center;
     }
 
     .hamburger {

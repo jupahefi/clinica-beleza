@@ -1,279 +1,333 @@
 erDiagram
-  FICHA ||--o{ FICHA_ESPECIFICA : tiene
-  FICHA ||--o{ CONSENTIMIENTO_FIRMA : firma
-  TIPO_FICHA_ESPECIFICA ||--o{ FICHA_ESPECIFICA : clasifica
-  FICHA_ESPECIFICA ||--o{ ZONA_CUERPO : incluye
-  PROFESIONAL ||--o{ CONSENTIMIENTO_FIRMA : atestigua
-
-  TRATAMIENTO ||--o{ PACK : tiene
-  TRATAMIENTO ||--o{ PRECIO_TRATAMIENTO : tiene
-  FICHA ||--o{ EVALUACION : recibe
-  TRATAMIENTO ||--o{ EVALUACION : evalua
-  PACK ||--o{ EVALUACION : "(opcional)"
-
-  FICHA ||--o{ VENTA : compra
-  EVALUACION ||--o{ VENTA : "(requerida si tratamiento lo exige)"
-  TRATAMIENTO ||--o{ VENTA : incluye
-  PACK ||--o{ VENTA : "(opcional)"
-
-  VENTA ||--o{ SESION : agenda
-  SUCURSAL ||--o{ SESION : se_realiza_en
-  BOX ||--o{ SESION : ocupa
-  PROFESIONAL ||--o{ SESION : atiende
-  SUCURSAL ||--o{ BOX : tiene
-
-  OFERTA ||--o{ OFERTA_PACK : aplica_a
-  OFERTA ||--o{ OFERTA_TRATAMIENTO : aplica_a
-  PACK ||--o{ OFERTA_PACK : afectado
-  TRATAMIENTO ||--o{ OFERTA_TRATAMIENTO : afectado
-  OFERTA ||--o{ OFERTA_COMBO : define
-  OFERTA_COMBO ||--o{ OFERTA_COMBO_PACK : incluye
-  PACK ||--o{ OFERTA_COMBO_PACK : parte
-
+  USUARIO ||--|| PROFESIONAL : "login de"
+  
+  %% FICHA GENERAL (libre, se puede crear en cualquier momento)
+  FICHA ||--o{ EVALUACION : "puede recibir múltiples"
+  FICHA ||--o{ CONSENTIMIENTO_FIRMA : "puede tener múltiples firmas"
+  
+  %% EVALUACIÓN (obligatoria para ventas)
+  EVALUACION ||--|| FICHA_ESPECIFICA : "genera"
+  EVALUACION ||--|| PROFESIONAL : "realizada por"
+  EVALUACION ||--|| TRATAMIENTO : "evalúa"
+  EVALUACION ||--o{ PACK : "puede sugerir"
+  
+  %% FICHA ESPECÍFICA (nace en la evaluación)
+  TIPO_FICHA_ESPECIFICA ||--o{ FICHA_ESPECIFICA : "clasifica"
+  FICHA_ESPECIFICA ||--o{ ZONA_CUERPO : "incluye"
+  FICHA_ESPECIFICA ||--o{ CONSENTIMIENTO_FIRMA : "requiere si es depilación"
+  
+  %% VENTA (requiere evaluación y ficha específica)
+  EVALUACION ||--o{ VENTA : "requerida para"
+  FICHA_ESPECIFICA ||--o{ VENTA : "requerida para"
+  VENTA ||--|| TRATAMIENTO : "incluye"
+  VENTA ||--o{ PACK : "puede incluir"
+  
+  %% CONSENTIMIENTO (solo para depilación)
+  CONSENTIMIENTO_FIRMA ||--|| PROFESIONAL : "atestiguado por"
+  CONSENTIMIENTO_FIRMA ||--|| FICHA_ESPECIFICA : "pertenece a"
+  
+  %% SESIONES (agendadas desde venta)
+  VENTA ||--o{ SESION : "agenda"
+  SUCURSAL ||--o{ SESION : "se_realiza_en"
+  BOX ||--o{ SESION : "ocupa"
+  PROFESIONAL ||--o{ SESION : "atiende"
+  SUCURSAL ||--o{ BOX : "tiene"
+  
+  %% OFERTAS Y DESCUENTOS
+  OFERTA ||--o{ OFERTA_PACK : "aplica_a"
+  OFERTA ||--o{ OFERTA_TRATAMIENTO : "aplica_a"
+  PACK ||--o{ OFERTA_PACK : "afectado"
+  TRATAMIENTO ||--o{ OFERTA_TRATAMIENTO : "afectado"
+  OFERTA ||--o{ OFERTA_COMBO : "define"
+  OFERTA_COMBO ||--o{ OFERTA_COMBO_PACK : "incluye"
+  PACK ||--o{ OFERTA_COMBO_PACK : "parte"
+  
   VENTA ||--o{ VENTA_OFERTA : "descuento sobre descuento"
-  OFERTA ||--o{ VENTA_OFERTA : aplicado
+  OFERTA ||--o{ VENTA_OFERTA : "aplicado"
+  
+  %% PAGOS
+  VENTA ||--o{ PAGO : "recibe"
+  PAGO ||--o{ PAGO_DETALLE : "tiene"
 
-  VENTA ||--o{ PAGO : recibe
-  PAGO ||--o{ PAGO_DETALLE : tiene
-
+  %% ENTIDADES PRINCIPALES
   FICHA {
     bigserial id PK
-    varchar codigo
-    varchar nombres
-    varchar apellidos
-    varchar rut
-    varchar telefono
-    varchar email
-    date fecha_nacimiento
-    text direccion
-    text observaciones
+    varchar codigo NOT NULL
+    varchar nombres NOT NULL
+    varchar apellidos NOT NULL
+    varchar rut NOT NULL
+    varchar telefono NOT NULL
+    varchar email UNIQUE NOT NULL
+    date fecha_nacimiento NOT NULL
+    text direccion NOT NULL
+    text observaciones NOT NULL
     timestamptz fecha_creacion
     timestamptz fecha_actualizacion
   }
 
+  %% EVALUACIÓN (obligatoria para ventas)
+  EVALUACION {
+    bigserial id PK
+    bigint ficha_id FK NOT NULL
+    bigint profesional_id FK NOT NULL
+    bigint tratamiento_id FK NOT NULL
+    bigint pack_id FK "opcional"
+    numeric precio_sugerido NOT NULL
+    int sesiones_sugeridas NOT NULL
+    text observaciones NOT NULL
+    text recomendaciones NOT NULL
+    varchar estado NOT NULL "PENDIENTE, COMPLETADA, CANCELADA"
+    timestamptz fecha_evaluacion NOT NULL
+    timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
+  }
+
+  %% TIPOS DE FICHA ESPECÍFICA
   TIPO_FICHA_ESPECIFICA {
     bigserial id PK
-    varchar nombre
-    text descripcion
-    boolean requiere_consentimiento
-    text template_consentimiento
+    varchar nombre NOT NULL "DEPILACION, CORPORAL"
+    text descripcion NOT NULL
+    boolean requiere_consentimiento NOT NULL
+    text template_consentimiento "solo si requiere_consentimiento"
+    jsonb campos_requeridos NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
   }
 
+  %% FICHA ESPECÍFICA (nace en la evaluación)
   FICHA_ESPECIFICA {
     bigserial id PK
-    bigint ficha_id FK
-    bigint tipo_id FK
-    jsonb datos
+    bigint evaluacion_id FK NOT NULL
+    bigint tipo_id FK NOT NULL
+    jsonb datos NOT NULL "campos específicos según tipo"
+    boolean consentimiento_firmado NOT NULL DEFAULT FALSE
+    text observaciones NOT NULL
     timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }
 
+  %% CONSENTIMIENTO (solo para depilación)
   CONSENTIMIENTO_FIRMA {
     bigserial id PK
-    bigint ficha_id FK
-    bigint ficha_especifica_id FK
-    varchar tipo_consentimiento
-    bytea firma_blob
-    varchar tipo_archivo
-    timestamptz fecha_firma
-    bigint profesional_id FK
-    text observaciones
+    bigint ficha_id FK NOT NULL
+    bigint ficha_especifica_id FK NOT NULL
+    bigint profesional_id FK NOT NULL
+    varchar tipo_consentimiento NOT NULL "DEPILACION"
+    bytea firma_blob NOT NULL "PNG como BLOB"
+    varchar tipo_archivo NOT NULL "image/png"
+    text contenido_leido NOT NULL "texto que leyó el profesional"
+    timestamptz fecha_firma NOT NULL
+    text observaciones NOT NULL
   }
 
   ZONA_CUERPO {
     varchar codigo PK
-    varchar nombre
-    varchar categoria
-    numeric precio_base
-    boolean activo
+    varchar nombre NOT NULL
+    varchar categoria NOT NULL "FACIAL, CORPORAL, CAPILAR"
+    numeric precio_base NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
   }
 
   TRATAMIENTO {
     bigserial id PK
-    varchar nombre
-    text descripcion
-    boolean requiere_ficha_especifica
-    int duracion_sesion_min
-    int frecuencia_recomendada_dias
-    boolean activo
+    varchar nombre NOT NULL
+    text descripcion NOT NULL
+    boolean requiere_ficha_especifica NOT NULL
+    varchar tipo_ficha_requerida "DEPILACION, CORPORAL, AMBAS"
+    int duracion_sesion_min NOT NULL
+    int frecuencia_recomendada_dias NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
   }
 
   PRECIO_TRATAMIENTO {
     bigserial id PK
-    bigint tratamiento_id FK
-    numeric precio_regular
-    numeric precio_oferta
-    date fecha_inicio_oferta
-    date fecha_fin_oferta
-    boolean activo
+    bigint tratamiento_id FK NOT NULL
+    numeric precio_regular NOT NULL
+    numeric precio_oferta "opcional"
+    date fecha_inicio_oferta "opcional"
+    date fecha_fin_oferta "opcional"
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
   }
 
   PACK {
     bigserial id PK
-    bigint tratamiento_id FK
-    varchar nombre
-    text descripcion
-    int duracion_sesion_min
-    int sesiones_incluidas
-    jsonb zonas_incluidas
-    jsonb precio_por_zona
-    numeric precio_regular
-    numeric precio_oferta
-    date fecha_inicio_oferta
-    date fecha_fin_oferta
-    boolean activo
+    bigint tratamiento_id FK NOT NULL
+    varchar nombre NOT NULL
+    text descripcion NOT NULL
+    int duracion_sesion_min NOT NULL
+    int sesiones_incluidas NOT NULL
+    jsonb zonas_incluidas NOT NULL
+    jsonb precio_por_zona NOT NULL
+    numeric precio_regular NOT NULL
+    numeric precio_oferta "opcional"
+    date fecha_inicio_oferta "opcional"
+    date fecha_fin_oferta "opcional"
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
-  }
-
-  EVALUACION {
-    bigserial id PK
-    bigint ficha_id FK
-    bigint tratamiento_id FK
-    bigint pack_id FK
-    bigint profesional_id FK
-    numeric precio_sugerido
-    int sesiones_sugeridas
-    text observaciones
-    timestamptz fecha
   }
 
   OFERTA {
     bigserial id PK
-    varchar nombre
-    varchar tipo
-    text descripcion
-    numeric porc_descuento
-    date fecha_inicio
-    date fecha_fin
-    boolean combinable
-    boolean activo
-    int prioridad
+    varchar nombre NOT NULL
+    varchar tipo NOT NULL "PACK, TRATAMIENTO, COMBO"
+    text descripcion NOT NULL
+    numeric porc_descuento NOT NULL
+    date fecha_inicio NOT NULL
+    date fecha_fin NOT NULL
+    boolean combinable NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
+    int prioridad NOT NULL
     timestamptz fecha_creacion
   }
 
   OFERTA_PACK {
     bigserial id PK
-    bigint oferta_id FK
-    bigint pack_id FK
-    numeric porc_descuento
+    bigint oferta_id FK NOT NULL
+    bigint pack_id FK NOT NULL
+    numeric porc_descuento NOT NULL
   }
 
   OFERTA_TRATAMIENTO {
     bigserial id PK
-    bigint oferta_id FK
-    bigint tratamiento_id FK
-    numeric porc_descuento
+    bigint oferta_id FK NOT NULL
+    bigint tratamiento_id FK NOT NULL
+    numeric porc_descuento NOT NULL
   }
 
   OFERTA_COMBO {
     bigserial id PK
-    bigint oferta_id FK
-    int min_packs
-    numeric porc_descuento_adicional
+    bigint oferta_id FK NOT NULL
+    int min_packs NOT NULL
+    numeric porc_descuento_adicional NOT NULL
   }
 
   OFERTA_COMBO_PACK {
     bigserial id PK
-    bigint oferta_combo_id FK
-    bigint pack_id FK
+    bigint oferta_combo_id FK NOT NULL
+    bigint pack_id FK NOT NULL
   }
 
+  %% VENTA (requiere evaluación y ficha específica)
   VENTA {
     bigserial id PK
-    bigint ficha_id FK
-    bigint evaluacion_id FK
-    bigint tratamiento_id FK
-    bigint pack_id FK
-    int cantidad_sesiones
-    numeric precio_lista
-    numeric descuento_manual_pct
-    numeric descuento_aplicado_total
-    numeric total_pagado
-    varchar estado
-    text observaciones
+    bigint ficha_id FK NOT NULL
+    bigint evaluacion_id FK NOT NULL "REQUERIDA"
+    bigint ficha_especifica_id FK NOT NULL "REQUERIDA"
+    bigint tratamiento_id FK NOT NULL
+    bigint pack_id FK "opcional"
+    int cantidad_sesiones NOT NULL
+    numeric precio_lista NOT NULL
+    numeric descuento_manual_pct DEFAULT 0
+    numeric descuento_aplicado_total DEFAULT 0
+    numeric total_pagado NOT NULL
+    varchar estado NOT NULL "PENDIENTE, PAGADA, CANCELADA"
+    text observaciones NOT NULL
     timestamptz fecha_creacion
     timestamptz fecha_actualizacion
   }
 
   VENTA_OFERTA {
     bigserial id PK
-    bigint venta_id FK
-    bigint oferta_id FK
-    int secuencia
-    numeric porc_descuento
-    numeric monto_descuento
+    bigint venta_id FK NOT NULL
+    bigint oferta_id FK NOT NULL
+    int secuencia NOT NULL
+    numeric porc_descuento NOT NULL
+    numeric monto_descuento NOT NULL
   }
 
   PAGO {
     bigserial id PK
-    bigint venta_id FK
-    numeric monto_total
-    varchar estado
-    text observaciones
+    bigint venta_id FK NOT NULL
+    numeric monto_total NOT NULL
+    varchar estado NOT NULL "PENDIENTE, COMPLETADO, CANCELADO"
+    text observaciones NOT NULL
     timestamptz fecha_creacion
   }
 
   PAGO_DETALLE {
     bigserial id PK
-    bigint pago_id FK
-    numeric monto
-    varchar metodo_pago
-    varchar referencia
-    text observaciones
-    timestamptz fecha_pago
+    bigint pago_id FK NOT NULL
+    numeric monto NOT NULL
+    varchar metodo_pago NOT NULL
+    varchar referencia NOT NULL
+    text observaciones NOT NULL
+    timestamptz fecha_pago NOT NULL
   }
 
   SUCURSAL {
     bigserial id PK
-    varchar nombre
-    varchar direccion
-    varchar telefono
-    varchar email
-    boolean activo
+    varchar nombre NOT NULL
+    varchar direccion NOT NULL
+    varchar telefono NOT NULL
+    varchar email NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
   }
 
   BOX {
     bigserial id PK
-    bigint sucursal_id FK
-    varchar nombre
-    varchar descripcion
-    boolean activo
+    bigint sucursal_id FK NOT NULL
+    varchar nombre NOT NULL
+    varchar descripcion NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
+  }
+
+  USUARIO {
+    bigserial id PK
+    varchar username UNIQUE
+    varchar password_hash
+    varchar email UNIQUE
+    varchar rol
+    boolean activo
+    timestamptz ultimo_login
+    timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }
 
   PROFESIONAL {
     bigserial id PK
-    varchar nombre
-    varchar apellidos
-    varchar rut
-    varchar telefono
-    varchar email
-    varchar tipo_profesional
-    text bio
-    text foto_url
-    boolean activo
+    bigint usuario_id FK
+    varchar nombre NOT NULL
+    varchar apellidos NOT NULL
+    varchar rut UNIQUE NOT NULL
+    varchar telefono NOT NULL
+    varchar email UNIQUE NOT NULL
+    varchar tipo_profesional NOT NULL
+    text bio NOT NULL
+    text foto_url NOT NULL
+    varchar especialidad NOT NULL
+    varchar titulo_profesional NOT NULL
+    varchar numero_colegio NOT NULL
+    date fecha_nacimiento NOT NULL
+    varchar direccion NOT NULL
+    varchar estado_civil NOT NULL
+    varchar grupo_sanguineo NOT NULL
+    varchar contacto_emergencia NOT NULL
+    varchar telefono_emergencia NOT NULL
+    boolean activo NOT NULL DEFAULT TRUE
     timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }
 
   SESION {
     bigserial id PK
-    bigint venta_id FK
-    int numero_sesion
-    bigint sucursal_id FK
-    bigint box_id FK
-    bigint profesional_id FK
-    varchar google_calendar_event_id
-    timestamptz fecha_planificada
-    timestamptz fecha_ejecucion
-    varchar estado
-    boolean paciente_confirmado
-    timestamptz abierta_en
-    timestamptz cerrada_en
-    text observaciones
-    jsonb intensidades_zonas
-    jsonb datos_sesion
+    bigint venta_id FK NOT NULL
+    int numero_sesion NOT NULL
+    bigint sucursal_id FK NOT NULL
+    bigint box_id FK NOT NULL
+    bigint profesional_id FK NOT NULL
+    varchar google_calendar_event_id "opcional"
+    timestamptz fecha_planificada NOT NULL
+    timestamptz fecha_ejecucion "opcional"
+    varchar estado NOT NULL "AGENDADA, EN_PROGRESO, COMPLETADA, CANCELADA"
+    boolean paciente_confirmado NOT NULL DEFAULT FALSE
+    timestamptz abierta_en "opcional"
+    timestamptz cerrada_en "opcional"
+    text observaciones NOT NULL
+    jsonb intensidades_zonas "opcional"
+    jsonb datos_sesion "opcional"
     timestamptz fecha_creacion
     timestamptz fecha_actualizacion
   }

@@ -218,29 +218,31 @@ export const fichasAPI = {
 };
 
 export const fichasEspecificasAPI = {
-    // Obtener fichas específicas de una ficha
-    getByFichaId: (fichaId) => get('fichas-especificas', { ficha_id: fichaId }),
+    // Obtener fichas específicas de una evaluación
+    getByEvaluacionId: (evaluacionId) => get('fichas-especificas', { evaluacion_id: evaluacionId }),
     
     // Obtener ficha específica por ID
     getById: (id) => get(`fichas-especificas/${id}`),
     
-    // Agregar ficha específica
+    // Agregar ficha específica desde evaluación
     create: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
     
     // Guardar ficha específica (alias para create)
-    saveFichaEspecifica: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
+    saveFichaEspecifica: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica)
+};
+
+export const consentimientoFirmaAPI = {
+    // Obtener consentimiento por ficha y tipo
+    getByFichaAndTipo: (fichaId, tipoConsentimiento) => get('consentimiento-firma', { ficha_id: fichaId, tipo_consentimiento: tipoConsentimiento }),
     
-    // Guardar consentimiento y firma
-    saveConsentimientoFirma: (formData) => {
-        // Para FormData, necesitamos usar fetch directamente
-        return fetch('./api.php/consentimiento-firma', {
-            method: 'POST',
-            body: formData
-        }).then(response => response.json());
-    },
+    // Obtener consentimiento por ID
+    getById: (id) => get(`consentimiento-firma/${id}`),
     
-    // Obtener consentimiento y firma
-    getConsentimientoFirma: (fichaId, tipoConsentimiento) => get(`consentimiento-firma/${fichaId}/${tipoConsentimiento}`)
+    // Guardar firma digital
+    saveFirma: (firmaData) => post('consentimiento-firma', firmaData),
+    
+    // Guardar consentimiento y firma (alias para saveFirma)
+    saveConsentimientoFirma: (firmaData) => post('consentimiento-firma', firmaData)
 };
 
 export const tiposFichaEspecificaAPI = {

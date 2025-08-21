@@ -27,48 +27,48 @@ export class PacientesModule {
     }
     
     configurarEventosPacientes() {
-        const pacienteSelect = document.getElementById('pacienteSelect');
-        const rutInput = document.getElementById('rutPaciente');
-        const emailInput = document.getElementById('emailPaciente');
-        const telefonoInput = document.getElementById('telefonoPaciente');
-        const codigoPaisSelect = document.getElementById('codigoPais');
-        
-        if (pacienteSelect) {
+  const pacienteSelect = document.getElementById('pacienteSelect');
+  const rutInput = document.getElementById('rutPaciente');
+  const emailInput = document.getElementById('emailPaciente');
+  const telefonoInput = document.getElementById('telefonoPaciente');
+  const codigoPaisSelect = document.getElementById('codigoPais');
+  
+  if (pacienteSelect) {
             pacienteSelect.addEventListener('change', () => this.cargarPacienteSeleccionado());
-        }
-        
-        // Configurar RUT
-        if (rutInput) {
+  }
+  
+  // Configurar RUT
+  if (rutInput) {
             rutInput.addEventListener('input', (e) => this.formatearRutTiempoReal(e));
             rutInput.addEventListener('blur', () => this.validarRutFinal());
             rutInput.addEventListener('keydown', (e) => this.manejarTeclasRut(e));
-        }
-        
-        // Configurar Email
-        if (emailInput) {
+  }
+  
+  // Configurar Email
+  if (emailInput) {
             emailInput.addEventListener('input', (e) => this.manejarEmailTiempoReal(e));
             emailInput.addEventListener('blur', () => this.validarEmailFinal());
-        }
-        
-        // Configurar Teléfono
-        if (telefonoInput) {
+  }
+  
+  // Configurar Teléfono
+  if (telefonoInput) {
             telefonoInput.addEventListener('input', (e) => this.formatearTelefonoTiempoReal(e));
             telefonoInput.addEventListener('blur', () => this.validarTelefonoFinal());
-        }
-        
-        // Configurar selector de país
-        if (codigoPaisSelect) {
-            codigoPaisSelect.addEventListener('change', () => {
-                // Revalidar teléfono cuando cambie el país
-                if (telefonoInput.value.trim()) {
+  }
+  
+  // Configurar selector de país
+  if (codigoPaisSelect) {
+    codigoPaisSelect.addEventListener('change', () => {
+      // Revalidar teléfono cuando cambie el país
+      if (telefonoInput.value.trim()) {
                     this.formatearTelefonoTiempoReal({ target: telefonoInput });
-                }
-            });
-        }
-        
-        // Configurar checkboxes de fichas específicas
-        const checkboxFichas = document.querySelectorAll('input[type="checkbox"][id^="ficha"]');
-        checkboxFichas.forEach(checkbox => {
+      }
+    });
+  }
+  
+  // Configurar checkboxes de fichas específicas
+  const checkboxFichas = document.querySelectorAll('input[type="checkbox"][id^="ficha"]');
+  checkboxFichas.forEach(checkbox => {
             checkbox.addEventListener('change', () => this.toggleFichasEspecificas());
         });
         
@@ -113,36 +113,36 @@ export class PacientesModule {
     }
     
     async cargarPacientesSelect() {
-        try {
-            const selects = document.querySelectorAll('#pacienteSelect, #clienteVenta, #pacienteSesion');
-            const response = await fichasAPI.getAll();
-            const pacientes = response.data || response;
+  try {
+    const selects = document.querySelectorAll('#pacienteSelect, #clienteVenta, #pacienteSesion');
+    const response = await fichasAPI.getAll();
+    const pacientes = response.data || response;
             
             // Guardar la lista de pacientes en la instancia
             this.pacientes = pacientes;
-            
-            selects.forEach(select => {
-                if (!select) return;
-                
-                const opcionVacia = select.id === 'pacienteSelect' 
-                    ? '-- Crear nuevo paciente --' 
-                    : '-- Seleccionar paciente --';
-                
-                select.innerHTML = `<option value="">${opcionVacia}</option>`;
-                
-                pacientes.forEach(paciente => {
-                    const option = document.createElement('option');
-                    option.value = paciente.id.toString();
-                    option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
-                    select.appendChild(option);
-                });
-            });
+    
+    selects.forEach(select => {
+      if (!select) return;
+      
+      const opcionVacia = select.id === 'pacienteSelect' 
+        ? '-- Crear nuevo paciente --' 
+        : '-- Seleccionar paciente --';
+      
+      select.innerHTML = `<option value="">${opcionVacia}</option>`;
+      
+      pacientes.forEach(paciente => {
+        const option = document.createElement('option');
+        option.value = paciente.id.toString();
+        option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
+        select.appendChild(option);
+      });
+    });
             
             // Actualizar también la tabla de pacientes registrados
             this.actualizarTablaPacientes();
             
-        } catch (error) {
-            console.error('Error cargando pacientes:', error);
+  } catch (error) {
+    console.error('Error cargando pacientes:', error);
             mostrarNotificacion('Error cargando pacientes', 'error');
         }
     }
@@ -185,19 +185,19 @@ export class PacientesModule {
     async cargarPacienteSeleccionado() {
         const pacienteSelect = document.getElementById('pacienteSelect');
         const pacienteId = pacienteSelect?.value;
-        
-        if (!pacienteId) {
+  
+  if (!pacienteId) {
             this.limpiarFormularioPaciente();
             this.pacienteActual = null;
-            return;
-        }
-        
-        try {
+    return;
+  }
+  
+    try {
             const paciente = await fichasAPI.getById(parseInt(pacienteId));
             this.pacienteActual = paciente;
             this.llenarFormularioPaciente(paciente);
-        } catch (error) {
-            console.error('Error cargando paciente:', error);
+  } catch (error) {
+    console.error('Error cargando paciente:', error);
             mostrarNotificacion('Error cargando paciente', 'error');
         }
     }
@@ -254,11 +254,11 @@ export class PacientesModule {
         ];
         
         camposEspecificos.forEach(campo => {
-            const elemento = document.getElementById(campo);
-            if (elemento) elemento.value = '';
-        });
-    }
-    
+    const elemento = document.getElementById(campo);
+    if (elemento) elemento.value = '';
+  });
+}
+
     llenarFichasEspecificas(paciente) {
         if (paciente.fichasEspecificas) {
             paciente.fichasEspecificas.forEach(tipo => {
@@ -300,16 +300,16 @@ export class PacientesModule {
     }
     
     formatearRutTiempoReal(event) {
-        const input = event.target;
-        const valor = input.value;
-        const cursorPos = input.selectionStart;
-        
+  const input = event.target;
+  const valor = input.value;
+  const cursorPos = input.selectionStart;
+  
         const rutFormateado = formatearRut(valor);
-        input.value = rutFormateado;
-        
+  input.value = rutFormateado;
+  
         // Restaurar posición del cursor
-        const nuevaPos = Math.min(cursorPos + (rutFormateado.length - valor.length), rutFormateado.length);
-        input.setSelectionRange(nuevaPos, nuevaPos);
+  const nuevaPos = Math.min(cursorPos + (rutFormateado.length - valor.length), rutFormateado.length);
+    input.setSelectionRange(nuevaPos, nuevaPos);
     }
     
     validarRutFinal() {
@@ -326,7 +326,7 @@ export class PacientesModule {
     }
     
     manejarTeclasRut(event) {
-        if (event.key === 'Enter') {
+  if (event.key === 'Enter') {
             const rut = event.target.value.trim();
             if (rut && rut.length >= 7) {
                 const rutCompleto = autocompletarRut(rut);
@@ -337,19 +337,19 @@ export class PacientesModule {
     }
     
     manejarEmailTiempoReal(event) {
-        const input = event.target;
+  const input = event.target;
         const email = input.value.trim();
         
         if (email) {
             const validacion = validarEmailTiempoReal(email);
-            if (!validacion.valido) {
-                input.classList.add('error');
+  if (!validacion.valido) {
+    input.classList.add('error');
                 this.mostrarSugerenciaEmail(email);
-            } else {
-                input.classList.remove('error');
+  } else {
+    input.classList.remove('error');
                 this.ocultarSugerenciaEmail();
-            }
-        } else {
+      }
+    } else {
             input.classList.remove('error');
             this.ocultarSugerenciaEmail();
         }
@@ -369,8 +369,8 @@ export class PacientesModule {
     }
     
     mostrarSugerenciaEmail(email) {
-        const sugerencia = sugerirEmail(email);
-        if (sugerencia) {
+    const sugerencia = sugerirEmail(email);
+    if (sugerencia) {
             let sugerenciaElement = document.getElementById('sugerenciaEmail');
             if (!sugerenciaElement) {
                 sugerenciaElement = document.createElement('div');
@@ -391,16 +391,16 @@ export class PacientesModule {
     }
     
     formatearTelefonoTiempoReal(event) {
-        const input = event.target;
+  const input = event.target;
         const valor = input.value;
-        const cursorPos = input.selectionStart;
-        
+  const cursorPos = input.selectionStart;
+  
         const telefonoFormateado = formatearTelefono(valor);
-        input.value = telefonoFormateado;
-        
-        // Restaurar posición del cursor
+    input.value = telefonoFormateado;
+    
+    // Restaurar posición del cursor
         const nuevaPos = Math.min(cursorPos + (telefonoFormateado.length - valor.length), telefonoFormateado.length);
-        input.setSelectionRange(nuevaPos, nuevaPos);
+      input.setSelectionRange(nuevaPos, nuevaPos);
     }
     
     validarTelefonoFinal() {
@@ -417,17 +417,17 @@ export class PacientesModule {
     }
     
     validarFormularioPaciente() {
-        const errores = [];
-        
+  const errores = [];
+  
         // Validar nombre
         const nombre = document.getElementById('nombrePaciente').value.trim();
-        if (!nombre) {
+  if (!nombre) {
             errores.push('El nombre es obligatorio');
         }
         
         // Validar email
         const email = document.getElementById('emailPaciente').value.trim();
-        if (email && !validarEmail(email)) {
+  if (email && !validarEmail(email)) {
             errores.push('Email inválido');
         }
         
@@ -435,47 +435,47 @@ export class PacientesModule {
         const telefono = document.getElementById('telefonoPaciente').value.trim();
         if (telefono && !validarTelefono(telefono)) {
             errores.push('Teléfono inválido');
-        }
-        
-        return errores;
-    }
-    
+  }
+  
+  return errores;
+}
+
     obtenerDatosFichasEspecificas() {
-        const fichasData = {};
-        const fichasSeleccionadas = [];
-        
-        // Verificar ficha de depilación
-        if (document.getElementById('fichaDepilacion')?.checked) {
-            fichasSeleccionadas.push('depilacion');
-            fichasData.fichaDepilacion = {
-                zonas: document.getElementById('zonasDepilacion').value.trim(),
-                observacionesMedicas: document.getElementById('observacionesMedicas').value.trim()
-            };
-        }
-        
-        // Verificar ficha corporal
-        if (document.getElementById('fichaCorporal')?.checked) {
-            fichasSeleccionadas.push('corporal');
-            fichasData.fichaCorporal = {
-                tratamientosPrevios: document.getElementById('tratamientosPrevios').value.trim(),
-                objetivoEstetico: document.getElementById('objetivoEstetico').value.trim()
-            };
-        }
-        
-        return {
-            fichasEspecificas: fichasSeleccionadas,
-            ...fichasData
-        };
-    }
-    
+  const fichasData = {};
+  const fichasSeleccionadas = [];
+  
+  // Verificar ficha de depilación
+  if (document.getElementById('fichaDepilacion')?.checked) {
+    fichasSeleccionadas.push('depilacion');
+    fichasData.fichaDepilacion = {
+      zonas: document.getElementById('zonasDepilacion').value.trim(),
+      observacionesMedicas: document.getElementById('observacionesMedicas').value.trim()
+    };
+  }
+  
+  // Verificar ficha corporal
+  if (document.getElementById('fichaCorporal')?.checked) {
+    fichasSeleccionadas.push('corporal');
+    fichasData.fichaCorporal = {
+      tratamientosPrevios: document.getElementById('tratamientosPrevios').value.trim(),
+      objetivoEstetico: document.getElementById('objetivoEstetico').value.trim()
+    };
+  }
+  
+  return {
+    fichasEspecificas: fichasSeleccionadas,
+    ...fichasData
+  };
+}
+
     async guardarPacienteFormulario() {
         const errores = this.validarFormularioPaciente();
-        
-        if (errores.length > 0) {
-            mostrarNotificacion(`Errores en el formulario:\n${errores.join('\n')}`, 'error');
-            return false;
-        }
-        
+  
+  if (errores.length > 0) {
+    mostrarNotificacion(`Errores en el formulario:\n${errores.join('\n')}`, 'error');
+    return false;
+  }
+  
         const esNuevo = !this.pacienteActual;
         const datosEspecificos = this.obtenerDatosFichasEspecificas();
         
@@ -483,55 +483,55 @@ export class PacientesModule {
         const nombreCompleto = document.getElementById('nombrePaciente').value.trim();
         const [nombres, ...apellidosArray] = nombreCompleto.split(' ');
         const apellidos = apellidosArray.join(' ') || '';
-        
-        const paciente = {
+  
+  const paciente = {
             id: this.pacienteActual?.id,
             codigo: 'PAC' + Date.now(), // Generar código único
             nombres: nombres,
             apellidos: apellidos,
-            fecha_nacimiento: document.getElementById('fechaNacimiento').value,
-            telefono: document.getElementById('telefonoPaciente').value.trim(),
-            email: document.getElementById('emailPaciente').value.trim(),
-            direccion: document.getElementById('direccionPaciente').value.trim(),
-            observaciones: document.getElementById('observacionesPaciente').value.trim(),
-            ...datosEspecificos
-        };
-        
-        try {
-            let pacienteGuardado;
-            if (esNuevo) {
-                pacienteGuardado = await fichasAPI.create(paciente);
-            } else {
-                pacienteGuardado = await fichasAPI.update(paciente.id, paciente);
-            }
-            
+    fecha_nacimiento: document.getElementById('fechaNacimiento').value,
+    telefono: document.getElementById('telefonoPaciente').value.trim(),
+    email: document.getElementById('emailPaciente').value.trim(),
+    direccion: document.getElementById('direccionPaciente').value.trim(),
+    observaciones: document.getElementById('observacionesPaciente').value.trim(),
+    ...datosEspecificos
+  };
+  
+  try {
+    let pacienteGuardado;
+    if (esNuevo) {
+      pacienteGuardado = await fichasAPI.create(paciente);
+    } else {
+      pacienteGuardado = await fichasAPI.update(paciente.id, paciente);
+    }
+    
             this.pacienteActual = pacienteGuardado;
             
             await this.cargarPacientesSelect();
-            
+    
             // Actualizar estadísticas
             if (window.clinicaApp) {
                 window.clinicaApp.showQuickStats();
             }
-            
-            const mensaje = esNuevo ? 'Paciente creado exitosamente' : 'Paciente actualizado exitosamente';
-            mostrarNotificacion(mensaje, 'success');
-            
-            return true;
-        } catch (error) {
-            mostrarNotificacion(`Error al guardar paciente: ${error.message}`, 'error');
-            return false;
-        }
-    }
     
+    const mensaje = esNuevo ? 'Paciente creado exitosamente' : 'Paciente actualizado exitosamente';
+    mostrarNotificacion(mensaje, 'success');
+    
+    return true;
+  } catch (error) {
+    mostrarNotificacion(`Error al guardar paciente: ${error.message}`, 'error');
+    return false;
+  }
+}
+
     async buscarPacientes(termino) {
-        if (!termino || termino.length < 2) {
-            return await fichasAPI.getAll();
-        }
-        
-        return await fichasAPI.search(termino);
-    }
-    
+  if (!termino || termino.length < 2) {
+    return await fichasAPI.getAll();
+  }
+  
+  return await fichasAPI.search(termino);
+}
+
     buscarPacientesEnTabla(termino) {
         const tbody = document.getElementById('cuerpoTablaPacientes');
         if (!tbody) return;

@@ -68,6 +68,10 @@ try {
             handleFichasEspecificas($db, $method, $id, $data);
             break;
             
+        case 'consentimiento-firma':
+            handleConsentimientoFirma($db, $method, $id, $data);
+            break;
+            
         // ---------- EVALUACIONES ----------
         case 'evaluaciones':
             handleEvaluaciones($db, $method, $id, $data);
@@ -80,6 +84,10 @@ try {
             
         case 'ventas/historial':
             handleHistorialVentas($db, $method, $id, $data);
+            break;
+            
+        case 'auth':
+            handleAuth($db, $method, $id, $data);
             break;
             
         case 'pagos':
@@ -284,23 +292,23 @@ function handleFichasEspecificas($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $result = $db->selectOne("SELECT * FROM ficha_especifica WHERE id = ?", [$id]);
+                $result = $db->selectOne("SELECT fe.*, tfe.nombre as tipo_nombre, e.ficha_id FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id JOIN evaluacion e ON fe.evaluacion_id = e.id WHERE fe.id = ?", [$id]);
                 echo json_encode(['success' => true, 'data' => $result]);
             } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                if ($fichaId) {
-                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id WHERE fe.ficha_id = ?", [$fichaId]);
+                $evaluacionId = $_GET['evaluacion_id'] ?? null;
+                if ($evaluacionId) {
+                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id WHERE fe.evaluacion_id = ?", [$evaluacionId]);
                 } else {
-                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id");
+                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre, e.ficha_id FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id JOIN evaluacion e ON fe.evaluacion_id = e.id");
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
             }
             break;
             
         case 'POST':
-            // Agregar ficha específica
-            $result = $db->executeRaw("CALL sp_agregar_ficha_especifica(?, ?, ?, @ficha_especifica_id)", [
-                $data['ficha_id'], $data['tipo_id'], json_encode($data['datos'])
+            // Agregar ficha específica desde evaluación
+            $result = $db->executeRaw("CALL sp_agregar_ficha_especifica(?, ?, ?, ?, @ficha_especifica_id)", [
+                $data['evaluacion_id'], $data['tipo_id'], json_encode($data['datos']), $data['observaciones'] ?? ''
             ]);
             $fichaEspecificaId = $db->selectOne("SELECT @ficha_especifica_id as id")['id'];
             echo json_encode(['success' => true, 'data' => ['id' => $fichaEspecificaId]]);
@@ -314,16 +322,46 @@ function handleTiposFichaEspecifica($db, $method, $id, $data) {
             if ($id) {
                 $result = $db->selectOne("SELECT * FROM tipo_ficha_especifica WHERE id = ?", [$id]);
             } else {
-                $result = $db->select("SELECT * FROM tipo_ficha_especifica ORDER BY nombre");
+                $result = $db->select("SELECT * FROM tipo_ficha_especifica WHERE activo = TRUE ORDER BY nombre");
             }
             echo json_encode(['success' => true, 'data' => $result]);
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO tipo_ficha_especifica (nombre, descripcion) VALUES (?, ?)", [
-                $data['nombre'], $data['descripcion'] ?? null
+            $result = $db->insert("INSERT INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos) VALUES (?, ?, ?, ?, ?)", [
+                $data['nombre'], $data['descripcion'] ?? '', $data['requiere_consentimiento'] ?? false,
+                $data['template_consentimiento'] ?? '', json_encode($data['campos_requeridos'] ?? [])
             ]);
             echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            break;
+    }
+}
+
+function handleConsentimientoFirma($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                $result = $db->selectOne("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id WHERE cf.id = ?", [$id]);
+            } else {
+                $fichaId = $_GET['ficha_id'] ?? null;
+                $tipoConsentimiento = $_GET['tipo_consentimiento'] ?? null;
+                if ($fichaId && $tipoConsentimiento) {
+                    $result = $db->selectOne("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id WHERE cf.ficha_id = ? AND cf.tipo_consentimiento = ?", [$fichaId, $tipoConsentimiento]);
+                } else {
+                    $result = $db->select("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id");
+                }
+            }
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+            
+        case 'POST':
+            // Guardar firma digital
+            $result = $db->executeRaw("CALL sp_guardar_firma_digital(?, ?, ?, ?, ?, ?, ?)", [
+                $data['ficha_id'], $data['ficha_especifica_id'], $data['profesional_id'],
+                $data['tipo_consentimiento'], $data['firma_blob'], $data['tipo_archivo'],
+                $data['contenido_leido']
+            ]);
+            echo json_encode(['success' => true, 'data' => ['firma_guardada' => true]]);
             break;
     }
 }
@@ -334,7 +372,7 @@ function handleEvaluaciones($db, $method, $id, $data) {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $result = $db->selectOne("SELECT * FROM evaluacion WHERE id = ?", [$id]);
+                $result = $db->selectOne("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id WHERE e.id = ?", [$id]);
             } else {
                 $fichaId = $_GET['ficha_id'] ?? null;
                 if ($fichaId) {
@@ -348,10 +386,10 @@ function handleEvaluaciones($db, $method, $id, $data) {
             
         case 'POST':
             // Crear evaluación
-            $result = $db->executeRaw("CALL sp_crear_evaluacion(?, ?, ?, ?, ?, ?, ?, @evaluacion_id)", [
-                $data['ficha_id'], $data['tratamiento_id'], $data['pack_id'] ?? null,
-                $data['profesional_id'], $data['precio_sugerido'], $data['sesiones_sugeridas'],
-                $data['observaciones'] ?? null
+            $result = $db->executeRaw("CALL sp_crear_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @evaluacion_id)", [
+                $data['ficha_id'], $data['profesional_id'], $data['tratamiento_id'], 
+                $data['pack_id'] ?? null, $data['precio_sugerido'], $data['sesiones_sugeridas'],
+                $data['observaciones'] ?? '', $data['recomendaciones'] ?? ''
             ]);
             $evaluacionId = $db->selectOne("SELECT @evaluacion_id as id")['id'];
             echo json_encode(['success' => true, 'data' => ['id' => $evaluacionId]]);
@@ -381,10 +419,10 @@ function handleVentas($db, $method, $id, $data) {
             
         case 'POST':
             // Crear venta
-            $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, @venta_id)", [
-                $data['ficha_id'], $data['evaluacion_id'] ?? null, $data['tratamiento_id'],
-                $data['pack_id'] ?? null, $data['cantidad_sesiones'], $data['precio_lista'],
-                $data['descuento_manual_pct'] ?? null
+            $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                $data['ficha_id'], $data['evaluacion_id'], $data['ficha_especifica_id'],
+                $data['tratamiento_id'], $data['pack_id'] ?? null, $data['cantidad_sesiones'], 
+                $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
             ]);
             $ventaId = $db->selectOne("SELECT @venta_id as id")['id'];
             
@@ -736,6 +774,80 @@ function handleHistorialVentas($db, $method, $id, $data) {
                 $result = $db->executeRaw("CALL sp_obtener_historial_tratamientos(?)", [$id]);
                 echo json_encode(['success' => true, 'data' => $result]);
             }
+            break;
+    }
+}
+
+// ---------- AUTENTICACIÓN ----------
+
+function handleAuth($db, $method, $id, $data) {
+    switch ($method) {
+        case 'POST':
+            $username = $data['username'] ?? '';
+            $password = $data['password'] ?? '';
+            
+            if (empty($username) || empty($password)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Username y password son requeridos']);
+                return;
+            }
+            
+            // Buscar usuario por username
+            $usuario = $db->selectOne("SELECT * FROM usuario WHERE username = ? AND activo = TRUE", [$username]);
+            
+            if (!$usuario) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Credenciales inválidas']);
+                return;
+            }
+            
+            // Verificar password
+            if (!password_verify($password, $usuario['password_hash'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Credenciales inválidas']);
+                return;
+            }
+            
+            // Actualizar último login
+            $db->update("UPDATE usuario SET ultimo_login = NOW() WHERE id = ?", [$usuario['id']]);
+            
+            // Obtener datos del profesional si existe
+            $profesional = null;
+            if ($usuario['rol'] === 'profesional') {
+                $profesional = $db->selectOne("SELECT * FROM profesional WHERE usuario_id = ?", [$usuario['id']]);
+            }
+            
+            // Generar token de sesión (simple por ahora)
+            $token = bin2hex(random_bytes(32));
+            
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'usuario' => [
+                        'id' => $usuario['id'],
+                        'username' => $usuario['username'],
+                        'email' => $usuario['email'],
+                        'rol' => $usuario['rol'],
+                        'ultimo_login' => $usuario['ultimo_login']
+                    ],
+                    'profesional' => $profesional
+                ]
+            ]);
+            break;
+            
+        case 'GET':
+            // Verificar token (implementación simple)
+            $token = $_GET['token'] ?? '';
+            if (empty($token)) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Token requerido']);
+                return;
+            }
+            
+            // Por ahora, solo validamos que el token existe
+            // En una implementación real, deberías verificar el token en una tabla de sesiones
+            echo json_encode(['success' => true, 'data' => ['valid' => true]]);
             break;
     }
 }

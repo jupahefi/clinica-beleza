@@ -1,9 +1,9 @@
 /**
  * Módulo de Gestión de Ventas
- * Maneja ventas con soporte para zonas del cuerpo
+ * Maneja ventas con el nuevo proceso: Evaluación -> Ficha Específica -> Venta
  */
 
-import { fichasAPI } from '../api-client.js';
+import { fichasAPI, evaluacionesAPI, fichasEspecificasAPI, ventasAPI, tratamientosAPI, packsAPI } from '../api-client.js';
 import { mostrarNotificacion } from '../utils.js';
 
 class VentasModule {
@@ -23,22 +23,16 @@ class VentasModule {
 
     async cargarDatos() {
         try {
-            // Cargar tratamientos disponibles
-            const responseTratamientos = await fetch('/api.php/tratamientos');
-            const tratamientosData = await responseTratamientos.json();
-            this.tratamientos = tratamientosData.data || [];
+            // Cargar tratamientos disponibles usando API client
+            this.tratamientos = await tratamientosAPI.getAll();
 
             // Cargar packs por tratamiento
             for (const tratamiento of this.tratamientos) {
-                const responsePacks = await fetch(`/api.php/packs/tratamiento/${tratamiento.id}`);
-                const packsData = await responsePacks.json();
-                tratamiento.packs = packsData.data || [];
+                tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id);
             }
 
             // Cargar ofertas aplicables
-            const responseOfertas = await fetch('/api.php/ofertas/aplicables');
-            const ofertasData = await responseOfertas.json();
-            this.ofertas = ofertasData.data || [];
+            this.ofertas = await fetch('/api.php/ofertas/aplicables').then(r => r.json()).then(d => d.data || []);
 
             console.log('Datos de ventas cargados:', {
                 tratamientos: this.tratamientos.length,
@@ -131,20 +125,20 @@ class VentasModule {
             packsDiv.style.display = 'block';
             
             tratamiento.packs.forEach((pack, idx) => {
-                const option = document.createElement('option');
+        const option = document.createElement('option');
                 option.value = idx;
-                
+        
                 const precioActual = pack.precio_oferta || pack.precio_regular;
                 const precioRegular = pack.precio_regular;
-                
+        
                 option.textContent = `${pack.nombre} - $${precioRegular.toLocaleString()}`;
-                if (pack.precio_oferta) {
+        if (pack.precio_oferta) {
                     option.textContent += ` (oferta $${precioActual.toLocaleString()})`;
-                }
-                
-                packSelect.appendChild(option);
-            });
-        } else {
+        }
+        
+        packSelect.appendChild(option);
+      });
+    } else {
             packsDiv.style.display = 'none';
         }
 
@@ -164,22 +158,22 @@ class VentasModule {
         const sesiones = parseInt(inputSesiones.value) || 1;
         const ofertaVenta = parseInt(inputOferta.value) || 0;
         const packIndex = selectPack.value;
-
-        if (!tratamientoId) {
+  
+  if (!tratamientoId) {
             resultado.textContent = 'Selecciona un tratamiento.';
-            return;
-        }
-
+    return;
+  }
+  
         const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
-        let precio = 0;
-        let detalle = '';
+    let precio = 0;
+    let detalle = '';
 
         // Si se seleccionó un pack
         if (packIndex !== '') {
             const pack = tratamiento.packs[packIndex];
             precio = pack.precio_oferta || pack.precio_regular;
             detalle = `Pack seleccionado: ${pack.nombre} → $${precio.toLocaleString()}`;
-        } else {
+    } else {
             // Modalidad sesión individual
             const precioSesion = this.obtenerPrecioSesionTratamiento(tratamiento);
             precio = sesiones * precioSesion;
@@ -205,7 +199,7 @@ class VentasModule {
             pack_id: packIndex !== '' ? tratamiento.packs[packIndex].id : null,
             sesiones,
             precio,
-            detalle,
+      detalle,
             oferta_adicional: ofertaVenta
         };
     }
@@ -230,54 +224,111 @@ class VentasModule {
         }
 
         try {
+            // PASO 1: Crear evaluación
+            const evaluacionData = {
+                ficha_id: parseInt(selectCliente.value),
+                profesional_id: 1, // TODO: Obtener del usuario logueado
+                tratamiento_id: ventaData.tratamiento_id,
+                pack_id: ventaData.pack_id,
+                precio_sugerido: ventaData.precio,
+                sesiones_sugeridas: ventaData.sesiones,
+                observaciones: ventaData.detalle,
+                recomendaciones: 'Evaluación realizada durante la venta'
+            };
+
+            const evaluacion = await evaluacionesAPI.create(evaluacionData);
+
+            // PASO 2: Crear ficha específica
+            const tratamiento = this.tratamientos.find(t => t.id === ventaData.tratamiento_id);
+            const tipoFichaId = this.obtenerTipoFichaId(tratamiento.nombre);
+            
+            const fichaEspecificaData = {
+                evaluacion_id: evaluacion.id,
+                tipo_id: tipoFichaId,
+                datos: this.generarDatosFichaEspecifica(tratamiento, ventaData),
+                observaciones: 'Ficha específica creada durante la venta'
+            };
+
+            const fichaEspecifica = await fichasEspecificasAPI.create(fichaEspecificaData);
+
+            // PASO 3: Crear venta
             const ventaCompleta = {
                 ficha_id: parseInt(selectCliente.value),
+                evaluacion_id: evaluacion.id,
+                ficha_especifica_id: fichaEspecifica.id,
                 tratamiento_id: ventaData.tratamiento_id,
                 pack_id: ventaData.pack_id,
                 cantidad_sesiones: ventaData.sesiones,
                 precio_lista: ventaData.precio,
-                descuento_manual_pct: ventaData.oferta_adicional,
-                observaciones: ventaData.detalle
+                descuento_manual_pct: ventaData.oferta_adicional
             };
 
-            const response = await fetch('/api.php/ventas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(ventaCompleta)
-            });
+            const venta = await ventasAPI.create(ventaCompleta);
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (venta.id) {
                 this.ventas.push(ventaData);
                 this.renderHistorial();
                 this.limpiarFormulario();
-                mostrarNotificacion('Venta registrada exitosamente.', 'success');
-            } else {
-                mostrarNotificacion(result.error || 'Error registrando venta', 'error');
+                mostrarNotificacion('Venta registrada exitosamente con evaluación y ficha específica.', 'success');
             }
 
         } catch (error) {
             console.error('Error confirmando venta:', error);
-            mostrarNotificacion('Error registrando venta', 'error');
+            mostrarNotificacion('Error registrando venta: ' + error.message, 'error');
         }
+    }
+
+    obtenerTipoFichaId(nombreTratamiento) {
+        // Mapear tratamientos a tipos de ficha específica
+        const mapeo = {
+            'DEPILACION': 1, // DEPILACION
+            'FACIAL': 3,     // FACIAL
+            'CORPORAL': 2,   // CORPORAL
+            'CAPILAR': 4     // CAPILAR
+        };
+        
+        for (const [key, value] of Object.entries(mapeo)) {
+            if (nombreTratamiento.toUpperCase().includes(key)) {
+                return value;
+            }
+        }
+        
+        return 1; // Por defecto DEPILACION
+    }
+
+    generarDatosFichaEspecifica(tratamiento, ventaData) {
+        const datos = {
+            tratamiento: tratamiento.nombre,
+            pack_seleccionado: ventaData.pack_id ? 'Sí' : 'No',
+            sesiones: ventaData.sesiones,
+            precio: ventaData.precio,
+            fecha_creacion: new Date().toISOString()
+        };
+
+        // Datos específicos según el tipo de tratamiento
+        if (tratamiento.nombre.toUpperCase().includes('DEPILACION')) {
+            datos.zonas = [];
+            datos.intensidad_anterior = 'N/A';
+            datos.observaciones_medicas = '';
+        } else if (tratamiento.nombre.toUpperCase().includes('FACIAL')) {
+            datos.tipo_piel = 'Por evaluar';
+            datos.alergias = 'Por evaluar';
+            datos.tratamientos_previos = 'Por evaluar';
+        }
+
+        return datos;
     }
 
     async cargarHistorialCliente() {
         if (!this.clienteSeleccionado) return;
 
         try {
-            const response = await fetch(`/api.php/ventas/historial/${this.clienteSeleccionado}`);
-            const result = await response.json();
-            
-            if (result.success) {
-                this.ventas = result.data || [];
-                this.renderHistorial();
-            }
+            // Usar API client para obtener historial
+            this.ventas = await ventasAPI.getByFichaId(this.clienteSeleccionado);
+            this.renderHistorial();
         } catch (error) {
             console.error('Error cargando historial:', error);
+            mostrarNotificacion('Error cargando historial del cliente', 'error');
         }
     }
 
