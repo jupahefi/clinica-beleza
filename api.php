@@ -217,6 +217,10 @@ try {
             handleTratamientos($db, $method, $id, $data);
             break;
             
+        case 'zonas':
+            handleZonas($db, $method, $id, $data);
+            break;
+            
         case 'packs':
             handlePacks($db, $method, $id, $data);
             break;
@@ -948,6 +952,49 @@ function handleAuth($db, $method, $id, $data) {
             // Por ahora, solo validamos que el token existe
             // En una implementación real, deberías verificar el token en una tabla de sesiones
             echo json_encode(['success' => true, 'data' => ['valid' => true]]);
+            break;
+    }
+}
+
+// ---------- ZONAS DEL CUERPO ----------
+
+function handleZonas($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                // Obtener zona específica por código
+                $result = $db->selectOne("SELECT * FROM zona_cuerpo WHERE codigo = ? AND activo = TRUE", [$id]);
+                if ($result) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'error' => 'Zona no encontrada']);
+                }
+            } else {
+                // Obtener todas las zonas activas
+                $result = $db->select("SELECT * FROM zona_cuerpo WHERE activo = TRUE ORDER BY nombre");
+                echo json_encode(['success' => true, 'data' => $result]);
+            }
+            break;
+            
+        case 'POST':
+            // Crear nueva zona usando stored procedure
+            $codigo = $data['codigo'] ?? '';
+            $nombre = $data['nombre'] ?? '';
+            $categoria = $data['categoria'] ?? '';
+            $precio_base = $data['precio_base'] ?? 0;
+            
+            if (empty($codigo) || empty($nombre) || empty($categoria)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Código, nombre y categoría son requeridos']);
+                return;
+            }
+            
+            $result = $db->executeRaw("CALL sp_crear_zona_cuerpo(?, ?, ?, ?, @zona_id)", [
+                $codigo, $nombre, $categoria, $precio_base
+            ]);
+            
+            echo json_encode(['success' => true, 'data' => ['codigo' => $codigo]]);
             break;
     }
 }

@@ -1533,6 +1533,62 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Crear oferta pack temporal
+DELIMITER $$
+CREATE PROCEDURE sp_crear_oferta_pack_temporal(
+    IN p_nombre VARCHAR(150),
+    IN p_porc_descuento DECIMAL(5,2),
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE,
+    IN p_combinable BOOLEAN,
+    IN p_prioridad INT,
+    OUT p_oferta_id BIGINT
+)
+BEGIN
+    INSERT INTO oferta (nombre, tipo, descripcion, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad)
+    VALUES (p_nombre, 'pack_temporal', p_nombre, p_porc_descuento, p_fecha_inicio, p_fecha_fin, p_combinable, TRUE, p_prioridad);
+    SET p_oferta_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Crear zona del cuerpo
+DELIMITER $$
+CREATE PROCEDURE sp_crear_zona_cuerpo(
+    IN p_codigo VARCHAR(50),
+    IN p_nombre VARCHAR(100),
+    IN p_categoria VARCHAR(50),
+    IN p_precio_base DECIMAL(12,2),
+    OUT p_zona_id VARCHAR(50)
+)
+BEGIN
+    INSERT INTO zona_cuerpo (codigo, nombre, categoria, precio_base, activo)
+    VALUES (p_codigo, p_nombre, p_categoria, p_precio_base, TRUE)
+    ON DUPLICATE KEY UPDATE 
+        nombre = p_nombre,
+        categoria = p_categoria,
+        precio_base = p_precio_base,
+        activo = TRUE;
+    SET p_zona_id = p_codigo;
+END$$
+DELIMITER ;
+
+-- Asociar oferta con pack
+DELIMITER $$
+CREATE PROCEDURE sp_asociar_oferta_pack(
+    IN p_oferta_id BIGINT,
+    IN p_pack_id BIGINT,
+    IN p_porc_descuento DECIMAL(5,2),
+    OUT p_asociacion_id BIGINT
+)
+BEGIN
+    INSERT INTO oferta_pack (oferta_id, pack_id, porc_descuento)
+    VALUES (p_oferta_id, p_pack_id, p_porc_descuento)
+    ON DUPLICATE KEY UPDATE 
+        porc_descuento = p_porc_descuento;
+    SET p_asociacion_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
 -- ---------- PROFESIONALES ----------
 
 -- PRO-001: Crear profesional
@@ -1899,8 +1955,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta)
-    VALUES (p_tratamiento_id, p_precio_regular, p_precio_oferta, p_fecha_inicio_oferta, p_fecha_fin_oferta);
+    INSERT INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo)
+    VALUES (p_tratamiento_id, p_precio_regular, p_precio_oferta, p_fecha_inicio_oferta, p_fecha_fin_oferta, TRUE);
     
     SET p_precio_id = LAST_INSERT_ID();
     
@@ -2277,11 +2333,13 @@ CREATE PROCEDURE sp_crear_tratamiento(
     IN p_nombre VARCHAR(100),
     IN p_descripcion TEXT,
     IN p_requiere_ficha_especifica BOOLEAN,
+    IN p_duracion_sesion_min INT,
+    IN p_frecuencia_recomendada_dias INT,
     OUT p_tratamiento_id BIGINT
 )
 BEGIN
-    INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, activo)
-    VALUES (p_nombre, p_descripcion, p_requiere_ficha_especifica, TRUE);
+    INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, duracion_sesion_min, frecuencia_recomendada_dias, activo)
+    VALUES (p_nombre, p_descripcion, p_requiere_ficha_especifica, p_duracion_sesion_min, p_frecuencia_recomendada_dias, TRUE);
     SET p_tratamiento_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
@@ -2302,17 +2360,48 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Crear pack completo con precios y zonas
+DELIMITER $$
+CREATE PROCEDURE sp_crear_pack_completo(
+    IN p_tratamiento_id BIGINT,
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_duracion_sesion_min INT,
+    IN p_sesiones_incluidas INT,
+    IN p_zonas_incluidas JSON,
+    IN p_precio_por_zona JSON,
+    IN p_precio_regular DECIMAL(12,2),
+    IN p_precio_oferta DECIMAL(12,2),
+    IN p_fecha_inicio_oferta DATE,
+    IN p_fecha_fin_oferta DATE,
+    OUT p_pack_id BIGINT
+)
+BEGIN
+    INSERT INTO pack (
+        tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas,
+        zonas_incluidas, precio_por_zona, precio_regular, precio_oferta,
+        fecha_inicio_oferta, fecha_fin_oferta, activo
+    ) VALUES (
+        p_tratamiento_id, p_nombre, p_descripcion, p_duracion_sesion_min, p_sesiones_incluidas,
+        p_zonas_incluidas, p_precio_por_zona, p_precio_regular, p_precio_oferta,
+        p_fecha_inicio_oferta, p_fecha_fin_oferta, TRUE
+    );
+    SET p_pack_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
 -- Crear sucursal
 DELIMITER $$
 CREATE PROCEDURE sp_crear_sucursal(
     IN p_nombre VARCHAR(100),
     IN p_direccion TEXT,
     IN p_telefono VARCHAR(50),
+    IN p_email VARCHAR(120),
     OUT p_sucursal_id BIGINT
 )
 BEGIN
-    INSERT INTO sucursal (nombre, direccion, telefono, activo)
-    VALUES (p_nombre, p_direccion, p_telefono, TRUE);
+    INSERT INTO sucursal (nombre, direccion, telefono, email, activo)
+    VALUES (p_nombre, p_direccion, p_telefono, p_email, TRUE);
     SET p_sucursal_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
@@ -2322,11 +2411,12 @@ DELIMITER $$
 CREATE PROCEDURE sp_crear_box(
     IN p_sucursal_id BIGINT,
     IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
     OUT p_box_id BIGINT
 )
 BEGIN
-    INSERT INTO box (sucursal_id, nombre, activo)
-    VALUES (p_sucursal_id, p_nombre, TRUE);
+    INSERT INTO box (sucursal_id, nombre, descripcion, activo)
+    VALUES (p_sucursal_id, p_nombre, p_descripcion, TRUE);
     SET p_box_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
@@ -2345,173 +2435,226 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Crear usuario
+DELIMITER $$
+CREATE PROCEDURE sp_crear_usuario(
+    IN p_username VARCHAR(50),
+    IN p_password_hash VARCHAR(255),
+    IN p_email VARCHAR(120),
+    IN p_rol VARCHAR(20),
+    OUT p_usuario_id BIGINT
+)
+BEGIN
+    INSERT INTO usuario (username, password_hash, email, rol, activo)
+    VALUES (p_username, p_password_hash, p_email, p_rol, TRUE);
+    SET p_usuario_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Crear profesional completo
+DELIMITER $$
+CREATE PROCEDURE sp_crear_profesional_completo(
+    IN p_usuario_id BIGINT,
+    IN p_nombre VARCHAR(150),
+    IN p_apellidos VARCHAR(150),
+    IN p_rut VARCHAR(20),
+    IN p_telefono VARCHAR(50),
+    IN p_email VARCHAR(120),
+    IN p_tipo_profesional VARCHAR(80),
+    IN p_bio TEXT,
+    IN p_foto_url TEXT,
+    IN p_especialidad VARCHAR(100),
+    IN p_titulo_profesional VARCHAR(150),
+    IN p_numero_colegio VARCHAR(50),
+    IN p_fecha_nacimiento DATE,
+    IN p_direccion TEXT,
+    IN p_estado_civil VARCHAR(20),
+    IN p_grupo_sanguineo VARCHAR(5),
+    IN p_contacto_emergencia VARCHAR(150),
+    IN p_telefono_emergencia VARCHAR(50),
+    OUT p_profesional_id BIGINT
+)
+BEGIN
+    INSERT INTO profesional (
+        usuario_id, nombre, apellidos, rut, telefono, email, tipo_profesional, 
+        bio, foto_url, especialidad, titulo_profesional, numero_colegio, 
+        fecha_nacimiento, direccion, estado_civil, grupo_sanguineo, 
+        contacto_emergencia, telefono_emergencia, activo
+    ) VALUES (
+        p_usuario_id, p_nombre, p_apellidos, p_rut, p_telefono, p_email, p_tipo_profesional,
+        p_bio, p_foto_url, p_especialidad, p_titulo_profesional, p_numero_colegio,
+        p_fecha_nacimiento, p_direccion, p_estado_civil, p_grupo_sanguineo,
+        p_contacto_emergencia, p_telefono_emergencia, TRUE
+    );
+    SET p_profesional_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
 -- =============================================================================
--- DATOS INICIALES - INSERTAR DESPUeS DE CREAR TODAS LAS TABLAS
+-- DATOS INICIALES - USANDO STORED PROCEDURES PARA CALIDAD DE DATOS
 -- =============================================================================
 
 -- ---------- ZONAS DEL CUERPO ----------
-INSERT IGNORE INTO zona_cuerpo (codigo, nombre, categoria, precio_base) VALUES
-('PIERNAS', 'Piernas', 'DEPILACION', 45000),
-('BRAZOS', 'Brazos', 'DEPILACION', 35000),
-('REBAJE', 'Rebaje', 'DEPILACION', 25000),
-('INTERGLUTEO', 'Intergluteo', 'DEPILACION', 20000),
-('ROSTRO_C', 'Rostro C', 'DEPILACION', 30000),
-('CUELLO', 'Cuello', 'DEPILACION', 25000),
-('BOZO', 'Bozo', 'DEPILACION', 15000),
-('AXILA', 'Axila', 'DEPILACION', 20000),
-('MENTON', 'Menton', 'DEPILACION', 15000),
-('PATILLAS', 'Patillas', 'DEPILACION', 15000),
-('ESPALDA', 'Espalda', 'DEPILACION', 40000),
-('ABDOMEN', 'Abdomen', 'DEPILACION', 30000),
-('GLUTEOS', 'Gluteos', 'DEPILACION', 25000),
-('PECHO', 'Pecho', 'DEPILACION', 30000),
-('BARBA', 'Barba', 'DEPILACION', 25000),
-('DEDOS_MANOS', 'Dedos Manos', 'DEPILACION', 10000),
-('EMPEINE_DEDOS', 'Empeine Dedos', 'DEPILACION', 15000),
-('LINEA_ALBA', 'Linea Alba', 'DEPILACION', 20000);
+-- Usando SP para crear zonas del cuerpo con validaciones
+CALL sp_crear_zona_cuerpo('PIERNAS', 'Piernas', 'DEPILACION', 45000, @zona_piernas);
+CALL sp_crear_zona_cuerpo('BRAZOS', 'Brazos', 'DEPILACION', 35000, @zona_brazos);
+CALL sp_crear_zona_cuerpo('REBAJE', 'Rebaje', 'DEPILACION', 25000, @zona_rebaje);
+CALL sp_crear_zona_cuerpo('INTERGLUTEO', 'Intergluteo', 'DEPILACION', 20000, @zona_intergluteo);
+CALL sp_crear_zona_cuerpo('ROSTRO_C', 'Rostro C', 'DEPILACION', 30000, @zona_rostro_c);
+CALL sp_crear_zona_cuerpo('CUELLO', 'Cuello', 'DEPILACION', 25000, @zona_cuello);
+CALL sp_crear_zona_cuerpo('BOZO', 'Bozo', 'DEPILACION', 15000, @zona_bozo);
+CALL sp_crear_zona_cuerpo('AXILA', 'Axila', 'DEPILACION', 20000, @zona_axila);
+CALL sp_crear_zona_cuerpo('MENTON', 'Menton', 'DEPILACION', 15000, @zona_menton);
+CALL sp_crear_zona_cuerpo('PATILLAS', 'Patillas', 'DEPILACION', 15000, @zona_patillas);
+CALL sp_crear_zona_cuerpo('ESPALDA', 'Espalda', 'DEPILACION', 40000, @zona_espalda);
+CALL sp_crear_zona_cuerpo('ABDOMEN', 'Abdomen', 'DEPILACION', 30000, @zona_abdomen);
+CALL sp_crear_zona_cuerpo('GLUTEOS', 'Gluteos', 'DEPILACION', 25000, @zona_gluteos);
+CALL sp_crear_zona_cuerpo('PECHO', 'Pecho', 'DEPILACION', 30000, @zona_pecho);
+CALL sp_crear_zona_cuerpo('BARBA', 'Barba', 'DEPILACION', 25000, @zona_barba);
+CALL sp_crear_zona_cuerpo('DEDOS_MANOS', 'Dedos Manos', 'DEPILACION', 10000, @zona_dedos_manos);
+CALL sp_crear_zona_cuerpo('EMPEINE_DEDOS', 'Empeine Dedos', 'DEPILACION', 15000, @zona_empeine_dedos);
+CALL sp_crear_zona_cuerpo('LINEA_ALBA', 'Linea Alba', 'DEPILACION', 20000, @zona_linea_alba);
 
 -- ---------- TRATAMIENTOS BASE ----------
-INSERT IGNORE INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, duracion_sesion_min, frecuencia_recomendada_dias, activo) VALUES
-('FACIAL', 'Tratamientos faciales y esteticos', TRUE, 60, 7, TRUE),
-('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, TRUE),
-('DEPILACION', 'Depilacion laser y tratamientos corporales', TRUE, 45, 30, TRUE);
+-- Usando SP para crear tratamientos con validaciones
+CALL sp_crear_tratamiento('FACIAL', 'Tratamientos faciales y esteticos', TRUE, 60, 7, @tratamiento_facial_id);
+CALL sp_crear_tratamiento('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, @tratamiento_capilar_id);
+CALL sp_crear_tratamiento('DEPILACION', 'Depilacion laser y tratamientos corporales', TRUE, 45, 30, @tratamiento_depilacion_id);
 
 -- ---------- TIPOS DE FICHA ESPECiFICA ----------
-INSERT IGNORE INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos) VALUES
-('DEPILACION', 'Ficha especifica para depilacion laser', TRUE, 'Consentimiento informado para depilacion laser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text')),
-('CORPORAL', 'Ficha especifica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text')),
-('FACIAL', 'Ficha especifica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text')),
-('CAPILAR', 'Ficha especifica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'));
+-- Usando SP para crear tipos de ficha específica con validaciones
+CALL sp_crear_tipo_ficha_especifica('DEPILACION', 'Ficha especifica para depilacion laser', TRUE, 'Consentimiento informado para depilacion laser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text'), @tipo_depilacion_id);
+CALL sp_crear_tipo_ficha_especifica('CORPORAL', 'Ficha especifica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text'), @tipo_corporal_id);
+CALL sp_crear_tipo_ficha_especifica('FACIAL', 'Ficha especifica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text'), @tipo_facial_id);
+CALL sp_crear_tipo_ficha_especifica('CAPILAR', 'Ficha especifica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'), @tipo_capilar_id);
 
 -- ---------- SUCURSAL ----------
-INSERT IGNORE INTO sucursal (nombre, direccion, telefono, email, activo) VALUES
-('Clinica Beleza Principal', 'Av. Principal 123, Santiago', '+56 2 2345 6789', 'contacto@clinica-beleza.cl', TRUE);
+-- Usando SP para crear sucursal con validaciones
+CALL sp_crear_sucursal('Clinica Beleza Principal', 'Av. Principal 123, Santiago', '+56 2 2345 6789', 'contacto@clinica-beleza.cl', @sucursal_principal_id);
 
 -- ---------- BOXES ----------
-INSERT IGNORE INTO box (sucursal_id, nombre, descripcion, activo) VALUES
-((SELECT id FROM sucursal LIMIT 1), 'Box 1', 'Box principal para tratamientos faciales y corporales', TRUE),
-((SELECT id FROM sucursal LIMIT 1), 'Box 2', 'Box secundario para tratamientos especializados', TRUE),
-((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box exclusivo para depilacion laser', TRUE);
+-- Usando SP para crear boxes con validaciones
+CALL sp_crear_box(@sucursal_principal_id, 'Box 1', 'Box principal para tratamientos faciales y corporales', @box_1_id);
+CALL sp_crear_box(@sucursal_principal_id, 'Box 2', 'Box secundario para tratamientos especializados', @box_2_id);
 
 -- ---------- USUARIOS ----------
-INSERT IGNORE INTO usuario (username, password_hash, email, rol, activo) VALUES
-('juan.herrera', '$2y$10$NgKGj0dk8VdWeuXclKEcH.7llW48dIGlNl5b2ScRFlA1RtkS.fLi.', 'juan.herrera@programadores.org', 'admin', TRUE),
-('maria.gonzalez', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'maria.gonzalez@clinica-beleza.cl', 'profesional', TRUE),
-('ana.rodriguez', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ana.rodriguez@clinica-beleza.cl', 'profesional', TRUE),
-('carmen.silva', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'carmen.silva@clinica-beleza.cl', 'profesional', TRUE);
+-- Usando SP para crear usuarios con validaciones (solo Juan Herrera por ahora)
+CALL sp_crear_usuario('juan.herrera', '$2y$10$NgKGj0dk8VdWeuXclKEcH.7llW48dIGlNl5b2ScRFlA1RtkS.fLi.', 'juan.herrera@programadores.org', 'admin', @usuario_juan_id);
 
 -- ---------- PROFESIONALES ----------
-INSERT IGNORE INTO profesional (usuario_id, nombre, apellidos, rut, telefono, email, tipo_profesional, bio, foto_url, especialidad, titulo_profesional, numero_colegio, fecha_nacimiento, direccion, estado_civil, grupo_sanguineo, contacto_emergencia, telefono_emergencia, activo) VALUES
-((SELECT id FROM usuario WHERE username = 'juan.herrera'), 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador', 'Administrador del sistema y desarrollador principal. Especialista en gestion de clinicas esteticas y sistemas de informacion medica.', '/assets/profesionales/juan-herrera.jpg', 'Administracion y Desarrollo', 'Ingeniero en Informatica', 'ADM-00001', '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'Maria Herrera', '+56 9 8888 8888', TRUE),
-((SELECT id FROM usuario WHERE username = 'maria.gonzalez'), 'Maria', 'Gonzalez', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesiologa', 'Especialista en tratamientos faciales y corporales con mas de 8 años de experiencia. Certificada en tecnicas avanzadas de radiofrecuencia y criolipolisis.', '/assets/profesionales/maria-gonzalez.jpg', 'Tratamientos Faciales y Corporales', 'Kinesiologa', 'KIN-12345', '1985-03-15', 'Av. Providencia 1234, Providencia, Santiago', 'Casada', 'O+', 'Carlos Gonzalez', '+56 9 8765 4321', TRUE),
-((SELECT id FROM usuario WHERE username = 'ana.rodriguez'), 'Ana', 'Rodriguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Tecnico Estetico', 'Especialista en depilacion laser con certificacion internacional. Experta en todos los tipos de piel y zonas corporales.', '/assets/profesionales/ana-rodriguez.jpg', 'Depilacion Laser', 'Tecnico Estetico', 'TEC-67890', '1990-07-22', 'Calle Las Condes 567, Las Condes, Santiago', 'Soltera', 'A+', 'Maria Rodriguez', '+56 9 1111 2222', TRUE),
-((SELECT id FROM usuario WHERE username = 'carmen.silva'), 'Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetologa', 'Especialista en tratamientos capilares y regenerativos. Certificada en PRP y fotobiomodulacion para el cabello.', '/assets/profesionales/carmen-silva.jpg', 'Tratamientos Capilares', 'Cosmetologa', 'COS-11111', '1988-11-08', 'Av. Vitacura 890, Vitacura, Santiago', 'Divorciada', 'B+', 'Pedro Silva', '+56 9 3333 4444', TRUE);
+-- Usando SP para crear profesionales con validaciones (solo Juan Herrera por ahora)
+CALL sp_crear_profesional_completo(
+    @usuario_juan_id, 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador',
+    'Administrador del sistema y desarrollador principal. Especialista en gestion de clinicas esteticas y sistemas de informacion medica.',
+    '/assets/profesionales/juan-herrera.jpg', 'Administracion y Desarrollo', 'Ingeniero en Informatica', 'ADM-00001',
+    '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'Maria Herrera', '+56 9 8888 8888',
+    @profesional_juan_id
+);
 
 -- ---------- PACKS DE TRATAMIENTOS FACIAL ----------
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, 39900, 24900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, 250000, 199000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, 299000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, 199000, 149900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, 450000, 390000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, 350000, 250000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, 189000, 139900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
+-- Usando SP para crear packs faciales con validaciones
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, JSON_ARRAY(), JSON_OBJECT(), 39900, 24900, '2024-01-01', '2024-12-31', @pack_limpieza_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 250000, 199000, '2024-01-01', '2024-12-31', @pack_radiofrecuencia_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 399000, 299000, '2024-01-01', '2024-12-31', @pack_criolipolisis_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, JSON_ARRAY(), JSON_OBJECT(), 299000, 299000, '2024-01-01', '2024-12-31', @pack_hifu_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 199000, 149900, '2024-01-01', '2024-12-31', @pack_prp_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, JSON_ARRAY(), JSON_OBJECT(), 450000, 390000, '2024-01-01', '2024-12-31', @pack_radiofrecuencia_fraccionada_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 350000, 250000, '2024-01-01', '2024-12-31', @pack_tecnologia_plasmatica_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 189000, 139900, '2024-01-01', '2024-12-31', @pack_pink_glow_id);
 
 -- ---------- PACKS DE TRATAMIENTOS CAPILAR ----------
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
+-- Usando SP para crear packs capilares con validaciones
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_carboxiterapia_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_prp_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_fotobiomodulacion_capilar_id);
 
 -- ---------- PACKS DE TRATAMIENTOS DEPILACION ----------
-INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilacion laser cuerpo completo', 120, 6, 499000, 499000, '2024-01-01', '2024-12-31', TRUE, 
+-- Usando SP para crear packs de depilación con validaciones
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo', 'Depilacion laser cuerpo completo', 120, 6, 
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
- JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilacion laser cuerpo completo sin rostro', 90, 6, 399000, 399000, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000),
+ 499000, 499000, '2024-01-01', '2024-12-31', @pack_cuerpo_completo_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo Sin Rostro', 'Depilacion laser cuerpo completo sin rostro', 90, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
- JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilacion laser rostro completo', 45, 8, 149900, 149900, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000),
+ 399000, 399000, '2024-01-01', '2024-12-31', @pack_cuerpo_sin_rostro_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Rostro Completo', 'Depilacion laser rostro completo', 45, 8,
  JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
- JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilacion laser full body: piernas, brazos, axilas, rebaje, intergluteo', 75, 6, 259000, 199000, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000),
+ 149900, 149900, '2024-01-01', '2024-12-31', @pack_rostro_completo_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Full Body', 'Depilacion laser full body: piernas, brazos, axilas, rebaje, intergluteo', 75, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
- JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilacion laser semi full: piernas, axilas, rebaje, intergluteo', 60, 6, 199000, 159000, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
+ 259000, 199000, '2024-01-01', '2024-12-31', @pack_full_body_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Semi Full', 'Depilacion laser semi full: piernas, axilas, rebaje, intergluteo', 60, 6,
  JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
- JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilacion laser bikini full: rebaje e intergluteo', 30, 6, 99000, 79900, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
+ 199000, 159000, '2024-01-01', '2024-12-31', @pack_semi_full_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full', 'Depilacion laser bikini full: rebaje e intergluteo', 30, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
- JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilacion laser bikini full con axilas', 35, 6, 120000, 99000, '2024-01-01', '2024-12-31', TRUE,
+ JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000),
+ 99000, 79900, '2024-01-01', '2024-12-31', @pack_bikini_full_id);
+
+CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full + Axilas', 'Depilacion laser bikini full con axilas', 35, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
- JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000));
+ JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000),
+ 120000, 99000, '2024-01-01', '2024-12-31', @pack_bikini_axilas_id);
 
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
-INSERT IGNORE INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 39900, 24900, '2024-01-01', '2024-12-31', TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 579000, 499000, '2024-01-01', '2024-12-31', TRUE),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 499000, 499000, '2024-01-01', '2024-12-31', TRUE);
+-- Usando SP para crear precios de tratamientos con validaciones
+CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2024-01-01', '2024-12-31', @precio_facial_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2024-01-01', '2024-12-31', @precio_capilar_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2024-01-01', '2024-12-31', @precio_depilacion_id);
 
 -- ---------- OFERTAS DE PACKS (PROMOCIONES) ----------
-INSERT IGNORE INTO oferta (nombre, tipo, descripcion, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad) VALUES
+-- Usando SP para crear ofertas con validaciones
 -- Ofertas FACIAL
-('Promo Limpieza Facial', 'pack_temporal', 'Descuento especial en limpieza facial profunda', 37.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Radiofrecuencia Facial', 'pack_temporal', 'Descuento en radiofrecuencia facial reafirmante', 20.4, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Criolipolisis Facial', 'pack_temporal', 'Descuento en criolipolisis facial dinamica', 25.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Plasma Rico en Plaquetas', 'pack_temporal', 'Descuento en tratamiento con PRP', 24.7, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Radiofrecuencia Fraccionada', 'pack_temporal', 'Descuento en radiofrecuencia fraccionada + vitamina C', 13.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Tecnologia Plasmatica', 'pack_temporal', 'Descuento en tecnologia plasmatica para parpados', 28.6, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Pink Glow', 'pack_temporal', 'Descuento en Pink Glow con ultrasonido', 26.0, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+CALL sp_crear_oferta_pack_temporal('Promo Limpieza Facial', 37.5, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_limpieza_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Facial', 20.4, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_radiofrecuencia_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Criolipolisis Facial', 25.1, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_criolipolisis_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Plasma Rico en Plaquetas', 24.7, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_prp_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Fraccionada', 13.3, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_radiofrecuencia_fraccionada_id);
+CALL sp_crear_oferta_pack_temporal('Promo Tecnologia Plasmatica', 28.6, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_tecnologia_plasmatica_id);
+CALL sp_crear_oferta_pack_temporal('Promo Pink Glow', 26.0, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_pink_glow_id);
 
 -- Ofertas CAPILAR
-('Promo Carboxiterapia Capilar', 'pack_temporal', 'Descuento en carboxiterapia para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo PRP Capilar', 'pack_temporal', 'Descuento en PRP para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Fotobiomodulacion Capilar', 'pack_temporal', 'Descuento en fotobiomodulacion para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+CALL sp_crear_oferta_pack_temporal('Promo Carboxiterapia Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_carboxiterapia_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo PRP Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_prp_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo Fotobiomodulacion Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_fotobiomodulacion_capilar_id);
 
 -- Ofertas DEPILACION
-('Promo Full Body', 'pack_temporal', 'Descuento en depilacion laser full body', 23.2, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Semi Full', 'pack_temporal', 'Descuento en depilacion laser semi full', 20.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Bikini Full', 'pack_temporal', 'Descuento en depilacion laser bikini full', 19.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Bikini Full + Axilas', 'pack_temporal', 'Descuento en depilacion laser bikini full + axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1);
+CALL sp_crear_oferta_pack_temporal('Promo Full Body', 23.2, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_full_body_id);
+CALL sp_crear_oferta_pack_temporal('Promo Semi Full', 20.1, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_semi_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full', 19.3, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_bikini_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full + Axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_bikini_axilas_id);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS FACIAL ----------
-INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
-((SELECT id FROM oferta WHERE nombre = 'Promo Limpieza Facial'), 
- (SELECT id FROM pack WHERE nombre = 'Limpieza Facial Profunda'), 37.5),
-((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Facial'), 
- (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Facial'), 20.4),
-((SELECT id FROM oferta WHERE nombre = 'Promo Criolipolisis Facial'), 
- (SELECT id FROM pack WHERE nombre = 'Criolipolisis Facial Dinamica'), 25.1),
-((SELECT id FROM oferta WHERE nombre = 'Promo Plasma Rico en Plaquetas'), 
- (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas'), 24.7),
-((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Fraccionada'), 
- (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Fraccionada + Vitamina C'), 13.3),
-((SELECT id FROM oferta WHERE nombre = 'Promo Tecnologia Plasmatica'), 
- (SELECT id FROM pack WHERE nombre = 'Tecnologia Plasmatica Parpados'), 28.6),
-((SELECT id FROM oferta WHERE nombre = 'Promo Pink Glow'), 
- (SELECT id FROM pack WHERE nombre = 'Pink Glow + Ultrasonido'), 26.0);
+-- Usando SP para asociar ofertas con packs
+CALL sp_asociar_oferta_pack(@oferta_limpieza_facial_id, @pack_limpieza_facial_id, 37.5, @asociacion_limpieza_facial);
+CALL sp_asociar_oferta_pack(@oferta_radiofrecuencia_facial_id, @pack_radiofrecuencia_facial_id, 20.4, @asociacion_radiofrecuencia_facial);
+CALL sp_asociar_oferta_pack(@oferta_criolipolisis_facial_id, @pack_criolipolisis_facial_id, 25.1, @asociacion_criolipolisis_facial);
+CALL sp_asociar_oferta_pack(@oferta_prp_facial_id, @pack_prp_facial_id, 24.7, @asociacion_prp_facial);
+CALL sp_asociar_oferta_pack(@oferta_radiofrecuencia_fraccionada_id, @pack_radiofrecuencia_fraccionada_id, 13.3, @asociacion_radiofrecuencia_fraccionada);
+CALL sp_asociar_oferta_pack(@oferta_tecnologia_plasmatica_id, @pack_tecnologia_plasmatica_id, 28.6, @asociacion_tecnologia_plasmatica);
+CALL sp_asociar_oferta_pack(@oferta_pink_glow_id, @pack_pink_glow_id, 26.0, @asociacion_pink_glow);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS CAPILAR ----------
-INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
-((SELECT id FROM oferta WHERE nombre = 'Promo Carboxiterapia Capilar'), 
- (SELECT id FROM pack WHERE nombre = 'Carboxiterapia Capilar'), 13.8),
-((SELECT id FROM oferta WHERE nombre = 'Promo PRP Capilar'), 
- (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas Capilar'), 13.8),
-((SELECT id FROM oferta WHERE nombre = 'Promo Fotobiomodulacion Capilar'), 
- (SELECT id FROM pack WHERE nombre = 'Fotobiomodulacion Capilar'), 13.8);
+-- Usando SP para asociar ofertas con packs capilares
+CALL sp_asociar_oferta_pack(@oferta_carboxiterapia_capilar_id, @pack_carboxiterapia_capilar_id, 13.8, @asociacion_carboxiterapia_capilar);
+CALL sp_asociar_oferta_pack(@oferta_prp_capilar_id, @pack_prp_capilar_id, 13.8, @asociacion_prp_capilar);
+CALL sp_asociar_oferta_pack(@oferta_fotobiomodulacion_capilar_id, @pack_fotobiomodulacion_capilar_id, 13.8, @asociacion_fotobiomodulacion_capilar);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS DEPILACION ----------
-INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
-((SELECT id FROM oferta WHERE nombre = 'Promo Full Body'), 
- (SELECT id FROM pack WHERE nombre = 'Full Body'), 23.2),
-((SELECT id FROM oferta WHERE nombre = 'Promo Semi Full'), 
- (SELECT id FROM pack WHERE nombre = 'Semi Full'), 20.1),
-((SELECT id FROM oferta WHERE nombre = 'Promo Bikini Full'), 
- (SELECT id FROM pack WHERE nombre = 'Bikini Full'), 19.3),
-((SELECT id FROM oferta WHERE nombre = 'Promo Bikini Full + Axilas'), 
- (SELECT id FROM pack WHERE nombre = 'Bikini Full + Axilas'), 17.5);
+-- Usando SP para asociar ofertas con packs de depilación
+CALL sp_asociar_oferta_pack(@oferta_full_body_id, @pack_full_body_id, 23.2, @asociacion_full_body);
+CALL sp_asociar_oferta_pack(@oferta_semi_full_id, @pack_semi_full_id, 20.1, @asociacion_semi_full);
+CALL sp_asociar_oferta_pack(@oferta_bikini_full_id, @pack_bikini_full_id, 19.3, @asociacion_bikini_full);
+CALL sp_asociar_oferta_pack(@oferta_bikini_axilas_id, @pack_bikini_axilas_id, 17.5, @asociacion_bikini_axilas);
 
 -- =============================================================================
 -- NOTA IMPORTANTE: TODA LA LoGICA DE NEGOCIO ESTa EN LA BASE DE DATOS

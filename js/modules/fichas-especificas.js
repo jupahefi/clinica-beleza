@@ -3,20 +3,33 @@
  * Maneja fichas de depilación y corporal/facial
  */
 
-import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS, PRECIO_POR_ZONA } from '../constants.js';
 import { formatCurrency, formatDate } from '../utils.js';
 import { ConsentimientoModal } from '../components/SignaturePad.js';
-import { fichasEspecificasAPI } from '../api-client.js';
+import { fichasEspecificasAPI, zonasAPI } from '../api-client.js';
 
 export class FichasEspecificasModule {
     constructor() {
         this.consentimientoModal = new ConsentimientoModal();
+        this.zonas = [];
         this.init();
     }
     
-    init() {
+    async init() {
+        await this.cargarZonas();
         this.setupEventListeners();
         this.loadConsentimientoText();
+    }
+    
+    async cargarZonas() {
+        try {
+            // Importar zonasAPI dinámicamente
+            const { zonasAPI } = await import('../api-client.js');
+            this.zonas = await zonasAPI.getAll();
+            console.log('✅ Zonas cargadas:', this.zonas.length);
+        } catch (error) {
+            console.error('❌ Error cargando zonas:', error);
+            this.zonas = [];
+        }
     }
     
     setupEventListeners() {
@@ -60,6 +73,11 @@ export class FichasEspecificasModule {
     createZonasSelector(container) {
         container.innerHTML = '';
         
+        if (!this.zonas || this.zonas.length === 0) {
+            container.innerHTML = '<p>Cargando zonas...</p>';
+            return;
+        }
+        
         const zonasGrid = document.createElement('div');
         zonasGrid.className = 'zonas-grid';
         zonasGrid.style.cssText = `
@@ -69,7 +87,7 @@ export class FichasEspecificasModule {
             margin-top: 10px;
         `;
         
-        Object.entries(ZONAS_CUERPO_LABELS).forEach(([key, label]) => {
+        this.zonas.forEach(zona => {
             const zonaItem = document.createElement('div');
             zonaItem.className = 'zona-item';
             zonaItem.style.cssText = `
@@ -85,17 +103,17 @@ export class FichasEspecificasModule {
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.id = `zona_${key}`;
-            checkbox.dataset.zona = key;
-            checkbox.dataset.precio = PRECIO_POR_ZONA[key];
+            checkbox.id = `zona_${zona.codigo}`;
+            checkbox.dataset.zona = zona.codigo;
+            checkbox.dataset.precio = zona.precio_base;
             
             const labelElement = document.createElement('label');
-            labelElement.htmlFor = `zona_${key}`;
-            labelElement.textContent = label;
+            labelElement.htmlFor = `zona_${zona.codigo}`;
+            labelElement.textContent = zona.nombre;
             labelElement.style.cursor = 'pointer';
             
             const precioSpan = document.createElement('span');
-            precioSpan.textContent = formatCurrency(PRECIO_POR_ZONA[key]);
+            precioSpan.textContent = formatCurrency(zona.precio_base);
             precioSpan.style.cssText = `
                 margin-left: auto;
                 font-size: 12px;
@@ -136,11 +154,14 @@ export class FichasEspecificasModule {
     
     updateZonasSeleccionadas() {
         const checkboxes = document.querySelectorAll('input[data-zona]:checked');
-        const zonasSeleccionadas = Array.from(checkboxes).map(cb => ({
-            zona: cb.dataset.zona,
-            label: ZONAS_CUERPO_LABELS[cb.dataset.zona],
-            precio: parseInt(cb.dataset.precio)
-        }));
+        const zonasSeleccionadas = Array.from(checkboxes).map(cb => {
+            const zona = this.zonas.find(z => z.codigo === cb.dataset.zona);
+            return {
+                zona: cb.dataset.zona,
+                label: zona ? zona.nombre : cb.dataset.zona,
+                precio: parseInt(cb.dataset.precio)
+            };
+        });
         
         const resumenDiv = document.getElementById('zonas-resumen');
         if (resumenDiv) {
@@ -349,33 +370,28 @@ Fecha: ${new Date().toLocaleDateString()}
     
     // Método para obtener zonas de un pack
     getZonasFromPack(packId) {
-        // Aquí deberías obtener las zonas desde la base de datos
-        // Por ahora, retornamos las zonas basadas en el ID del pack
-        const packZonas = {
-            'cuerpo_completo': Object.values(ZONAS_CUERPO),
-            'cuerpo_sin_rostro': Object.values(ZONAS_CUERPO).filter(z => 
-                ![ZONAS_CUERPO.ROSTRO_C, ZONAS_CUERPO.BOZO, ZONAS_CUERPO.MENTON, ZONAS_CUERPO.PATILLAS, ZONAS_CUERPO.CUELLO].includes(z)
-            ),
-            'rostro_completo': [ZONAS_CUERPO.ROSTRO_C, ZONAS_CUERPO.BOZO, ZONAS_CUERPO.MENTON, ZONAS_CUERPO.PATILLAS, ZONAS_CUERPO.CUELLO],
-            'full_body': [ZONAS_CUERPO.PIERNAS, ZONAS_CUERPO.BRAZOS, ZONAS_CUERPO.AXILA, ZONAS_CUERPO.REBAJE, ZONAS_CUERPO.INTERGLUTEO],
-            'semi_full': [ZONAS_CUERPO.PIERNAS, ZONAS_CUERPO.AXILA, ZONAS_CUERPO.REBAJE, ZONAS_CUERPO.INTERGLUTEO],
-            'bikini_full': [ZONAS_CUERPO.REBAJE, ZONAS_CUERPO.INTERGLUTEO],
-            'bikini_axilas': [ZONAS_CUERPO.REBAJE, ZONAS_CUERPO.INTERGLUTEO, ZONAS_CUERPO.AXILA]
-        };
-        
-        return packZonas[packId] || [];
+        // TODO: Obtener desde la base de datos usando packsAPI
+        // Por ahora retornamos array vacío - se implementará cuando se conecte con packs
+        console.log('⚠️ getZonasFromPack: Implementar con packsAPI');
+        return [];
     }
     
     // Método para calcular precio adicional por zonas extra
     calculatePrecioZonasExtra(zonasPack, zonasSeleccionadas) {
         const zonasExtra = zonasSeleccionadas.filter(zona => !zonasPack.includes(zona));
-        return zonasExtra.reduce((total, zona) => total + (PRECIO_POR_ZONA[zona] || 0), 0);
+        return zonasExtra.reduce((total, zona) => {
+            const zonaData = this.zonas.find(z => z.codigo === zona);
+            return total + (zonaData ? zonaData.precio_base : 0);
+        }, 0);
     }
     
     // Método para calcular descuento por zonas removidas
     calculateDescuentoZonasRemovidas(zonasPack, zonasSeleccionadas) {
         const zonasRemovidas = zonasPack.filter(zona => !zonasSeleccionadas.includes(zona));
-        return zonasRemovidas.reduce((total, zona) => total + (PRECIO_POR_ZONA[zona] || 0), 0);
+        return zonasRemovidas.reduce((total, zona) => {
+            const zonaData = this.zonas.find(z => z.codigo === zona);
+            return total + (zonaData ? zonaData.precio_base : 0);
+        }, 0);
     }
 }
 

@@ -3,7 +3,7 @@
  * Maneja el agendamiento y control de sesiones de depilación
  */
 
-import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS } from '../constants.js';
+// Las zonas se obtienen desde la API, no desde constantes
 import { formatCurrency, formatDate } from '../utils.js';
 import { sesionesAPI, fichasAPI } from '../api-client.js';
 import '../calendar.js';
@@ -11,6 +11,7 @@ import '../calendar.js';
 export class SesionesModule {
     constructor() {
         this.sesiones = [];
+        this.zonas = []; // Zonas del cuerpo desde la API
         this.intensidades = {}; // Almacena intensidades por paciente y zona
         this.calendar = null; // Instancia del calendario
         this.init();
@@ -19,6 +20,8 @@ export class SesionesModule {
     async init() {
         console.log('🚀 Inicializando módulo de sesiones...');
         try {
+            await this.cargarZonas();
+            console.log('✅ Zonas cargadas');
             this.setupEventListeners();
             console.log('✅ Event listeners configurados');
             this.initCalendar();
@@ -27,6 +30,18 @@ export class SesionesModule {
             console.log('✅ Sesiones cargadas');
         } catch (error) {
             console.error('❌ Error inicializando módulo de sesiones:', error);
+        }
+    }
+    
+    async cargarZonas() {
+        try {
+            // Importar zonasAPI dinámicamente
+            const { zonasAPI } = await import('../api-client.js');
+            this.zonas = await zonasAPI.getAll();
+            console.log('✅ Zonas cargadas:', this.zonas.length);
+        } catch (error) {
+            console.error('❌ Error cargando zonas:', error);
+            this.zonas = [];
         }
     }
     
@@ -130,7 +145,13 @@ export class SesionesModule {
         
         grid.innerHTML = '';
         
-        Object.entries(ZONAS_CUERPO_LABELS).forEach(([key, label]) => {
+        // Si no hay zonas cargadas, mostrar mensaje
+        if (!this.zonas || this.zonas.length === 0) {
+            grid.innerHTML = '<p>Cargando zonas...</p>';
+            return;
+        }
+        
+        this.zonas.forEach(zona => {
             const zonaDiv = document.createElement('div');
             zonaDiv.className = 'intensidad-zona';
             zonaDiv.style.cssText = `
@@ -144,11 +165,11 @@ export class SesionesModule {
             `;
             
             zonaDiv.innerHTML = `
-                <label class="zona-label" style="font-weight: 600; color: #333;">${label}</label>
+                <label class="zona-label" style="font-weight: 600; color: #333;">${zona.nombre}</label>
                 <div class="intensidad-controls">
                     <label>Intensidad (J/cm²):</label>
                     <input type="number" 
-                           id="intensidad_${key}" 
+                           id="intensidad_${zona.codigo}" 
                            class="intensidad-input" 
                            min="0" 
                            max="50" 
@@ -159,7 +180,7 @@ export class SesionesModule {
                 <div class="intensidad-controls">
                     <label>Frecuencia (Hz):</label>
                     <input type="number" 
-                           id="frecuencia_${key}" 
+                           id="frecuencia_${zona.codigo}" 
                            class="frecuencia-input" 
                            min="1" 
                            max="10" 
@@ -170,7 +191,7 @@ export class SesionesModule {
                 <div class="intensidad-controls">
                     <label>Duración (ms):</label>
                     <input type="number" 
-                           id="duracion_${key}" 
+                           id="duracion_${zona.codigo}" 
                            class="duracion-input" 
                            min="1" 
                            max="100" 
@@ -180,7 +201,7 @@ export class SesionesModule {
                 </div>
                 <div class="intensidad-controls">
                     <label>Spot Size (mm):</label>
-                    <select id="spot_${key}" class="spot-select" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                    <select id="spot_${zona.codigo}" class="spot-select" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
                         <option value="6">6</option>
                         <option value="8">8</option>
                         <option value="10">10</option>
@@ -191,7 +212,7 @@ export class SesionesModule {
                 </div>
                 <div class="intensidad-controls">
                     <label>Observaciones:</label>
-                    <textarea id="obs_${key}" 
+                    <textarea id="obs_${zona.codigo}" 
                               class="obs-textarea" 
                               rows="2" 
                               placeholder="Observaciones específicas..."
@@ -427,15 +448,20 @@ export class SesionesModule {
     getIntensidadesFromForm(gridId) {
         const intensidades = {};
         
-        Object.keys(ZONAS_CUERPO).forEach(zona => {
-            const intensidad = document.getElementById(`intensidad_${zona}`)?.value;
-            const frecuencia = document.getElementById(`frecuencia_${zona}`)?.value;
-            const duracion = document.getElementById(`duracion_${zona}`)?.value;
-            const spot = document.getElementById(`spot_${zona}`)?.value;
-            const observaciones = document.getElementById(`obs_${zona}`)?.value;
+        if (!this.zonas || this.zonas.length === 0) {
+            console.warn('⚠️ No hay zonas cargadas para obtener intensidades');
+            return intensidades;
+        }
+        
+        this.zonas.forEach(zona => {
+            const intensidad = document.getElementById(`intensidad_${zona.codigo}`)?.value;
+            const frecuencia = document.getElementById(`frecuencia_${zona.codigo}`)?.value;
+            const duracion = document.getElementById(`duracion_${zona.codigo}`)?.value;
+            const spot = document.getElementById(`spot_${zona.codigo}`)?.value;
+            const observaciones = document.getElementById(`obs_${zona.codigo}`)?.value;
             
             if (intensidad || frecuencia || duracion || spot || observaciones) {
-                intensidades[zona] = {
+                intensidades[zona.codigo] = {
                     intensidad: parseFloat(intensidad) || 0,
                     frecuencia: parseFloat(frecuencia) || 1,
                     duracion: parseInt(duracion) || 10,

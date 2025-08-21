@@ -420,6 +420,17 @@ export const tratamientosAPI = {
     create: (tratamiento) => post('tratamientos', tratamiento)
 };
 
+export const zonasAPI = {
+    // Obtener todas las zonas del cuerpo
+    getAll: () => get('zonas'),
+    
+    // Obtener zona por código
+    getByCodigo: (codigo) => get(`zonas/${codigo}`),
+    
+    // Crear zona
+    create: (zona) => post('zonas', zona)
+};
+
 export const packsAPI = {
     // Obtener packs de un tratamiento
     getByTratamientoId: (tratamientoId) => get('packs', { tratamiento_id: tratamientoId }),
