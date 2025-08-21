@@ -58,6 +58,19 @@ DROP PROCEDURE IF EXISTS sp_calcular_precio_zonas;
 DROP PROCEDURE IF EXISTS sp_guardar_firma_digital;
 DROP PROCEDURE IF EXISTS sp_verificar_consentimiento_firmado;
 DROP PROCEDURE IF EXISTS sp_obtener_firma_consentimiento;
+DROP PROCEDURE IF EXISTS sp_crear_oferta_tratamiento;
+DROP PROCEDURE IF EXISTS sp_crear_precio_tratamiento;
+DROP PROCEDURE IF EXISTS sp_obtener_precio_tratamiento;
+DROP PROCEDURE IF EXISTS sp_actualizar_precio_pack;
+DROP PROCEDURE IF EXISTS sp_crear_pago;
+DROP PROCEDURE IF EXISTS sp_agregar_detalle_pago;
+DROP PROCEDURE IF EXISTS sp_confirmar_pago;
+DROP PROCEDURE IF EXISTS sp_obtener_pagos_venta;
+DROP PROCEDURE IF EXISTS sp_obtener_tratamientos_disponibles;
+DROP PROCEDURE IF EXISTS sp_obtener_packs_tratamiento;
+DROP PROCEDURE IF EXISTS sp_obtener_zonas_cuerpo;
+DROP PROCEDURE IF EXISTS sp_calcular_precio_pack_zonas;
+DROP PROCEDURE IF EXISTS sp_obtener_historial_tratamientos;
 
 DELIMITER $$
 
