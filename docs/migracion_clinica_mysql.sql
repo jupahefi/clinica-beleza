@@ -231,15 +231,7 @@ CREATE TABLE IF NOT EXISTS ficha (
 CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
 CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 
-CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100) NOT NULL,
-  descripcion TEXT NOT NULL,
-  requiere_consentimiento BOOLEAN NOT NULL DEFAULT FALSE,
-  template_consentimiento TEXT NOT NULL
-);
-
-CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
+-- Primera definición eliminada (duplicada)
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -266,6 +258,8 @@ CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   campos_requeridos JSON NOT NULL DEFAULT (JSON_OBJECT()),
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
+
+CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
 
 CREATE TABLE IF NOT EXISTS ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
