@@ -368,12 +368,6 @@ export class PacientesModule {
             errores.push('El nombre es obligatorio');
         }
         
-        // Validar RUT
-        const rut = document.getElementById('rutPaciente').value.trim();
-        if (rut && !validarRut(rut)) {
-            errores.push('RUT inválido');
-        }
-        
         // Validar email
         const email = document.getElementById('emailPaciente').value.trim();
         if (email && !validarEmail(email)) {
