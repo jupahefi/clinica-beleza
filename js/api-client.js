@@ -96,6 +96,17 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
             try {
                 const errorBody = await response.text();
                 console.error('🚨 Cuerpo del error:', errorBody);
+                
+                // Intentar parsear el JSON para obtener el error específico de la DB
+                try {
+                    const errorData = JSON.parse(errorBody);
+                    if (errorData.error) {
+                        throw new Error(errorData.error);
+                    }
+                } catch (parseError) {
+                    // Si no es JSON válido, usar el texto como está
+                }
+                
             } catch (e) {
                 console.error('🚨 No se pudo leer el cuerpo del error');
             }
