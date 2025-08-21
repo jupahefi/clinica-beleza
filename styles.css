@@ -434,37 +434,164 @@ body {
     transform: translateX(20px);
 }
 
-/* Table Styles */
+/* =============================================================================
+   SIMPLE RESPONSIVE TABLE - Mobile First Design
+   ============================================================================= */
+
 .table-container {
-    overflow-x: auto;
+    width: 100%;
+    margin: 1rem 0;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
-  margin-top: 1rem;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.data-table th,
-.data-table td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #E9ECEF;
+/* Desktop Styles */
+@media (min-width: 768px) {
+    .data-table {
+        display: table;
+    }
+    
+    .data-table thead {
+        display: table-header-group;
+    }
+    
+    .data-table tbody {
+        display: table-row-group;
+    }
+    
+    .data-table tr {
+        display: table-row;
+    }
+    
+    .data-table th,
+    .data-table td {
+        display: table-cell;
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #E9ECEF;
+        vertical-align: middle;
+    }
+    
+    .data-table th {
+        background: var(--light-gray);
+        font-weight: 600;
+        color: var(--dark-gray);
+        font-size: 0.9rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .data-table tr:hover {
+        background: rgba(127, 179, 211, 0.05);
+        transition: background-color 0.2s ease;
+    }
+    
+    .data-table td {
+        font-size: 0.9rem;
+    }
 }
 
-.data-table th {
-    background: var(--light-gray);
-  font-weight: 600;
-    color: var(--dark-gray);
-    font-size: 0.9rem;
-}
-
-.data-table tr:hover {
-    background: rgba(127, 179, 211, 0.05);
-}
-
-.data-table td {
-    font-size: 0.9rem;
+/* Mobile Styles - Card Layout */
+@media (max-width: 767px) {
+    .data-table,
+    .data-table thead,
+    .data-table tbody,
+    .data-table tr,
+    .data-table th,
+    .data-table td {
+        display: block;
+    }
+    
+    .data-table thead {
+        display: none; /* Hide headers on mobile */
+    }
+    
+    .data-table tbody {
+        display: block;
+    }
+    
+    .data-table tr {
+        display: block;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--white);
+        border: 1px solid #E9ECEF;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .data-table tr:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+    
+    .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+    }
+    
+    .data-table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Add labels for mobile */
+    .data-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-right: 1rem;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+    
+    /* Special handling for action buttons */
+    .data-table td:has(.action-buttons) {
+        justify-content: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .data-table td:has(.action-buttons)::before {
+        content: "Acciones:";
+    }
+    
+    /* Status badges in mobile */
+    .data-table .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Action buttons in mobile */
+    .data-table .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    
+    .data-table .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .data-table .action-buttons .btn i {
+        font-size: 0.7rem;
+    }
 }
 
 /* Action Buttons in Tables */

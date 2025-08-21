@@ -78,12 +78,12 @@ export class BoxesModule {
         this.boxes.forEach(box => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${box.nombre}</td>
-                <td>${box.sucursal?.nombre || 'N/A'}</td>
-                <td>${box.descripcion || 'Sin descripción'}</td>
-                <td>${box.capacidad || 'N/A'}</td>
-                <td><span class="status-badge status-${box.estado}">${this.formatearEstado(box.estado)}</span></td>
-                <td>
+                <td data-label="Nombre">${box.nombre}</td>
+                <td data-label="Sucursal">${box.sucursal?.nombre || 'N/A'}</td>
+                <td data-label="Descripción">${box.descripcion || 'Sin descripción'}</td>
+                <td data-label="Capacidad">${box.capacidad || 'N/A'}</td>
+                <td data-label="Estado"><span class="status-badge status-${box.estado}">${this.formatearEstado(box.estado)}</span></td>
+                <td data-label="Acciones">
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-primary" onclick="boxesModule.editarBox(${box.id})">
                             <i class="fas fa-edit"></i>

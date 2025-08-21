@@ -507,18 +507,18 @@ export class SesionesModule {
         this.sesiones.forEach(sesion => {
         const row = document.createElement('tr');
         row.innerHTML = `
-                <td>${sesion.paciente_nombre || 'N/A'}</td>
-                <td>${sesion.venta_id || 'N/A'}</td>
-                <td>${sesion.box_nombre || 'N/A'}</td>
-                <td>${formatDate(sesion.fecha_planificada)}</td>
-                <td>${sesion.hora_planificada || 'N/A'}</td>
-                <td>${sesion.duracion || 'N/A'} min</td>
-                <td>
+                <td data-label="Paciente">${sesion.paciente_nombre || 'N/A'}</td>
+                <td data-label="Venta ID">${sesion.venta_id || 'N/A'}</td>
+                <td data-label="Box">${sesion.box_nombre || 'N/A'}</td>
+                <td data-label="Fecha">${formatDate(sesion.fecha_planificada)}</td>
+                <td data-label="Hora">${sesion.hora_planificada || 'N/A'}</td>
+                <td data-label="Duración">${sesion.duracion || 'N/A'} min</td>
+                <td data-label="Estado">
                     <span class="status-badge status-${sesion.estado}">
                         ${this.getEstadoLabel(sesion.estado)}
                     </span>
                 </td>
-            <td>
+            <td data-label="Acciones">
                 <div class="action-buttons">
                         ${this.getActionButtons(sesion)}
       </div>

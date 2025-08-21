@@ -162,11 +162,11 @@ export class PacientesModule {
         this.pacientes.forEach(paciente => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${paciente.nombres} ${paciente.apellidos}</td>
-                <td>${paciente.telefono || '-'}</td>
-                <td>${paciente.email || '-'}</td>
-                <td>${paciente.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-CL') : '-'}</td>
-                <td>
+                <td data-label="Nombre">${paciente.nombres} ${paciente.apellidos}</td>
+                <td data-label="Teléfono">${paciente.telefono || '-'}</td>
+                <td data-label="Email">${paciente.email || '-'}</td>
+                <td data-label="Fecha Nac.">${paciente.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-CL') : '-'}</td>
+                <td data-label="Acciones" class="action-buttons">
                     <button class="btn btn-sm btn-primary" onclick="window.clinicaApp.getModule('pacientes').editarPaciente(${paciente.id})">
                         <i class="fas fa-edit"></i>
                     </button>

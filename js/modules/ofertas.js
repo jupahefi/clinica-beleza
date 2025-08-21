@@ -74,12 +74,12 @@ export class OfertasModule {
         this.ofertas.forEach(oferta => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${oferta.nombre}</td>
-                <td>${oferta.porcentaje_descuento}%</td>
-                <td>${oferta.descripcion || 'Sin descripción'}</td>
-                <td>${oferta.prioridad || 'N/A'}</td>
-                <td><span class="status-badge status-${oferta.estado}">${this.formatearEstado(oferta.estado)}</span></td>
-                <td>
+                <td data-label="Nombre">${oferta.nombre}</td>
+                <td data-label="Descuento">${oferta.porcentaje_descuento}%</td>
+                <td data-label="Descripción">${oferta.descripcion || 'Sin descripción'}</td>
+                <td data-label="Prioridad">${oferta.prioridad || 'N/A'}</td>
+                <td data-label="Estado"><span class="status-badge status-${oferta.estado}">${this.formatearEstado(oferta.estado)}</span></td>
+                <td data-label="Acciones">
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-primary" onclick="ofertasModule.editarOferta(${oferta.id})">
                             <i class="fas fa-edit"></i>
@@ -108,11 +108,11 @@ export class OfertasModule {
         this.ofertasCombo.forEach(ofertaCombo => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${ofertaCombo.nombre}</td>
-                <td>${ofertaCombo.porcentaje_descuento}%</td>
-                <td>${ofertaCombo.descripcion || 'Sin descripción'}</td>
-                <td><span class="status-badge status-${ofertaCombo.estado}">${this.formatearEstado(ofertaCombo.estado)}</span></td>
-                <td>
+                <td data-label="Nombre">${ofertaCombo.nombre}</td>
+                <td data-label="Descuento">${ofertaCombo.porcentaje_descuento}%</td>
+                <td data-label="Descripción">${ofertaCombo.descripcion || 'Sin descripción'}</td>
+                <td data-label="Estado"><span class="status-badge status-${ofertaCombo.estado}">${this.formatearEstado(ofertaCombo.estado)}</span></td>
+                <td data-label="Acciones">
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-primary" onclick="ofertasModule.editarOfertaCombo(${ofertaCombo.id})">
                             <i class="fas fa-edit"></i>
