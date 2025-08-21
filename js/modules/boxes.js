@@ -35,7 +35,8 @@ export class BoxesModule {
             this.actualizarTablaBoxes();
         } catch (error) {
             console.error('Error cargando boxes:', error);
-            mostrarNotificacion('Error cargando boxes', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando boxes';
+            mostrarNotificacion(`Error cargando boxes: ${errorMessage}`, 'error');
         }
     }
     
@@ -58,7 +59,8 @@ export class BoxesModule {
             }
         } catch (error) {
             console.error('Error cargando sucursales:', error);
-            mostrarNotificacion('Error cargando sucursales', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando sucursales';
+            mostrarNotificacion(`Error cargando sucursales: ${errorMessage}`, 'error');
         }
     }
     
@@ -130,7 +132,8 @@ export class BoxesModule {
             }
         } catch (error) {
             console.error('Error guardando box:', error);
-            mostrarNotificacion('Error al guardar box: ' + error.message, 'error');
+            const errorMessage = error.message || 'Error desconocido guardando box';
+            mostrarNotificacion(`Error al guardar box: ${errorMessage}`, 'error');
         }
     }
     
@@ -169,7 +172,8 @@ export class BoxesModule {
                 }
             } catch (error) {
                 console.error('Error eliminando box:', error);
-                mostrarNotificacion('Error al eliminar box: ' + error.message, 'error');
+                const errorMessage = error.message || 'Error desconocido eliminando box';
+                mostrarNotificacion(`Error al eliminar box: ${errorMessage}`, 'error');
             }
         }
     }

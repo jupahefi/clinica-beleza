@@ -44,7 +44,8 @@ class VentasModule {
 
         } catch (error) {
             console.error('Error cargando datos de ventas:', error);
-            mostrarNotificacion('Error cargando datos de ventas', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando datos de ventas';
+            mostrarNotificacion(`Error cargando datos de ventas: ${errorMessage}`, 'error');
         }
     }
 
@@ -283,7 +284,9 @@ class VentasModule {
 
         } catch (error) {
             console.error('Error confirmando venta:', error);
-            mostrarNotificacion('Error al registrar la venta.', 'error');
+            // Mostrar el error completo como en el módulo de pacientes
+            const errorMessage = error.message || 'Error desconocido al registrar la venta';
+            mostrarNotificacion(`Error al registrar la venta: ${errorMessage}`, 'error');
         }
     }
 
@@ -319,6 +322,8 @@ class VentasModule {
             this.renderHistorial();
         } catch (error) {
             console.error('Error cargando historial del cliente:', error);
+            const errorMessage = error.message || 'Error desconocido cargando historial';
+            mostrarNotificacion(`Error cargando historial del cliente: ${errorMessage}`, 'error');
             this.historial = [];
             this.renderHistorial();
         }
@@ -376,7 +381,8 @@ class VentasModule {
             console.log('✅ Ventas cargadas:', this.ventas.length);
         } catch (error) {
             console.error('❌ Error cargando ventas:', error);
-            mostrarNotificacion('Error cargando ventas', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando ventas';
+            mostrarNotificacion(`Error cargando ventas: ${errorMessage}`, 'error');
         }
     }
 
@@ -387,7 +393,8 @@ class VentasModule {
             console.log('✅ Select2 configurado para cargar pacientes automáticamente');
         } catch (error) {
             console.error('❌ Error configurando Select2:', error);
-            mostrarNotificacion('Error configurando selector de pacientes', 'error');
+            const errorMessage = error.message || 'Error desconocido configurando Select2';
+            mostrarNotificacion(`Error configurando selector de pacientes: ${errorMessage}`, 'error');
         }
     }
 

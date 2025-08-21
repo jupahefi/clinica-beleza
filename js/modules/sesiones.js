@@ -249,9 +249,10 @@ export class SesionesModule {
             } else {
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
-  } catch (error) {
+          } catch (error) {
             console.error('Error:', error);
-            mostrarNotificacion('❌ Error creando sesión: ' + error.message, 'error');
+            const errorMessage = error.message || 'Error desconocido creando sesión';
+            mostrarNotificacion(`❌ Error creando sesión: ${errorMessage}`, 'error');
         }
     }
     
@@ -281,7 +282,8 @@ export class SesionesModule {
             
         } catch (error) {
             console.error('Error abriendo sesión:', error);
-            alert('Error abriendo sesión: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido abriendo sesión';
+            alert(`Error abriendo sesión: ${errorMessage}`);
         }
     }
     

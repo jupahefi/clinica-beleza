@@ -44,7 +44,8 @@ export class OfertasModule {
             this.actualizarTablaOfertas();
         } catch (error) {
             console.error('Error cargando ofertas:', error);
-            mostrarNotificacion('Error cargando ofertas', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando ofertas';
+            mostrarNotificacion(`Error cargando ofertas: ${errorMessage}`, 'error');
         }
     }
     
@@ -54,7 +55,8 @@ export class OfertasModule {
             this.actualizarTablaOfertasCombo();
         } catch (error) {
             console.error('Error cargando ofertas combo:', error);
-            mostrarNotificacion('Error cargando ofertas combo', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando ofertas combo';
+            mostrarNotificacion(`Error cargando ofertas combo: ${errorMessage}`, 'error');
         }
     }
     
@@ -159,7 +161,8 @@ export class OfertasModule {
             }
         } catch (error) {
             console.error('Error guardando oferta:', error);
-            mostrarNotificacion('Error al guardar oferta: ' + error.message, 'error');
+            const errorMessage = error.message || 'Error desconocido guardando oferta';
+            mostrarNotificacion(`Error al guardar oferta: ${errorMessage}`, 'error');
         }
     }
     
@@ -196,7 +199,8 @@ export class OfertasModule {
             }
         } catch (error) {
             console.error('Error guardando oferta combo:', error);
-            mostrarNotificacion('Error al guardar oferta combo: ' + error.message, 'error');
+            const errorMessage = error.message || 'Error desconocido guardando oferta combo';
+            mostrarNotificacion(`Error al guardar oferta combo: ${errorMessage}`, 'error');
         }
     }
     
@@ -253,7 +257,8 @@ export class OfertasModule {
                 }
             } catch (error) {
                 console.error('Error eliminando oferta:', error);
-                mostrarNotificacion('Error al eliminar oferta: ' + error.message, 'error');
+                const errorMessage = error.message || 'Error desconocido eliminando oferta';
+                mostrarNotificacion(`Error al eliminar oferta: ${errorMessage}`, 'error');
             }
         }
     }
@@ -274,7 +279,8 @@ export class OfertasModule {
                 }
             } catch (error) {
                 console.error('Error eliminando oferta combo:', error);
-                mostrarNotificacion('Error al eliminar oferta combo: ' + error.message, 'error');
+                const errorMessage = error.message || 'Error desconocido eliminando oferta combo';
+                mostrarNotificacion(`Error al eliminar oferta combo: ${errorMessage}`, 'error');
             }
         }
     }

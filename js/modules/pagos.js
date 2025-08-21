@@ -52,7 +52,8 @@ export class PagosModule {
                     
                 } catch (error) {
                     console.error('Error en formulario pago:', error);
-                    mostrarNotificacion(`Error inesperado: ${error.message}`, 'error');
+                    const errorMessage = error.message || 'Error desconocido en formulario pago';
+                    mostrarNotificacion(`Error inesperado: ${errorMessage}`, 'error');
                 } finally {
                     // Restaurar botón
                     submitBtn.innerHTML = originalText;
@@ -91,7 +92,8 @@ export class PagosModule {
             }
         } catch (error) {
             console.error('Error cargando ventas pendientes:', error);
-            mostrarNotificacion('Error cargando ventas pendientes', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando ventas pendientes';
+            mostrarNotificacion(`Error cargando ventas pendientes: ${errorMessage}`, 'error');
         }
     }
     
@@ -144,7 +146,8 @@ export class PagosModule {
             }
         } catch (error) {
             console.error('Error cargando venta:', error);
-            mostrarNotificacion('Error cargando venta', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando venta';
+            mostrarNotificacion(`Error cargando venta: ${errorMessage}`, 'error');
         }
     }
     
@@ -240,7 +243,8 @@ export class PagosModule {
             }
         } catch (error) {
             console.error('Error registrando pago:', error);
-            mostrarNotificacion(`Error al registrar pago: ${error.message}`, 'error');
+            const errorMessage = error.message || 'Error desconocido registrando pago';
+            mostrarNotificacion(`Error al registrar pago: ${errorMessage}`, 'error');
             return false;
         }
     }
