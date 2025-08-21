@@ -202,29 +202,39 @@ export class PacientesModule {
         }
     }
     
-    limpiarFormularioPaciente() {
-        const campos = [
-            'nombrePaciente', 'rutPaciente', 'fechaNacimiento', 'telefonoPaciente',
-            'emailPaciente', 'direccionPaciente', 'observacionesPaciente'
-        ];
-        
-        campos.forEach(campo => {
-            const elemento = document.getElementById(campo);
-            if (elemento) elemento.value = '';
-        });
-        
-        // Limpiar fichas específicas
-        this.limpiarFichasEspecificas();
-    }
+
     
     llenarFormularioPaciente(paciente) {
-        document.getElementById('nombrePaciente').value = paciente.nombres || '';
-        document.getElementById('rutPaciente').value = paciente.rut || '';
-        document.getElementById('fechaNacimiento').value = paciente.fecha_nacimiento || '';
-        document.getElementById('telefonoPaciente').value = paciente.telefono || '';
-        document.getElementById('emailPaciente').value = paciente.email || '';
-        document.getElementById('direccionPaciente').value = paciente.direccion || '';
-        document.getElementById('observacionesPaciente').value = paciente.observaciones || '';
+        // Llenar campos principales (solo los que existen en el HTML)
+        const nombreElement = document.getElementById('nombrePaciente');
+        if (nombreElement) {
+            nombreElement.value = `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim();
+        }
+        
+        const fechaElement = document.getElementById('fechaNacimiento');
+        if (fechaElement) {
+            fechaElement.value = paciente.fecha_nacimiento || '';
+        }
+        
+        const telefonoElement = document.getElementById('telefonoPaciente');
+        if (telefonoElement) {
+            telefonoElement.value = paciente.telefono || '';
+        }
+        
+        const emailElement = document.getElementById('emailPaciente');
+        if (emailElement) {
+            emailElement.value = paciente.email || '';
+        }
+        
+        const direccionElement = document.getElementById('direccionPaciente');
+        if (direccionElement) {
+            direccionElement.value = paciente.direccion || '';
+        }
+        
+        const observacionesElement = document.getElementById('observacionesPaciente');
+        if (observacionesElement) {
+            observacionesElement.value = paciente.observaciones || '';
+        }
         
         // Llenar fichas específicas si existen
         this.llenarFichasEspecificas(paciente);
@@ -276,16 +286,16 @@ export class PacientesModule {
         const fichaDepilacion = document.getElementById('fichaDepilacion');
         const fichaCorporal = document.getElementById('fichaCorporal');
         
-        // Mostrar/ocultar sección de depilación
-        const seccionDepilacion = document.getElementById('seccionDepilacion');
-        if (seccionDepilacion) {
-            seccionDepilacion.style.display = fichaDepilacion?.checked ? 'block' : 'none';
+        // Mostrar/ocultar contenedor de depilación
+        const fichaDepilacionCard = document.getElementById('fichaDepilacionCard');
+        if (fichaDepilacionCard) {
+            fichaDepilacionCard.classList.toggle('hidden', !fichaDepilacion?.checked);
         }
         
-        // Mostrar/ocultar sección corporal
-        const seccionCorporal = document.getElementById('seccionCorporal');
-        if (seccionCorporal) {
-            seccionCorporal.style.display = fichaCorporal?.checked ? 'block' : 'none';
+        // Mostrar/ocultar contenedor corporal
+        const fichaCorporalCard = document.getElementById('fichaCorporalCard');
+        if (fichaCorporalCard) {
+            fichaCorporalCard.classList.toggle('hidden', !fichaCorporal?.checked);
         }
     }
     
@@ -567,25 +577,40 @@ export class PacientesModule {
     }
     
     limpiarFormularioPaciente() {
-        // Limpiar campos principales
-        document.getElementById('nombrePaciente').value = '';
-        document.getElementById('telefonoPaciente').value = '';
-        document.getElementById('emailPaciente').value = '';
-        document.getElementById('fechaNacimiento').value = '';
-        document.getElementById('direccionPaciente').value = '';
-        document.getElementById('observacionesPaciente').value = '';
+        // Limpiar campos principales con verificación de existencia
+        const campos = [
+            'nombrePaciente', 'telefonoPaciente', 'emailPaciente', 
+            'fechaNacimiento', 'direccionPaciente', 'observacionesPaciente'
+        ];
         
-        // Limpiar fichas específicas
-        document.getElementById('fichaDepilacion').checked = false;
-        document.getElementById('fichaCorporal').checked = false;
-        document.getElementById('zonasDepilacion').value = '';
-        document.getElementById('observacionesMedicas').value = '';
-        document.getElementById('tratamientosPrevios').value = '';
-        document.getElementById('objetivoEstetico').value = '';
+        campos.forEach(campo => {
+            const elemento = document.getElementById(campo);
+            if (elemento) elemento.value = '';
+        });
+        
+        // Limpiar fichas específicas con verificación
+        const fichas = ['fichaDepilacion', 'fichaCorporal'];
+        fichas.forEach(ficha => {
+            const checkbox = document.getElementById(ficha);
+            if (checkbox) checkbox.checked = false;
+        });
+        
+        const camposEspecificos = [
+            'zonasDepilacion', 'observacionesMedicas',
+            'tratamientosPrevios', 'objetivoEstetico'
+        ];
+        
+        camposEspecificos.forEach(campo => {
+            const elemento = document.getElementById(campo);
+            if (elemento) elemento.value = '';
+        });
         
         // Ocultar contenedores de fichas específicas
-        document.getElementById('fichaDepilacionCard').classList.add('hidden');
-        document.getElementById('fichaCorporalCard').classList.add('hidden');
+        const fichaDepilacionCard = document.getElementById('fichaDepilacionCard');
+        if (fichaDepilacionCard) fichaDepilacionCard.classList.add('hidden');
+        
+        const fichaCorporalCard = document.getElementById('fichaCorporalCard');
+        if (fichaCorporalCard) fichaCorporalCard.classList.add('hidden');
         
         // Resetear paciente actual
         this.pacienteActual = null;
