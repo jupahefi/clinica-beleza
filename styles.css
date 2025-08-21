@@ -497,66 +497,6 @@ body {
     margin-top: 4rem;
 }
 
-/* Ventas específicos */
-.resultado {
-    margin-top: 20px;
-    padding: 15px;
-    background: #eef8ee;
-    border-left: 4px solid #4CAF50;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.resultado strong {
-    color: #2E7D32;
-}
-
-.resultado em {
-    color: #666;
-    font-style: italic;
-}
-
-#historialLista {
-    background: #fff;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    max-width: 700px;
-}
-
-.venta-item {
-    border-bottom: 1px solid #ddd;
-    padding: 8px 0;
-    margin-bottom: 8px;
-}
-
-.venta-item:last-child {
-    border-bottom: none;
-}
-
-.venta-item small {
-    color: #666;
-    font-size: 12px;
-}
-
-/* Select2 customización */
-.select2-container--default .select2-selection--single {
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    height: 38px;
-    line-height: 36px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 36px;
-    padding-left: 12px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 36px;
-}
-
 .footer-content {
   display: flex;
   justify-content: space-between;
@@ -1447,4 +1387,44 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-left: 1rem;
+}
+
+/* Ventas specific styles */
+.resultado {
+    margin-top: 20px;
+    padding: 15px;
+    background: #eef8ee;
+    border-left: 4px solid #4CAF50;
+    border-radius: 8px;
+}
+
+.venta-item {
+    border-bottom: 1px solid #ddd;
+    padding: 8px 0;
+}
+
+/* Select2 customization */
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px;
+    padding-left: 12px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+
+.select2-dropdown {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--calypso-pastel);
+    color: var(--calypso-dark);
 }

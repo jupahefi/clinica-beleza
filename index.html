@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="js/calendar.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body>
     <!-- Header -->
@@ -225,25 +226,24 @@
         <section id="ventas" class="view-section">
             <div class="container">
                 <h2 class="section-title">Venta de Tratamientos - Clínica Estética</h2>
-                
-                <!-- Cliente -->
-                <div class="form-container">
-                    <h3>Ficha del Cliente</h3>
-                    <div class="form-group">
-                        <label for="cliente">Seleccionar cliente</label>
-                        <select id="cliente" class="form-control">
-                            <option value="">-- Selecciona cliente --</option>
-                        </select>
+                <div class="section-content">
+                    <!-- Cliente -->
+                    <div class="form-container">
+                        <h3>Ficha del Cliente</h3>
+                        <div class="form-group">
+                            <label for="cliente">Seleccionar cliente</label>
+                            <select id="cliente" class="select2-ajax">
+                                <option value="">-- Selecciona cliente --</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Venta -->
-                <div class="form-container">
-                    <h3>Venta</h3>
-                    <form id="ventaForm" class="form">
+                    <!-- Venta -->
+                    <div class="form-container">
+                        <h3>Venta</h3>
                         <div class="form-group">
                             <label for="tratamiento">Tratamiento</label>
-                            <select id="tratamiento" class="form-control" onchange="window.ventasModule.mostrarOpciones(); window.ventasModule.calcularPrecio();">
+                            <select id="tratamiento">
                                 <option value="">-- Selecciona tratamiento --</option>
                             </select>
                         </div>
@@ -251,7 +251,7 @@
                         <div id="packsDiv" style="display:none;">
                             <div class="form-group">
                                 <label for="pack">Pack disponible</label>
-                                <select id="pack" class="form-control" onchange="window.ventasModule.calcularPrecio()">
+                                <select id="pack">
                                     <option value="">-- Selecciona pack --</option>
                                 </select>
                             </div>
@@ -260,13 +260,13 @@
                         <div id="sesionesDiv">
                             <div class="form-group">
                                 <label for="sesiones">Cantidad de sesiones (solo aplica en modalidad sesión)</label>
-                                <input type="number" id="sesiones" class="form-control" min="1" value="1" oninput="window.ventasModule.calcularPrecio()">
+                                <input type="number" id="sesiones" min="1" value="1">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="ofertaVenta">Oferta adicional en la venta (%)</label>
-                            <input type="number" id="ofertaVenta" class="form-control" min="0" max="100" value="0" oninput="window.ventasModule.calcularPrecio()">
+                            <input type="number" id="ofertaVenta" min="0" max="100" value="0">
                         </div>
 
                         <div class="resultado" id="resultado">
@@ -274,20 +274,17 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn btn-primary" onclick="window.ventasModule.confirmarVenta()">
+                            <button type="button" class="btn btn-primary" onclick="confirmarVenta()">
                                 <i class="fas fa-cash-register"></i> Confirmar Venta
                             </button>
-                            <button type="button" class="btn btn-secondary" onclick="window.ventasModule.limpiarFormulario()">
-                                <i class="fas fa-eraser"></i> Limpiar
-                            </button>
                         </div>
-                    </form>
-                </div>
+                    </div>
 
-                <!-- Historial -->
-                <div class="data-container">
-                    <h3>Historial de Compras</h3>
-                    <div id="historialLista">Sin compras registradas.</div>
+                    <!-- Historial -->
+                    <div class="data-container">
+                        <h3>Historial de Compras</h3>
+                        <div id="historialLista">Sin compras registradas.</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -652,12 +649,9 @@
         </div>
     </footer>
 
-                   <!-- Select2 CSS and JS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
-    <!-- Scripts -->
+                               <!-- Scripts -->
             <script src="js/calendar.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
             <script type="module" src="js/main.js"></script>
 </body>
 </html>
