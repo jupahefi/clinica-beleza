@@ -19,6 +19,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'database/Database.php';
 
+// =============================================================================
+// FUNCIÓN DE DETECCIÓN DE SQL INJECTION (PARANOIA EXTREMA)
+// =============================================================================
+
+function detectSQLInjection($data) {
+    // Patrones sospechosos de SQL injection
+    $suspiciousPatterns = [
+        // Comandos SQL básicos
+        '/\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b/i',
+        // Comentarios SQL
+        '/--|\/\*|\*\//',
+        // Operadores de comparación múltiple
+        '/\b(and|or)\s+\d+\s*=\s*\d+/i',
+        // Inyección de comillas
+        '/[\'"]\s*(union|select|insert|update|delete|drop|create|alter|exec|execute)\b/i',
+        // Comandos de sistema
+        '/\b(xp_cmdshell|sp_executesql|waitfor|delay)\b/i',
+        // Patrones de bypass
+        '/\b(admin|root|system)\b/i',
+        // Caracteres especiales sospechosos
+        '/[<>{}[\]`~!@#$%^&*()+=|\\]/',
+        // Patrones de hex
+        '/0x[0-9a-fA-F]+/',
+        // Patrones de char()
+        '/char\s*\(\s*\d+\s*\)/i',
+        // Patrones de concat
+        '/concat\s*\(/i'
+    ];
+    
+    // Función recursiva para revisar arrays
+    function checkValue($value) {
+        global $suspiciousPatterns;
+        
+        if (is_array($value)) {
+            foreach ($value as $v) {
+                if (checkValue($v)) return true;
+            }
+            return false;
+        }
+        
+        if (is_string($value)) {
+            foreach ($suspiciousPatterns as $pattern) {
+                if (preg_match($pattern, $value)) {
+                    error_log("🚨 SQL INJECTION DETECTED: Pattern '$pattern' found in: " . substr($value, 0, 100));
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    return checkValue($data);
+}
+
 try {
     $db = Database::getInstance();
     
@@ -39,6 +94,46 @@ try {
     
     $method = $_SERVER['REQUEST_METHOD'];
     $data = json_decode(file_get_contents('php://input'), true);
+    
+    // =============================================================================
+    // DETECCIÓN DE SQL INJECTION EN TODOS LOS DATOS RECIBIDOS
+    // =============================================================================
+    
+    // Revisar datos POST/PUT
+    if ($data && detectSQLInjection($data)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Datos sospechosos detectados',
+            'security' => 'SQL injection attempt blocked',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit();
+    }
+    
+    // Revisar parámetros GET
+    if ($_GET && detectSQLInjection($_GET)) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Parámetros sospechosos detectados',
+            'security' => 'SQL injection attempt blocked',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit();
+    }
+    
+    // Revisar ID de la URL
+    if ($id && detectSQLInjection([$id])) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'ID sospechoso detectado',
+            'security' => 'SQL injection attempt blocked',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit();
+    }
     
     // Router principal - SOLO PASSTHROUGH
     switch ($endpoint) {
