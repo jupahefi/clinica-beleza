@@ -16,6 +16,7 @@ DROP PROCEDURE IF EXISTS AddCheckConstraintIfNotExists;
 
 -- Drop existing triggers
 DROP TRIGGER IF EXISTS trg_venta_requiere_ficha_especifica;
+DROP TRIGGER IF EXISTS trg_venta_requiere_evaluacion_ficha_especifica;
 DROP TRIGGER IF EXISTS trg_sesion_numero_en_rango;
 DROP TRIGGER IF EXISTS trg_venta_calcular_total;
 DROP TRIGGER IF EXISTS trg_venta_oferta_calcular_total;
