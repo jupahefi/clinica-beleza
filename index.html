@@ -224,71 +224,70 @@
         <!-- Ventas Section -->
         <section id="ventas" class="view-section">
             <div class="container">
-                <h2 class="section-title">Gestión de Ventas</h2>
-                <div class="section-content">
-                    <div class="form-container">
-                        <h3>Nueva Venta</h3>
-                        <form id="ventaForm" class="form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="pacienteVenta">Paciente</label>
-                                    <select id="pacienteVenta" required>
-                                        <option value="">Seleccionar paciente...</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="servicioVenta">Servicio</label>
-                                    <input type="text" id="servicioVenta" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="precioVenta">Precio</label>
-                                    <input type="number" id="precioVenta" min="0" step="1000" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="fechaVenta">Fecha</label>
-                                    <input type="date" id="fechaVenta" required>
-                                </div>
-                            </div>
+                <h2 class="section-title">Venta de Tratamientos - Clínica Estética</h2>
+                
+                <!-- Cliente -->
+                <div class="form-container">
+                    <h3>Ficha del Cliente</h3>
+                    <div class="form-group">
+                        <label for="cliente">Seleccionar cliente</label>
+                        <select id="cliente" class="form-control">
+                            <option value="">-- Selecciona cliente --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Venta -->
+                <div class="form-container">
+                    <h3>Venta</h3>
+                    <form id="ventaForm" class="form">
+                        <div class="form-group">
+                            <label for="tratamiento">Tratamiento</label>
+                            <select id="tratamiento" class="form-control" onchange="window.ventasModule.mostrarOpciones(); window.ventasModule.calcularPrecio();">
+                                <option value="">-- Selecciona tratamiento --</option>
+                            </select>
+                        </div>
+
+                        <div id="packsDiv" style="display:none;">
                             <div class="form-group">
-                                <label for="observacionesVenta">Observaciones</label>
-                                <textarea id="observacionesVenta" rows="3"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-cash-register"></i> Registrar Venta
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioVenta()">
-                                    <i class="fas fa-eraser"></i> Limpiar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <div class="data-container">
-                        <div class="data-header">
-                            <h3>Ventas Registradas</h3>
-                            <div class="search-box">
-                                <input type="text" id="buscarVenta" placeholder="Buscar venta...">
-                                <i class="fas fa-search"></i>
+                                <label for="pack">Pack disponible</label>
+                                <select id="pack" class="form-control" onchange="window.ventasModule.calcularPrecio()">
+                                    <option value="">-- Selecciona pack --</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="table-container">
-                            <table id="tablaVentas" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Paciente</th>
-                                        <th>Servicio</th>
-                                        <th>Precio</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cuerpoTablaVentas"></tbody>
-                            </table>
+
+                        <div id="sesionesDiv">
+                            <div class="form-group">
+                                <label for="sesiones">Cantidad de sesiones (solo aplica en modalidad sesión)</label>
+                                <input type="number" id="sesiones" class="form-control" min="1" value="1" oninput="window.ventasModule.calcularPrecio()">
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="form-group">
+                            <label for="ofertaVenta">Oferta adicional en la venta (%)</label>
+                            <input type="number" id="ofertaVenta" class="form-control" min="0" max="100" value="0" oninput="window.ventasModule.calcularPrecio()">
+                        </div>
+
+                        <div class="resultado" id="resultado">
+                            Selecciona tratamiento y modalidad para calcular el precio.
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-primary" onclick="window.ventasModule.confirmarVenta()">
+                                <i class="fas fa-cash-register"></i> Confirmar Venta
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="window.ventasModule.limpiarFormulario()">
+                                <i class="fas fa-eraser"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Historial -->
+                <div class="data-container">
+                    <h3>Historial de Compras</h3>
+                    <div id="historialLista">Sin compras registradas.</div>
                 </div>
             </div>
         </section>
@@ -653,8 +652,12 @@
         </div>
     </footer>
 
-               <!-- Scripts -->
-           <script src="js/calendar.js"></script>
-           <script type="module" src="js/main.js"></script>
+                   <!-- Select2 CSS and JS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Scripts -->
+            <script src="js/calendar.js"></script>
+            <script type="module" src="js/main.js"></script>
 </body>
 </html>
