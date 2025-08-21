@@ -370,6 +370,12 @@ export class ReportesModule {
         link.click();
         document.body.removeChild(link);
     }
+    
+    filtrarHistorial(tipo) {
+        console.log('Filtrando historial por:', tipo);
+        // Por ahora solo un placeholder - se implementará cuando se desarrolle el módulo de historial
+        mostrarNotificacion(`Filtro de historial: ${tipo} - Funcionalidad en desarrollo`, 'info');
+    }
 }
 
 // Exportar instancia global

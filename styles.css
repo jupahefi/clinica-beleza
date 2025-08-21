@@ -896,6 +896,43 @@ body {
     color: var(--warning);
 }
 
+/* Estilos para fichas específicas */
+.fichas-especificas-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.fichas-especificas-section h3 {
+    color: #495057;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.ficha-especifica-container {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.ficha-especifica-container h4 {
+    color: #007bff;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.ficha-especifica-container textarea[readonly] {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    color: #495057;
+}
+
 .status-completed {
     background: rgba(127, 179, 211, 0.1);
     color: var(--calypso-pastel);

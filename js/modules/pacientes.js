@@ -67,11 +67,7 @@ export class PacientesModule {
     });
   }
   
-  // Configurar checkboxes de fichas específicas
-  const checkboxFichas = document.querySelectorAll('input[type="checkbox"][id^="ficha"]');
-  checkboxFichas.forEach(checkbox => {
-            checkbox.addEventListener('change', () => this.toggleFichasEspecificas());
-        });
+  
         
         // Configurar búsqueda de pacientes
         const buscarInput = document.getElementById('buscarPaciente');
@@ -190,6 +186,13 @@ export class PacientesModule {
   if (!pacienteId) {
             this.limpiarFormularioPaciente();
             this.pacienteActual = null;
+            
+            // Ocultar fichas específicas para nuevo paciente
+            const fichasEspecificasContainer = document.getElementById('fichasEspecificasContainer');
+            if (fichasEspecificasContainer) {
+                fichasEspecificasContainer.style.display = 'none';
+            }
+            
     return;
   }
   
@@ -246,64 +249,47 @@ export class PacientesModule {
         this.llenarFichasEspecificas(paciente);
     }
     
-    limpiarFichasEspecificas() {
-        const fichas = ['fichaDepilacion', 'fichaCorporal'];
-        fichas.forEach(ficha => {
-            const checkbox = document.getElementById(ficha);
-            if (checkbox) checkbox.checked = false;
-        });
-        
-        // Limpiar campos específicos
-        const camposEspecificos = [
-            'zonasDepilacion', 'observacionesMedicas',
-            'tratamientosPrevios', 'objetivoEstetico'
-        ];
-        
-        camposEspecificos.forEach(campo => {
-    const elemento = document.getElementById(campo);
-    if (elemento) elemento.value = '';
-  });
-}
+
 
     llenarFichasEspecificas(paciente) {
-        if (paciente.fichasEspecificas) {
-            paciente.fichasEspecificas.forEach(tipo => {
-                const checkbox = document.getElementById(`ficha${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    this.toggleFichasEspecificas();
+        const container = document.getElementById('fichasEspecificasContainer');
+        const fichaDepilacionCard = document.getElementById('fichaDepilacionCard');
+        const fichaCorporalCard = document.getElementById('fichaCorporalCard');
+        
+        if (!container) return;
+        
+        // Ocultar contenedor por defecto
+        container.style.display = 'none';
+        fichaDepilacionCard.style.display = 'none';
+        fichaCorporalCard.style.display = 'none';
+        
+        // Mostrar fichas específicas si existen
+        if (paciente.fichas_especificas && paciente.fichas_especificas.length > 0) {
+            container.style.display = 'block';
+            
+            paciente.fichas_especificas.forEach(ficha => {
+                if (ficha.tipo === 'depilacion') {
+                    fichaDepilacionCard.style.display = 'block';
+                    const zonasElement = document.getElementById('zonasDepilacion');
+                    const observacionesElement = document.getElementById('observacionesMedicas');
+                    
+                    if (zonasElement) zonasElement.value = ficha.datos?.zonas || '';
+                    if (observacionesElement) observacionesElement.value = ficha.datos?.observaciones_medicas || '';
+                }
+                
+                if (ficha.tipo === 'corporal') {
+                    fichaCorporalCard.style.display = 'block';
+                    const tratamientosElement = document.getElementById('tratamientosPrevios');
+                    const objetivoElement = document.getElementById('objetivoEstetico');
+                    
+                    if (tratamientosElement) tratamientosElement.value = ficha.datos?.tratamientos_previos || '';
+                    if (objetivoElement) objetivoElement.value = ficha.datos?.objetivo_estetico || '';
                 }
             });
         }
-        
-        // Llenar datos específicos si existen
-        if (paciente.fichaDepilacion) {
-            document.getElementById('zonasDepilacion').value = paciente.fichaDepilacion.zonas || '';
-            document.getElementById('observacionesMedicas').value = paciente.fichaDepilacion.observacionesMedicas || '';
-        }
-        
-        if (paciente.fichaCorporal) {
-            document.getElementById('tratamientosPrevios').value = paciente.fichaCorporal.tratamientosPrevios || '';
-            document.getElementById('objetivoEstetico').value = paciente.fichaCorporal.objetivoEstetico || '';
-        }
     }
     
-    toggleFichasEspecificas() {
-        const fichaDepilacion = document.getElementById('fichaDepilacion');
-        const fichaCorporal = document.getElementById('fichaCorporal');
-        
-        // Mostrar/ocultar contenedor de depilación
-        const fichaDepilacionCard = document.getElementById('fichaDepilacionCard');
-        if (fichaDepilacionCard) {
-            fichaDepilacionCard.classList.toggle('hidden', !fichaDepilacion?.checked);
-        }
-        
-        // Mostrar/ocultar contenedor corporal
-        const fichaCorporalCard = document.getElementById('fichaCorporalCard');
-        if (fichaCorporalCard) {
-            fichaCorporalCard.classList.toggle('hidden', !fichaCorporal?.checked);
-        }
-    }
+
     
     formatearRutTiempoReal(event) {
   const input = event.target;
@@ -484,33 +470,9 @@ export class PacientesModule {
   return errores;
 }
 
-    obtenerDatosFichasEspecificas() {
-  const fichasData = {};
-  const fichasSeleccionadas = [];
-  
-  // Verificar ficha de depilación
-  if (document.getElementById('fichaDepilacion')?.checked) {
-    fichasSeleccionadas.push('depilacion');
-    fichasData.fichaDepilacion = {
-      zonas: document.getElementById('zonasDepilacion').value.trim(),
-      observacionesMedicas: document.getElementById('observacionesMedicas').value.trim()
-    };
-  }
-  
-  // Verificar ficha corporal
-  if (document.getElementById('fichaCorporal')?.checked) {
-    fichasSeleccionadas.push('corporal');
-    fichasData.fichaCorporal = {
-      tratamientosPrevios: document.getElementById('tratamientosPrevios').value.trim(),
-      objetivoEstetico: document.getElementById('objetivoEstetico').value.trim()
-    };
-  }
-  
-  return {
-    fichasEspecificas: fichasSeleccionadas,
-    ...fichasData
-  };
-}
+        obtenerDatosFichasEspecificas() {
+        return {};
+    }
 
     async guardarPacienteFormulario() {
         const errores = this.validarFormularioPaciente();
@@ -636,29 +598,13 @@ export class PacientesModule {
             if (elemento) elemento.value = '';
         });
         
-        // Limpiar fichas específicas con verificación
-        const fichas = ['fichaDepilacion', 'fichaCorporal'];
-        fichas.forEach(ficha => {
-            const checkbox = document.getElementById(ficha);
-            if (checkbox) checkbox.checked = false;
-        });
+
         
-        const camposEspecificos = [
-            'zonasDepilacion', 'observacionesMedicas',
-            'tratamientosPrevios', 'objetivoEstetico'
-        ];
-        
-        camposEspecificos.forEach(campo => {
-            const elemento = document.getElementById(campo);
-            if (elemento) elemento.value = '';
-        });
-        
-        // Ocultar contenedores de fichas específicas
-        const fichaDepilacionCard = document.getElementById('fichaDepilacionCard');
-        if (fichaDepilacionCard) fichaDepilacionCard.classList.add('hidden');
-        
-        const fichaCorporalCard = document.getElementById('fichaCorporalCard');
-        if (fichaCorporalCard) fichaCorporalCard.classList.add('hidden');
+        // Ocultar fichas específicas
+        const fichasEspecificasContainer = document.getElementById('fichasEspecificasContainer');
+        if (fichasEspecificasContainer) {
+            fichasEspecificasContainer.style.display = 'none';
+        }
         
         // Resetear paciente actual
         this.pacienteActual = null;
