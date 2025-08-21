@@ -15,8 +15,7 @@ import { reportesModule } from './modules/reportes.js';
 // Importar utilidades
 import { formatCurrency, formatDate, showMessage } from './utils.js';
 
-// Importar constantes
-import { ZONAS_CUERPO, ZONAS_CUERPO_LABELS, TRATAMIENTOS } from './constants.js';
+// Las constantes se obtienen desde la API, no desde constants.js
 
 // Importar cliente API
 import { initializeApiClient } from './api-client.js';

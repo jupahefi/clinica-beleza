@@ -5,7 +5,7 @@
 
 import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
 import { fichasAPI, tiposFichaEspecificaAPI, fichasEspecificasAPI } from '../api-client.js';
-import { TIPOS_PIEL, ZONAS_TRATAMIENTO, FICHAS_ESPECIFICAS } from '../constants.js';
+// Las constantes se obtienen desde la API, no desde constants.js
 
 export class PacientesModule {
     constructor() {
