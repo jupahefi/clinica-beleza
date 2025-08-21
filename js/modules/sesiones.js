@@ -354,7 +354,8 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error abriendo sesión: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido abriendo sesión';
+            alert(`❌ Error abriendo sesión: ${errorMessage}`);
         }
     }
     
@@ -372,7 +373,8 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error cerrando sesión:', error);
-            alert('❌ Error cerrando sesión: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido cerrando sesión';
+            alert(`❌ Error cerrando sesión: ${errorMessage}`);
         }
     }
     
@@ -390,7 +392,8 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error guardando intensidades:', error);
-            alert('❌ Error guardando intensidades: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido guardando intensidades';
+            alert(`❌ Error guardando intensidades: ${errorMessage}`);
         }
     }
     
@@ -408,7 +411,8 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error cargando intensidades:', error);
-            alert('Error cargando intensidades anteriores: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido cargando intensidades';
+            alert(`Error cargando intensidades anteriores: ${errorMessage}`);
         }
     }
     
@@ -459,6 +463,8 @@ export class SesionesModule {
             this.updateCalendarEvents(); // Actualizar calendario
         } catch (error) {
             console.error('Error cargando sesiones:', error);
+            const errorMessage = error.message || 'Error desconocido cargando sesiones';
+            console.error(`Error cargando sesiones: ${errorMessage}`);
         }
     }
     
@@ -468,6 +474,8 @@ export class SesionesModule {
             return sesion;
         } catch (error) {
             console.error('Error obteniendo sesión:', error);
+            const errorMessage = error.message || 'Error desconocido obteniendo sesión';
+            console.error(`Error obteniendo sesión: ${errorMessage}`);
             return null;
         }
     }
@@ -550,9 +558,10 @@ export class SesionesModule {
   } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
-  } catch (error) {
+          } catch (error) {
             console.error('Error confirmando paciente:', error);
-            alert('❌ Error confirmando paciente: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido confirmando paciente';
+            alert(`❌ Error confirmando paciente: ${errorMessage}`);
         }
     }
     
@@ -574,9 +583,10 @@ export class SesionesModule {
         } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
         }
-  } catch (error) {
+          } catch (error) {
             console.error('Error reprogramando sesión:', error);
-            alert('❌ Error reprogramando sesión: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido reprogramando sesión';
+            alert(`❌ Error reprogramando sesión: ${errorMessage}`);
         }
     }
     
@@ -594,7 +604,8 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error cancelando sesión:', error);
-            alert('❌ Error cancelando sesión: ' + error.message);
+            const errorMessage = error.message || 'Error desconocido cancelando sesión';
+            alert(`❌ Error cancelando sesión: ${errorMessage}`);
         }
     }
     

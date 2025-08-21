@@ -176,6 +176,8 @@ export class FichasEspecificasModule {
             this.consentimientoText = textContent.trim();
         } catch (error) {
             console.warn('No se pudo cargar el consentimiento:', error);
+            const errorMessage = error.message || 'Error desconocido cargando consentimiento';
+            console.warn(`Error cargando consentimiento: ${errorMessage}`);
             this.consentimientoText = this.getDefaultConsentimientoText();
         }
     }
@@ -237,7 +239,8 @@ Fecha: ${new Date().toLocaleDateString()}
             }
         } catch (error) {
             console.error('Error guardando firma digital:', error);
-            throw error;
+            const errorMessage = error.message || 'Error desconocido guardando firma digital';
+            throw new Error(`Error guardando firma digital: ${errorMessage}`);
         }
     }
     
@@ -252,6 +255,8 @@ Fecha: ${new Date().toLocaleDateString()}
             }
         } catch (error) {
             console.error('Error verificando consentimiento:', error);
+            const errorMessage = error.message || 'Error desconocido verificando consentimiento';
+            console.error(`Error verificando consentimiento: ${errorMessage}`);
             return null;
         }
     }
@@ -300,7 +305,8 @@ Fecha: ${new Date().toLocaleDateString()}
             }
         } catch (error) {
             console.error('Error:', error);
-            throw error;
+            const errorMessage = error.message || 'Error desconocido guardando ficha de depilación';
+            throw new Error(`Error guardando ficha de depilación: ${errorMessage}`);
         }
     }
     

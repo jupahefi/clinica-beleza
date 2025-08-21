@@ -47,7 +47,8 @@ export class ReportesModule {
             console.log('Reportes disponibles cargados');
         } catch (error) {
             console.error('Error cargando reportes disponibles:', error);
-            mostrarNotificacion('Error cargando reportes disponibles', 'error');
+            const errorMessage = error.message || 'Error desconocido cargando reportes disponibles';
+            mostrarNotificacion(`Error cargando reportes disponibles: ${errorMessage}`, 'error');
         }
     }
     
@@ -57,7 +58,8 @@ export class ReportesModule {
             this.mostrarReporteProgresoVentas(reporte);
         } catch (error) {
             console.error('Error generando reporte de progreso de ventas:', error);
-            this.mostrarError('Error generando reporte de progreso de ventas');
+            const errorMessage = error.message || 'Error desconocido generando reporte de progreso de ventas';
+            this.mostrarError(`Error generando reporte de progreso de ventas: ${errorMessage}`);
         }
     }
     
@@ -67,7 +69,8 @@ export class ReportesModule {
             this.mostrarReportePlanVsEjecucion(reporte);
         } catch (error) {
             console.error('Error generando reporte plan vs ejecución:', error);
-            this.mostrarError('Error generando reporte plan vs ejecución');
+            const errorMessage = error.message || 'Error desconocido generando reporte plan vs ejecución';
+            this.mostrarError(`Error generando reporte plan vs ejecución: ${errorMessage}`);
         }
     }
     
@@ -77,7 +80,8 @@ export class ReportesModule {
             this.mostrarReporteDisponibilidadProfesionales(reporte);
         } catch (error) {
             console.error('Error generando reporte de disponibilidad:', error);
-            this.mostrarError('Error generando reporte de disponibilidad');
+            const errorMessage = error.message || 'Error desconocido generando reporte de disponibilidad';
+            this.mostrarError(`Error generando reporte de disponibilidad: ${errorMessage}`);
         }
     }
     
@@ -87,7 +91,8 @@ export class ReportesModule {
             this.mostrarReporteOfertasAplicadas(reporte);
         } catch (error) {
             console.error('Error generando reporte de ofertas aplicadas:', error);
-            this.mostrarError('Error generando reporte de ofertas aplicadas');
+            const errorMessage = error.message || 'Error desconocido generando reporte de ofertas aplicadas';
+            this.mostrarError(`Error generando reporte de ofertas aplicadas: ${errorMessage}`);
         }
     }
     
