@@ -1178,10 +1178,11 @@ BEGIN
     DECLARE v_porc_descuento DECIMAL(5,2);
     DECLARE v_monto_descuento DECIMAL(12,2);
     DECLARE v_precio_actual DECIMAL(12,2);
+    DECLARE v_prioridad INT;
     DECLARE done INT DEFAULT FALSE;
     
     DECLARE oferta_cursor CURSOR FOR
-        SELECT o.id, op.porc_descuento
+        SELECT o.id, op.porc_descuento, o.prioridad
         FROM oferta o
         JOIN oferta_pack op ON o.id = op.oferta_id
         WHERE op.pack_id = v_pack_id
@@ -1192,7 +1193,7 @@ BEGIN
         
         UNION ALL
         
-        SELECT o.id, ot.porc_descuento
+        SELECT o.id, ot.porc_descuento, o.prioridad
         FROM oferta o
         JOIN oferta_tratamiento ot ON o.id = ot.oferta_id
         WHERE ot.tratamiento_id = v_tratamiento_id
@@ -1201,7 +1202,7 @@ BEGIN
           AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
           AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
         
-        ORDER BY o.prioridad ASC;
+        ORDER BY prioridad ASC;
     
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1222,7 +1223,7 @@ BEGIN
     OPEN oferta_cursor;
     
     read_loop: LOOP
-        FETCH oferta_cursor INTO v_oferta_id, v_porc_descuento;
+        FETCH oferta_cursor INTO v_oferta_id, v_porc_descuento, v_prioridad;
         IF done THEN
             LEAVE read_loop;
         END IF;
