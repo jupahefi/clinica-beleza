@@ -253,12 +253,21 @@ class VentasModule {
             const evaluacion = await evaluacionesAPI.create({
                 ficha_id: cliente,
                 profesional_id: 1, // Por ahora hardcodeado
+                tratamiento_id: parseInt(document.getElementById('tratamiento').value),
+                pack_id: null, // Por ahora null
+                precio_sugerido: venta.precio,
+                sesiones_sugeridas: venta.sesiones,
                 recomendaciones: `Venta de ${venta.tratamiento}`
             });
 
             const fichaEspecifica = await fichasEspecificasAPI.create({
                 evaluacion_id: evaluacion.id,
-                tipo_ficha_especifica_id: this.obtenerTipoFichaId(venta.tratamiento),
+                tipo_id: this.obtenerTipoFichaId(venta.tratamiento),
+                datos: {
+                    tratamiento: venta.tratamiento,
+                    precio: venta.precio,
+                    sesiones: venta.sesiones
+                },
                 observaciones: venta.detalle
             });
 
