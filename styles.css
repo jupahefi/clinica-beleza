@@ -501,49 +501,6 @@ body {
 
 /* Mobile Styles - Card Layout */
 @media (max-width: 767px) {
-    /* Reduce header height for mobile */
-    .header {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .navbar {
-        padding: 0.5rem 0;
-    }
-    
-    .logo-img {
-        height: 40px;
-    }
-    
-    .logo-text {
-        font-size: 1.2rem;
-    }
-    
-    /* Reduce spacing for mobile */
-    .main-content {
-        margin-top: 60px;
-        padding: 1rem 0;
-    }
-    
-    .section-title {
-        font-size: 1.8rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .section-title::after {
-        bottom: -5px;
-        width: 40px;
-        height: 2px;
-    }
-    
-    .section-content {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-    
-    .form-container {
-        padding: 1.5rem;
-    }
     .data-table,
     .data-table thead,
     .data-table tbody,
@@ -819,36 +776,6 @@ body {
     .container {
         padding: 0 15px;
     }
-    
-    /* Reduce header even more for small mobile */
-    .navbar {
-        padding: 0.3rem 0;
-    }
-    
-    .logo-img {
-        height: 35px;
-    }
-    
-    .logo-text {
-        font-size: 1rem;
-    }
-    
-    /* Reduce spacing even more for small mobile */
-    .main-content {
-        margin-top: 50px;
-        padding: 0.5rem 0;
-    }
-    
-    .section-title {
-        font-size: 1.3rem;
-        margin-bottom: 1rem;
-    }
-    
-    .section-title::after {
-        bottom: -3px;
-        width: 30px;
-        height: 2px;
-    }
 
     .form-container,
     .data-container {
@@ -1048,7 +975,8 @@ body {
 
     /* Ajustar espaciado general */
     .main-content {
-        padding-top: 80px;
+        padding-top: 20px;
+        margin-top: 0;
     }
 
     /* Mejorar contraste en botones */
