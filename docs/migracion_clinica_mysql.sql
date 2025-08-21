@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS profesional (
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+  -- Foreign key se agregará con función idempotente
 );
 
 CREATE TABLE IF NOT EXISTS ficha (
@@ -283,7 +283,7 @@ CREATE TABLE IF NOT EXISTS consentimiento_firma (
   contenido_leido TEXT NOT NULL,
   fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   observaciones TEXT NOT NULL,
-  UNIQUE KEY uk_ficha_tipo_consentimiento (ficha_id, tipo_consentimiento)
+  -- Unique key se agregará con función idempotente
 );
 
 CALL AddIndexIfNotExists('ix_evaluacion_ficha', 'evaluacion', 'ficha_id', FALSE);
@@ -483,6 +483,7 @@ CALL AddIndexIfNotExists('ix_sesion_estado', 'sesion', 'estado', FALSE);
 
 -- Add foreign keys
 CALL AddForeignKeyIfNotExists('profesional', 'fk_profesional_usuario', 'usuario_id', 'usuario', 'id');
+CALL AddIndexIfNotExists('uk_ficha_tipo_consentimiento', 'consentimiento_firma', 'ficha_id, tipo_consentimiento', TRUE);
 CALL AddForeignKeyIfNotExists('box', 'fk_box_sucursal', 'sucursal_id', 'sucursal', 'id');
 
 CALL AddForeignKeyIfNotExists('evaluacion', 'fk_evaluacion_ficha', 'ficha_id', 'ficha', 'id');
