@@ -282,7 +282,7 @@ CREATE TABLE IF NOT EXISTS consentimiento_firma (
   tipo_archivo VARCHAR(10) NOT NULL,
   contenido_leido TEXT NOT NULL,
   fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  observaciones TEXT NOT NULL,
+  observaciones TEXT NOT NULL
   -- Unique key se agregará con función idempotente
 );
 
