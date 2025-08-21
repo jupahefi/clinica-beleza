@@ -116,7 +116,7 @@ class VentasModule {
         }
 
         // Configurar inputs numéricos
-        const inputSesiones = document.getElementById('sesiones');
+        const inputSesiones = document.getElementById('cantidadSesiones');
         if (inputSesiones) {
             inputSesiones.addEventListener('input', () => {
                 this.calcularPrecio();
@@ -187,7 +187,7 @@ class VentasModule {
 
     calcularPrecio() {
         const selectTratamiento = document.getElementById('tratamiento');
-        const inputSesiones = document.getElementById('sesiones');
+        const inputSesiones = document.getElementById('cantidadSesiones');
         const inputOferta = document.getElementById('ofertaVenta');
         const packSelect = document.getElementById('pack');
         const resultado = document.getElementById('resultado');
@@ -363,7 +363,7 @@ class VentasModule {
     limpiarFormulario() {
         const selectTratamiento = document.getElementById('tratamiento');
         const packSelect = document.getElementById('pack');
-        const inputSesiones = document.getElementById('sesiones');
+        const inputSesiones = document.getElementById('cantidadSesiones');
         const inputOferta = document.getElementById('ofertaVenta');
         const resultado = document.getElementById('resultado');
 
