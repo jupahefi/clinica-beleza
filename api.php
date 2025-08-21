@@ -78,6 +78,10 @@ try {
             handleVentas($db, $method, $id, $data);
             break;
             
+        case 'ventas/historial':
+            handleHistorialVentas($db, $method, $id, $data);
+            break;
+            
         case 'pagos':
             handlePagos($db, $method, $id, $data);
             break;
@@ -98,6 +102,11 @@ try {
             
         case 'ofertas-combo':
             handleOfertasCombo($db, $method, $id, $data);
+            break;
+            
+        case 'ofertas-aplicables':
+            handleOfertasAplicables($db, $method, $id, $data);
+            break;
             break;
             
         // ---------- CATÁLOGOS ----------
@@ -703,6 +712,30 @@ function handleReportes($db, $method, $id, $data) {
             }
             
             echo json_encode(['success' => true, 'data' => $result]);
+            break;
+    }
+}
+
+function handleOfertasAplicables($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            // Obtener todas las ofertas aplicables (activas y en fecha)
+            $result = $db->select("SELECT * FROM v_ofertas_aplicables WHERE aplicable_hoy = TRUE ORDER BY prioridad");
+            echo json_encode(['success' => true, 'data' => $result]);
+            break;
+    }
+}
+
+// ---------- HISTORIAL DE VENTAS ----------
+
+function handleHistorialVentas($db, $method, $id, $data) {
+    switch ($method) {
+        case 'GET':
+            if ($id) {
+                // Obtener historial de ventas de un cliente específico
+                $result = $db->executeRaw("CALL sp_obtener_historial_tratamientos(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+            }
             break;
     }
 }

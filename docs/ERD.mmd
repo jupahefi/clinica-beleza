@@ -6,6 +6,7 @@ erDiagram
   PROFESIONAL ||--o{ CONSENTIMIENTO_FIRMA : atestigua
 
   TRATAMIENTO ||--o{ PACK : tiene
+  TRATAMIENTO ||--o{ PRECIO_TRATAMIENTO : tiene
   FICHA ||--o{ EVALUACION : recibe
   TRATAMIENTO ||--o{ EVALUACION : evalua
   PACK ||--o{ EVALUACION : "(opcional)"
@@ -22,13 +23,18 @@ erDiagram
   SUCURSAL ||--o{ BOX : tiene
 
   OFERTA ||--o{ OFERTA_PACK : aplica_a
+  OFERTA ||--o{ OFERTA_TRATAMIENTO : aplica_a
   PACK ||--o{ OFERTA_PACK : afectado
+  TRATAMIENTO ||--o{ OFERTA_TRATAMIENTO : afectado
   OFERTA ||--o{ OFERTA_COMBO : define
   OFERTA_COMBO ||--o{ OFERTA_COMBO_PACK : incluye
   PACK ||--o{ OFERTA_COMBO_PACK : parte
 
   VENTA ||--o{ VENTA_OFERTA : "descuento sobre descuento"
   OFERTA ||--o{ VENTA_OFERTA : aplicado
+
+  VENTA ||--o{ PAGO : recibe
+  PAGO ||--o{ PAGO_DETALLE : tiene
 
   FICHA {
     bigserial id PK
@@ -38,13 +44,19 @@ erDiagram
     varchar rut
     varchar telefono
     varchar email
+    date fecha_nacimiento
+    text direccion
+    text observaciones
     timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }
 
   TIPO_FICHA_ESPECIFICA {
     bigserial id PK
     varchar nombre
     text descripcion
+    boolean requiere_consentimiento
+    text template_consentimiento
   }
 
   FICHA_ESPECIFICA {
@@ -54,19 +66,25 @@ erDiagram
     jsonb datos
     timestamptz fecha_creacion
   }
+
   CONSENTIMIENTO_FIRMA {
     bigserial id PK
     bigint ficha_id FK
+    bigint ficha_especifica_id FK
     varchar tipo_consentimiento
     bytea firma_blob
     varchar tipo_archivo
     timestamptz fecha_firma
     bigint profesional_id FK
+    text observaciones
   }
+
   ZONA_CUERPO {
     varchar codigo PK
     varchar nombre
-    numeric precio
+    varchar categoria
+    numeric precio_base
+    boolean activo
   }
 
   TRATAMIENTO {
@@ -74,6 +92,21 @@ erDiagram
     varchar nombre
     text descripcion
     boolean requiere_ficha_especifica
+    int duracion_sesion_min
+    int frecuencia_recomendada_dias
+    boolean activo
+    timestamptz fecha_creacion
+  }
+
+  PRECIO_TRATAMIENTO {
+    bigserial id PK
+    bigint tratamiento_id FK
+    numeric precio_regular
+    numeric precio_oferta
+    date fecha_inicio_oferta
+    date fecha_fin_oferta
+    boolean activo
+    timestamptz fecha_creacion
   }
 
   PACK {
@@ -82,9 +115,15 @@ erDiagram
     varchar nombre
     text descripcion
     int duracion_sesion_min
+    int sesiones_incluidas
     jsonb zonas_incluidas
     jsonb precio_por_zona
+    numeric precio_regular
+    numeric precio_oferta
+    date fecha_inicio_oferta
+    date fecha_fin_oferta
     boolean activo
+    timestamptz fecha_creacion
   }
 
   EVALUACION {
@@ -103,12 +142,14 @@ erDiagram
     bigserial id PK
     varchar nombre
     varchar tipo
+    text descripcion
     numeric porc_descuento
     date fecha_inicio
     date fecha_fin
     boolean combinable
     boolean activo
     int prioridad
+    timestamptz fecha_creacion
   }
 
   OFERTA_PACK {
@@ -118,10 +159,18 @@ erDiagram
     numeric porc_descuento
   }
 
+  OFERTA_TRATAMIENTO {
+    bigserial id PK
+    bigint oferta_id FK
+    bigint tratamiento_id FK
+    numeric porc_descuento
+  }
+
   OFERTA_COMBO {
     bigserial id PK
     bigint oferta_id FK
     int min_packs
+    numeric porc_descuento_adicional
   }
 
   OFERTA_COMBO_PACK {
@@ -142,7 +191,9 @@ erDiagram
     numeric descuento_aplicado_total
     numeric total_pagado
     varchar estado
+    text observaciones
     timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }
 
   VENTA_OFERTA {
@@ -154,28 +205,56 @@ erDiagram
     numeric monto_descuento
   }
 
+  PAGO {
+    bigserial id PK
+    bigint venta_id FK
+    numeric monto_total
+    varchar estado
+    text observaciones
+    timestamptz fecha_creacion
+  }
+
+  PAGO_DETALLE {
+    bigserial id PK
+    bigint pago_id FK
+    numeric monto
+    varchar metodo_pago
+    varchar referencia
+    text observaciones
+    timestamptz fecha_pago
+  }
+
   SUCURSAL {
     bigserial id PK
     varchar nombre
     varchar direccion
     varchar telefono
+    varchar email
     boolean activo
+    timestamptz fecha_creacion
   }
 
   BOX {
     bigserial id PK
     bigint sucursal_id FK
     varchar nombre
+    varchar descripcion
     boolean activo
+    timestamptz fecha_creacion
   }
 
   PROFESIONAL {
     bigserial id PK
     varchar nombre
+    varchar apellidos
+    varchar rut
+    varchar telefono
+    varchar email
     varchar tipo_profesional
     text bio
     text foto_url
     boolean activo
+    timestamptz fecha_creacion
   }
 
   SESION {
@@ -185,6 +264,7 @@ erDiagram
     bigint sucursal_id FK
     bigint box_id FK
     bigint profesional_id FK
+    varchar google_calendar_event_id
     timestamptz fecha_planificada
     timestamptz fecha_ejecucion
     varchar estado
@@ -193,4 +273,7 @@ erDiagram
     timestamptz cerrada_en
     text observaciones
     jsonb intensidades_zonas
+    jsonb datos_sesion
+    timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
   }

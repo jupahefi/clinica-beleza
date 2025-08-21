@@ -142,7 +142,9 @@ CREATE TABLE IF NOT EXISTS sucursal (
   nombre VARCHAR(120) NOT NULL,
   direccion VARCHAR(200),
   telefono VARCHAR(50),
-  activo BOOLEAN NOT NULL DEFAULT TRUE
+  email VARCHAR(120),
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
@@ -150,35 +152,174 @@ CALL AddIndexIfNotExists('ux_sucursal_nombre', 'sucursal', 'nombre', TRUE);
 CREATE TABLE IF NOT EXISTS zona_cuerpo (
   codigo VARCHAR(50) PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
-  precio DECIMAL(12,2) NOT NULL DEFAULT 0.00
+  categoria VARCHAR(50),
+  precio_base DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Insertar zonas del cuerpo predefinidas
-INSERT IGNORE INTO zona_cuerpo (codigo, nombre, precio) VALUES
-('PIERNAS', 'Piernas', 45000),
-('BRAZOS', 'Brazos', 35000),
-('REBAJE', 'Rebaje', 25000),
-('INTERGLUTEO', 'Interglúteo', 20000),
-('ROSTRO_C', 'Rostro C', 30000),
-('CUELLO', 'Cuello', 25000),
-('BOZO', 'Bozo', 15000),
-('AXILA', 'Axila', 20000),
-('MENTON', 'Mentón', 15000),
-('PATILLAS', 'Patillas', 15000),
-('ESPALDA', 'Espalda', 40000),
-('ABDOMEN', 'Abdomen', 30000),
-('GLUTEOS', 'Glúteos', 25000),
-('PECHO', 'Pecho', 30000),
-('BARBA', 'Barba', 25000),
-('DEDOS_MANOS', 'Dedos Manos', 10000),
-('EMPEINE_DEDOS', 'Empeine Dedos', 15000),
-('LINEA_ALBA', 'Línea Alba', 20000);
+INSERT IGNORE INTO zona_cuerpo (codigo, nombre, categoria, precio_base) VALUES
+('PIERNAS', 'Piernas', 'DEPILACION', 45000),
+('BRAZOS', 'Brazos', 'DEPILACION', 35000),
+('REBAJE', 'Rebaje', 'DEPILACION', 25000),
+('INTERGLUTEO', 'Interglúteo', 'DEPILACION', 20000),
+('ROSTRO_C', 'Rostro C', 'DEPILACION', 30000),
+('CUELLO', 'Cuello', 'DEPILACION', 25000),
+('BOZO', 'Bozo', 'DEPILACION', 15000),
+('AXILA', 'Axila', 'DEPILACION', 20000),
+('MENTON', 'Mentón', 'DEPILACION', 15000),
+('PATILLAS', 'Patillas', 'DEPILACION', 15000),
+('ESPALDA', 'Espalda', 'DEPILACION', 40000),
+('ABDOMEN', 'Abdomen', 'DEPILACION', 30000),
+('GLUTEOS', 'Glúteos', 'DEPILACION', 25000),
+('PECHO', 'Pecho', 'DEPILACION', 30000),
+('BARBA', 'Barba', 'DEPILACION', 25000),
+('DEDOS_MANOS', 'Dedos Manos', 'DEPILACION', 10000),
+('EMPEINE_DEDOS', 'Empeine Dedos', 'DEPILACION', 15000),
+('LINEA_ALBA', 'Línea Alba', 'DEPILACION', 20000);
+
+-- Insertar tratamientos base
+INSERT IGNORE INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, duracion_sesion_min, frecuencia_recomendada_dias, activo) VALUES
+('FACIAL', 'Tratamientos faciales y estéticos', TRUE, 60, 7, TRUE),
+('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, TRUE),
+('DEPILACION', 'Depilación láser y tratamientos corporales', TRUE, 45, 30, TRUE);
+
+-- Insertar packs de tratamientos FACIAL
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, 39900, 24900, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, 250000, 199000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinámica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, 299000, NULL, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, 199000, 149900, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, 450000, 390000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnología Plasmática Párpados', 'Tratamiento plasmático para párpados', 45, 1, 350000, 250000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, 189000, 139900, TRUE);
+
+-- Insertar packs de tratamientos CAPILAR
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, 579000, 499000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, 579000, 499000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulación Capilar', 'Fotobiomodulación para el cabello', 60, 6, 579000, 499000, TRUE);
+
+-- Insertar packs de tratamientos DEPILACION
+INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilación láser cuerpo completo', 120, 6, 499000, NULL, TRUE, 
+ JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilación láser cuerpo completo sin rostro', 90, 6, 399000, NULL, TRUE,
+ JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilación láser rostro completo', 45, 8, 149900, NULL, TRUE,
+ JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
+ JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilación láser full body: piernas, brazos, axilas, rebaje, interglúteo', 75, 6, 259000, 199000, TRUE,
+ JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
+ JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilación láser semi full: piernas, axilas, rebaje, interglúteo', 60, 6, 199000, 159000, TRUE,
+ JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
+ JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilación láser bikini full: rebaje e interglúteo', 30, 6, 99000, 79900, TRUE,
+ JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
+ JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000)),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilación láser bikini full con axilas', 35, 6, 120000, 99000, TRUE,
+ JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
+ JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000));
+
+-- Insertar precios de tratamientos (para tratamientos sin pack específico)
+INSERT IGNORE INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, activo) VALUES
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 39900, 24900, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 579000, 499000, TRUE),
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 499000, NULL, TRUE);
+
+-- Insertar tipos de fichas específicas
+INSERT IGNORE INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento) VALUES
+('DEPILACION', 'Ficha específica para depilación láser', TRUE, 'Consentimiento informado para depilación láser'),
+('CORPORAL', 'Ficha específica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales'),
+('FACIAL', 'Ficha específica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales'),
+('CAPILAR', 'Ficha específica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares');
+
+-- Insertar sucursal por defecto
+INSERT IGNORE INTO sucursal (nombre, direccion, telefono, email, activo) VALUES
+('Clínica Beleza Principal', 'Av. Principal 123, Santiago', '+56 2 2345 6789', 'contacto@clinica-beleza.cl', TRUE);
+
+-- Insertar boxes por defecto
+INSERT IGNORE INTO box (sucursal_id, nombre, descripcion, activo) VALUES
+((SELECT id FROM sucursal LIMIT 1), 'Box 1', 'Box principal para tratamientos', TRUE),
+((SELECT id FROM sucursal LIMIT 1), 'Box 2', 'Box secundario para tratamientos', TRUE),
+((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box para depilación', TRUE);
+
+-- Insertar profesionales por defecto
+INSERT IGNORE INTO profesional (nombre, apellidos, rut, telefono, email, tipo_profesional, bio, activo) VALUES
+('María', 'González', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesióloga', 'Especialista en tratamientos faciales y corporales', TRUE),
+('Ana', 'Rodríguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Técnico Estético', 'Especialista en depilación láser', TRUE),
+('Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetóloga', 'Especialista en tratamientos capilares', TRUE);
+
+-- Insertar ofertas de packs (promociones)
+INSERT IGNORE INTO oferta (nombre, tipo, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad) VALUES
+-- Ofertas FACIAL
+('Promo Limpieza Facial', 'pack_temporal', 37.5, NULL, NULL, TRUE, TRUE, 1),
+('Promo Radiofrecuencia Facial', 'pack_temporal', 20.4, NULL, NULL, TRUE, TRUE, 1),
+('Promo Criolipolisis Facial', 'pack_temporal', 25.1, NULL, NULL, TRUE, TRUE, 1),
+('Promo Plasma Rico en Plaquetas', 'pack_temporal', 24.7, NULL, NULL, TRUE, TRUE, 1),
+('Promo Radiofrecuencia Fraccionada', 'pack_temporal', 13.3, NULL, NULL, TRUE, TRUE, 1),
+('Promo Tecnología Plasmática', 'pack_temporal', 28.6, NULL, NULL, TRUE, TRUE, 1),
+('Promo Pink Glow', 'pack_temporal', 26.0, NULL, NULL, TRUE, TRUE, 1),
+
+-- Ofertas CAPILAR
+('Promo Carboxiterapia Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
+('Promo PRP Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
+('Promo Fotobiomodulación Capilar', 'pack_temporal', 13.8, NULL, NULL, TRUE, TRUE, 1),
+
+-- Ofertas DEPILACION
+('Promo Full Body', 'pack_temporal', 23.2, NULL, NULL, TRUE, TRUE, 1),
+('Promo Semi Full', 'pack_temporal', 20.1, NULL, NULL, TRUE, TRUE, 1),
+('Promo Bikini Full', 'pack_temporal', 19.3, NULL, NULL, TRUE, TRUE, 1),
+('Promo Bikini Full + Axilas', 'pack_temporal', 17.5, NULL, NULL, TRUE, TRUE, 1);
+
+-- Asociar ofertas con packs FACIAL
+INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
+((SELECT id FROM oferta WHERE nombre = 'Promo Limpieza Facial'), 
+ (SELECT id FROM pack WHERE nombre = 'Limpieza Facial Profunda'), 37.5),
+((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Facial'), 
+ (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Facial'), 20.4),
+((SELECT id FROM oferta WHERE nombre = 'Promo Criolipolisis Facial'), 
+ (SELECT id FROM pack WHERE nombre = 'Criolipolisis Facial Dinámica'), 25.1),
+((SELECT id FROM oferta WHERE nombre = 'Promo Plasma Rico en Plaquetas'), 
+ (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas'), 24.7),
+((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Fraccionada'), 
+ (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Fraccionada + Vitamina C'), 13.3),
+((SELECT id FROM oferta WHERE nombre = 'Promo Tecnología Plasmática'), 
+ (SELECT id FROM pack WHERE nombre = 'Tecnología Plasmática Párpados'), 28.6),
+((SELECT id FROM oferta WHERE nombre = 'Promo Pink Glow'), 
+ (SELECT id FROM pack WHERE nombre = 'Pink Glow + Ultrasonido'), 26.0);
+
+-- Asociar ofertas con packs CAPILAR
+INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
+((SELECT id FROM oferta WHERE nombre = 'Promo Carboxiterapia Capilar'), 
+ (SELECT id FROM pack WHERE nombre = 'Carboxiterapia Capilar'), 13.8),
+((SELECT id FROM oferta WHERE nombre = 'Promo PRP Capilar'), 
+ (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas Capilar'), 13.8),
+((SELECT id FROM oferta WHERE nombre = 'Promo Fotobiomodulación Capilar'), 
+ (SELECT id FROM pack WHERE nombre = 'Fotobiomodulación Capilar'), 13.8);
+
+-- Asociar ofertas con packs DEPILACION
+INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
+((SELECT id FROM oferta WHERE nombre = 'Promo Full Body'), 
+ (SELECT id FROM pack WHERE nombre = 'Full Body'), 23.2),
+((SELECT id FROM oferta WHERE nombre = 'Promo Semi Full'), 
+ (SELECT id FROM pack WHERE nombre = 'Semi Full'), 20.1),
+((SELECT id FROM oferta WHERE nombre = 'Promo Bikini Full'), 
+ (SELECT id FROM pack WHERE nombre = 'Bikini Full'), 19.3),
+((SELECT id FROM oferta WHERE nombre = 'Promo Bikini Full + Axilas'), 
+ (SELECT id FROM pack WHERE nombre = 'Bikini Full + Axilas'), 17.5);
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   sucursal_id BIGINT NOT NULL,
   nombre VARCHAR(80) NOT NULL,
-  activo BOOLEAN NOT NULL DEFAULT TRUE
+  descripcion TEXT,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
@@ -186,10 +327,15 @@ CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
 CREATE TABLE IF NOT EXISTS profesional (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
+  apellidos VARCHAR(150),
+  rut VARCHAR(20),
+  telefono VARCHAR(50),
+  email VARCHAR(120),
   tipo_profesional VARCHAR(80) NOT NULL,
   bio TEXT,
   foto_url TEXT,
-  activo BOOLEAN NOT NULL DEFAULT TRUE
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ficha (
@@ -200,7 +346,11 @@ CREATE TABLE IF NOT EXISTS ficha (
   rut VARCHAR(20),
   telefono VARCHAR(50),
   email VARCHAR(120),
-  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  fecha_nacimiento DATE,
+  direccion TEXT,
+  observaciones TEXT,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
@@ -209,7 +359,9 @@ CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 CREATE TABLE IF NOT EXISTS tipo_ficha_especifica (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
-  descripcion TEXT
+  descripcion TEXT,
+  requiere_consentimiento BOOLEAN NOT NULL DEFAULT FALSE,
+  template_consentimiento TEXT
 );
 
 CALL AddIndexIfNotExists('ux_tipo_ficha_especifica_nombre', 'tipo_ficha_especifica', 'nombre', TRUE);
@@ -225,11 +377,13 @@ CREATE TABLE IF NOT EXISTS ficha_especifica (
 CREATE TABLE IF NOT EXISTS consentimiento_firma (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ficha_id BIGINT NOT NULL,
+  ficha_especifica_id BIGINT,
   tipo_consentimiento VARCHAR(50) NOT NULL, -- 'depilacion', 'corporal', etc.
   firma_blob LONGBLOB NOT NULL,
   tipo_archivo VARCHAR(10) NOT NULL, -- 'png', 'jpeg'
   fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   profesional_id BIGINT NOT NULL,
+  observaciones TEXT,
   UNIQUE KEY uk_ficha_tipo_consentimiento (ficha_id, tipo_consentimiento)
 );
 
@@ -240,10 +394,27 @@ CREATE TABLE IF NOT EXISTS tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
   descripcion TEXT,
-  requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE
+  requiere_ficha_especifica BOOLEAN NOT NULL DEFAULT FALSE,
+  duracion_sesion_min INT NOT NULL DEFAULT 0,
+  frecuencia_recomendada_dias INT,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_tratamiento_nombre', 'tratamiento', 'nombre', TRUE);
+
+CREATE TABLE IF NOT EXISTS precio_tratamiento (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tratamiento_id BIGINT NOT NULL,
+  precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  precio_oferta DECIMAL(12,2),
+  fecha_inicio_oferta DATE,
+  fecha_fin_oferta DATE,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CALL AddIndexIfNotExists('ix_precio_tratamiento_tratamiento', 'precio_tratamiento', 'tratamiento_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS pack (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -251,9 +422,15 @@ CREATE TABLE IF NOT EXISTS pack (
   nombre VARCHAR(150) NOT NULL,
   descripcion TEXT,
   duracion_sesion_min INT NOT NULL DEFAULT 0,
+  sesiones_incluidas INT NOT NULL DEFAULT 1,
   zonas_incluidas JSON,
   precio_por_zona JSON,
-  activo BOOLEAN NOT NULL DEFAULT TRUE
+  precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  precio_oferta DECIMAL(12,2),
+  fecha_inicio_oferta DATE,
+  fecha_fin_oferta DATE,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, nombre', TRUE);
@@ -297,10 +474,20 @@ CREATE TABLE IF NOT EXISTS oferta_pack (
 
 CALL AddIndexIfNotExists('ux_oferta_pack', 'oferta_pack', 'oferta_id, pack_id', TRUE);
 
+CREATE TABLE IF NOT EXISTS oferta_tratamiento (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  oferta_id BIGINT NOT NULL,
+  tratamiento_id BIGINT NOT NULL,
+  porc_descuento DECIMAL(5,2) NOT NULL DEFAULT 0.00
+);
+
+CALL AddIndexIfNotExists('ux_oferta_tratamiento', 'oferta_tratamiento', 'oferta_id, tratamiento_id', TRUE);
+
 CREATE TABLE IF NOT EXISTS oferta_combo (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   oferta_id BIGINT NOT NULL,
-  min_packs INT NOT NULL DEFAULT 2
+  min_packs INT NOT NULL DEFAULT 2,
+  porc_descuento_adicional DECIMAL(5,2) NOT NULL DEFAULT 0.00
 );
 
 CREATE TABLE IF NOT EXISTS oferta_combo_pack (
@@ -323,12 +510,37 @@ CREATE TABLE IF NOT EXISTS venta (
   descuento_aplicado_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   total_pagado DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   estado VARCHAR(30) NOT NULL DEFAULT 'pendiente', -- pendiente|pagado|anulado
-  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  observaciones TEXT,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ix_venta_ficha', 'venta', 'ficha_id', FALSE);
 CALL AddIndexIfNotExists('ix_venta_tratamiento', 'venta', 'tratamiento_id', FALSE);
 CALL AddIndexIfNotExists('ix_venta_pack', 'venta', 'pack_id', FALSE);
+
+CREATE TABLE IF NOT EXISTS pago (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  venta_id BIGINT NOT NULL,
+  monto_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  estado VARCHAR(30) NOT NULL DEFAULT 'pendiente', -- pendiente|pagado|anulado
+  observaciones TEXT,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CALL AddIndexIfNotExists('ix_pago_venta', 'pago', 'venta_id', FALSE);
+
+CREATE TABLE IF NOT EXISTS pago_detalle (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  pago_id BIGINT NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  metodo_pago VARCHAR(50) NOT NULL,
+  referencia VARCHAR(100),
+  observaciones TEXT,
+  fecha_pago TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CALL AddIndexIfNotExists('ix_pago_detalle_pago', 'pago_detalle', 'pago_id', FALSE);
 
 CREATE TABLE IF NOT EXISTS venta_oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -348,6 +560,7 @@ CREATE TABLE IF NOT EXISTS sesion (
   sucursal_id BIGINT NOT NULL,
   box_id BIGINT NOT NULL,
   profesional_id BIGINT NOT NULL,
+  google_calendar_event_id VARCHAR(255),
   fecha_planificada TIMESTAMP NOT NULL,
   fecha_ejecucion TIMESTAMP NULL,
   estado VARCHAR(30) NOT NULL DEFAULT 'planificada', -- planificada|confirmada|realizada|no_show|cancelada
@@ -355,7 +568,10 @@ CREATE TABLE IF NOT EXISTS sesion (
   abierta_en TIMESTAMP NULL,
   cerrada_en TIMESTAMP NULL,
   observaciones TEXT,
-  intensidades_zonas JSON
+  intensidades_zonas JSON,
+  datos_sesion JSON,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ux_sesion_venta_num', 'sesion', 'venta_id, numero_sesion', TRUE);
@@ -376,6 +592,9 @@ CALL AddForeignKeyIfNotExists('ficha_especifica', 'fk_ficha_especifica_tipo', 't
 
 CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_ficha', 'ficha_id', 'ficha', 'id');
 CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_profesional', 'profesional_id', 'profesional', 'id');
+CALL AddForeignKeyIfNotExists('consentimiento_firma', 'fk_consentimiento_firma_especifica', 'ficha_especifica_id', 'ficha_especifica', 'id');
+
+CALL AddForeignKeyIfNotExists('precio_tratamiento', 'fk_precio_tratamiento_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 
 CALL AddForeignKeyIfNotExists('pack', 'fk_pack_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 
@@ -387,6 +606,9 @@ CALL AddForeignKeyIfNotExists('evaluacion', 'fk_eval_profesional', 'profesional_
 CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_oferta', 'oferta_id', 'oferta', 'id');
 CALL AddForeignKeyIfNotExists('oferta_pack', 'fk_oferta_pack_pack', 'pack_id', 'pack', 'id');
 
+CALL AddForeignKeyIfNotExists('oferta_tratamiento', 'fk_oferta_tratamiento_oferta', 'oferta_id', 'oferta', 'id');
+CALL AddForeignKeyIfNotExists('oferta_tratamiento', 'fk_oferta_tratamiento_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
+
 CALL AddForeignKeyIfNotExists('oferta_combo', 'fk_oferta_combo_oferta', 'oferta_id', 'oferta', 'id');
 
 CALL AddForeignKeyIfNotExists('oferta_combo_pack', 'fk_oferta_combo_pack_combo', 'oferta_combo_id', 'oferta_combo', 'id');
@@ -396,6 +618,9 @@ CALL AddForeignKeyIfNotExists('venta', 'fk_venta_ficha', 'ficha_id', 'ficha', 'i
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_eval', 'evaluacion_id', 'evaluacion', 'id');
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_tratamiento', 'tratamiento_id', 'tratamiento', 'id');
 CALL AddForeignKeyIfNotExists('venta', 'fk_venta_pack', 'pack_id', 'pack', 'id');
+
+CALL AddForeignKeyIfNotExists('pago', 'fk_pago_venta', 'venta_id', 'venta', 'id');
+CALL AddForeignKeyIfNotExists('pago_detalle', 'fk_pago_detalle_pago', 'pago_id', 'pago', 'id');
 
 CALL AddForeignKeyIfNotExists('venta_oferta', 'fk_venta_oferta_venta', 'venta_id', 'venta', 'id');
 CALL AddForeignKeyIfNotExists('venta_oferta', 'fk_venta_oferta_oferta', 'oferta_id', 'oferta', 'id');
@@ -423,6 +648,16 @@ CALL AddCheckConstraintIfNotExists('venta_oferta', 'ck_venta_oferta_descuento_ra
 CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_min_packs', 'min_packs >= 2');
 CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_duracion_pos', 'duracion_sesion_min >= 0');
 CALL AddCheckConstraintIfNotExists('oferta', 'ck_oferta_prioridad_pos', 'prioridad >= 0');
+CALL AddCheckConstraintIfNotExists('precio_tratamiento', 'ck_precio_tratamiento_regular_pos', 'precio_regular >= 0');
+CALL AddCheckConstraintIfNotExists('precio_tratamiento', 'ck_precio_tratamiento_oferta_pos', 'precio_oferta IS NULL OR precio_oferta >= 0');
+CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_precio_regular_pos', 'precio_regular >= 0');
+CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_precio_oferta_pos', 'precio_oferta IS NULL OR precio_oferta >= 0');
+CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_sesiones_pos', 'sesiones_incluidas >= 1');
+CALL AddCheckConstraintIfNotExists('pago', 'ck_pago_monto_pos', 'monto_total >= 0');
+CALL AddCheckConstraintIfNotExists('pago', 'ck_pago_estado', 'estado IN (''pendiente'',''pagado'',''anulado'')');
+CALL AddCheckConstraintIfNotExists('pago_detalle', 'ck_pago_detalle_monto_pos', 'monto >= 0');
+CALL AddCheckConstraintIfNotExists('oferta_tratamiento', 'ck_oferta_tratamiento_descuento_rango', 'porc_descuento >= 0 AND porc_descuento <= 100');
+CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_descuento_adicional_rango', 'porc_descuento_adicional >= 0 AND porc_descuento_adicional <= 100');
 
 -- ---------- Triggers ----------
 
@@ -677,6 +912,32 @@ JOIN pack p ON op.pack_id = p.id
 JOIN tratamiento t ON p.tratamiento_id = t.id
 WHERE o.activo = TRUE AND p.activo = TRUE;
 
+-- Vista para ofertas por tratamiento
+CREATE OR REPLACE VIEW v_ofertas_tratamiento AS
+SELECT 
+  o.id AS oferta_id,
+  o.nombre AS oferta_nombre,
+  o.tipo,
+  o.porc_descuento AS descuento_general,
+  ot.porc_descuento AS descuento_tratamiento,
+  t.id AS tratamiento_id,
+  t.nombre AS tratamiento_nombre,
+  o.combinable,
+  o.prioridad,
+  o.fecha_inicio,
+  o.fecha_fin,
+  CASE 
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NULL THEN TRUE
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin >= CURDATE() THEN TRUE
+    WHEN o.fecha_fin IS NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
+    WHEN CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
+    ELSE FALSE
+  END AS aplicable_hoy
+FROM oferta o
+JOIN oferta_tratamiento ot ON o.id = ot.oferta_id
+JOIN tratamiento t ON ot.tratamiento_id = t.id
+WHERE o.activo = TRUE AND t.activo = TRUE;
+
 -- Vista para ofertas combo
 CREATE OR REPLACE VIEW v_ofertas_combo AS
 SELECT 
@@ -684,6 +945,7 @@ SELECT
   o.nombre AS oferta_nombre,
   o.tipo,
   oc.min_packs,
+  oc.porc_descuento_adicional,
   oc.id AS oferta_combo_id,
   p.id AS pack_id,
   p.nombre AS pack_nombre,
@@ -995,6 +1257,7 @@ CREATE PROCEDURE sp_aplicar_ofertas(
 BEGIN
     DECLARE v_precio_lista DECIMAL(12,2);
     DECLARE v_pack_id BIGINT;
+    DECLARE v_tratamiento_id BIGINT;
     DECLARE v_secuencia INT DEFAULT 0;
     DECLARE v_oferta_id BIGINT;
     DECLARE v_porc_descuento DECIMAL(5,2);
@@ -1011,6 +1274,18 @@ BEGIN
           AND o.combinable = TRUE
           AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
           AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+        
+        UNION ALL
+        
+        SELECT o.id, ot.porc_descuento
+        FROM oferta o
+        JOIN oferta_tratamiento ot ON o.id = ot.oferta_id
+        WHERE ot.tratamiento_id = v_tratamiento_id
+          AND o.activo = TRUE
+          AND o.combinable = TRUE
+          AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+          AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+        
         ORDER BY o.prioridad ASC;
     
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -1023,12 +1298,12 @@ BEGIN
     START TRANSACTION;
     
     -- Obtener datos de la venta
-    SELECT precio_lista, pack_id INTO v_precio_lista, v_pack_id
+    SELECT precio_lista, pack_id, tratamiento_id INTO v_precio_lista, v_pack_id, v_tratamiento_id
     FROM venta WHERE id = p_venta_id;
     
     SET v_precio_actual = v_precio_lista;
     
-    -- Aplicar ofertas por pack en orden de prioridad
+    -- Aplicar ofertas por pack y tratamiento en orden de prioridad
     OPEN oferta_cursor;
     
     read_loop: LOOP
@@ -1252,12 +1527,46 @@ BEGIN
 END$$
 DELIMITER ;
 
--- OFE-002: Crear oferta combo
+-- OFE-002: Crear oferta por tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_crear_oferta_tratamiento(
+    IN p_nombre VARCHAR(150),
+    IN p_porc_descuento DECIMAL(5,2),
+    IN p_tratamiento_id BIGINT,
+    IN p_fecha_inicio DATE,
+    IN p_fecha_fin DATE,
+    IN p_combinable BOOLEAN,
+    IN p_prioridad INT,
+    OUT p_oferta_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    INSERT INTO oferta (nombre, tipo, porc_descuento, fecha_inicio, fecha_fin, combinable, prioridad)
+    VALUES (p_nombre, 'tratamiento_temporal', p_porc_descuento, p_fecha_inicio, p_fecha_fin, p_combinable, p_prioridad);
+    
+    SET p_oferta_id = LAST_INSERT_ID();
+    
+    INSERT INTO oferta_tratamiento (oferta_id, tratamiento_id, porc_descuento)
+    VALUES (p_oferta_id, p_tratamiento_id, p_porc_descuento);
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- OFE-003: Crear oferta combo
 DELIMITER $$
 CREATE PROCEDURE sp_crear_oferta_combo(
     IN p_nombre VARCHAR(150),
     IN p_porc_descuento DECIMAL(5,2),
     IN p_min_packs INT,
+    IN p_porc_descuento_adicional DECIMAL(5,2),
     IN p_combinable BOOLEAN,
     IN p_prioridad INT,
     OUT p_oferta_id BIGINT
@@ -1276,8 +1585,8 @@ BEGIN
     
     SET p_oferta_id = LAST_INSERT_ID();
     
-    INSERT INTO oferta_combo (oferta_id, min_packs)
-    VALUES (p_oferta_id, p_min_packs);
+    INSERT INTO oferta_combo (oferta_id, min_packs, porc_descuento_adicional)
+    VALUES (p_oferta_id, p_min_packs, p_porc_descuento_adicional);
     
     COMMIT;
 END$$
@@ -1423,15 +1732,28 @@ CREATE PROCEDURE sp_ofertas_aplicables_venta(
 )
 BEGIN
     DECLARE v_pack_id BIGINT;
+    DECLARE v_tratamiento_id BIGINT;
     
-    -- Obtener pack de la venta
-    SELECT pack_id INTO v_pack_id FROM venta WHERE id = p_venta_id;
+    -- Obtener pack y tratamiento de la venta
+    SELECT pack_id, tratamiento_id INTO v_pack_id, v_tratamiento_id FROM venta WHERE id = p_venta_id;
     
     -- Ofertas por pack
     SELECT 'pack' AS tipo, o.*, op.porc_descuento AS descuento_especifico
     FROM oferta o
     JOIN oferta_pack op ON o.id = op.oferta_id
     WHERE op.pack_id = v_pack_id
+      AND o.activo = TRUE
+      AND o.combinable = TRUE
+      AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+      AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+    
+    UNION ALL
+    
+    -- Ofertas por tratamiento
+    SELECT 'tratamiento' AS tipo, o.*, ot.porc_descuento AS descuento_especifico
+    FROM oferta o
+    JOIN oferta_tratamiento ot ON o.id = ot.oferta_id
+    WHERE ot.tratamiento_id = v_tratamiento_id
       AND o.activo = TRUE
       AND o.combinable = TRUE
       AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
@@ -1612,6 +1934,325 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- ---------- GESTIÓN DE PRECIOS ----------
+
+-- PRE-001: Crear precio de tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_crear_precio_tratamiento(
+    IN p_tratamiento_id BIGINT,
+    IN p_precio_regular DECIMAL(12,2),
+    IN p_precio_oferta DECIMAL(12,2),
+    IN p_fecha_inicio_oferta DATE,
+    IN p_fecha_fin_oferta DATE,
+    OUT p_precio_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    INSERT INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta)
+    VALUES (p_tratamiento_id, p_precio_regular, p_precio_oferta, p_fecha_inicio_oferta, p_fecha_fin_oferta);
+    
+    SET p_precio_id = LAST_INSERT_ID();
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- PRE-002: Obtener precio actual de tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_precio_tratamiento(
+    IN p_tratamiento_id BIGINT
+)
+BEGIN
+    SELECT 
+        pt.*,
+        t.nombre AS tratamiento_nombre,
+        CASE 
+            WHEN pt.precio_oferta IS NOT NULL 
+                AND (pt.fecha_inicio_oferta IS NULL OR pt.fecha_inicio_oferta <= CURDATE())
+                AND (pt.fecha_fin_oferta IS NULL OR pt.fecha_fin_oferta >= CURDATE())
+            THEN pt.precio_oferta
+            ELSE pt.precio_regular
+        END AS precio_actual
+    FROM precio_tratamiento pt
+    JOIN tratamiento t ON pt.tratamiento_id = t.id
+    WHERE pt.tratamiento_id = p_tratamiento_id
+      AND pt.activo = TRUE
+    ORDER BY pt.fecha_creacion DESC
+    LIMIT 1;
+END$$
+DELIMITER ;
+
+-- PRE-003: Actualizar precio de pack
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_precio_pack(
+    IN p_pack_id BIGINT,
+    IN p_precio_regular DECIMAL(12,2),
+    IN p_precio_oferta DECIMAL(12,2),
+    IN p_fecha_inicio_oferta DATE,
+    IN p_fecha_fin_oferta DATE
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    UPDATE pack 
+    SET precio_regular = p_precio_regular,
+        precio_oferta = p_precio_oferta,
+        fecha_inicio_oferta = p_fecha_inicio_oferta,
+        fecha_fin_oferta = p_fecha_fin_oferta
+    WHERE id = p_pack_id;
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- ---------- GESTIÓN DE PAGOS ----------
+
+-- PAG-001: Crear pago
+DELIMITER $$
+CREATE PROCEDURE sp_crear_pago(
+    IN p_venta_id BIGINT,
+    IN p_monto_total DECIMAL(12,2),
+    IN p_observaciones TEXT,
+    OUT p_pago_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    INSERT INTO pago (venta_id, monto_total, observaciones)
+    VALUES (p_venta_id, p_monto_total, p_observaciones);
+    
+    SET p_pago_id = LAST_INSERT_ID();
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- PAG-002: Agregar detalle de pago
+DELIMITER $$
+CREATE PROCEDURE sp_agregar_detalle_pago(
+    IN p_pago_id BIGINT,
+    IN p_monto DECIMAL(12,2),
+    IN p_metodo_pago VARCHAR(50),
+    IN p_referencia VARCHAR(100),
+    IN p_observaciones TEXT,
+    OUT p_detalle_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    INSERT INTO pago_detalle (pago_id, monto, metodo_pago, referencia, observaciones)
+    VALUES (p_pago_id, p_monto, p_metodo_pago, p_referencia, p_observaciones);
+    
+    SET p_detalle_id = LAST_INSERT_ID();
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- PAG-003: Confirmar pago
+DELIMITER $$
+CREATE PROCEDURE sp_confirmar_pago(
+    IN p_pago_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    UPDATE pago 
+    SET estado = 'pagado'
+    WHERE id = p_pago_id;
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- PAG-004: Obtener pagos de una venta
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_pagos_venta(
+    IN p_venta_id BIGINT
+)
+BEGIN
+    SELECT 
+        p.*,
+        pd.id AS detalle_id,
+        pd.monto,
+        pd.metodo_pago,
+        pd.referencia,
+        pd.observaciones AS detalle_observaciones,
+        pd.fecha_pago
+    FROM pago p
+    LEFT JOIN pago_detalle pd ON p.id = pd.pago_id
+    WHERE p.venta_id = p_venta_id
+    ORDER BY p.fecha_creacion DESC, pd.fecha_pago DESC;
+END$$
+DELIMITER ;
+
+-- ---------- GESTIÓN DE TRATAMIENTOS Y PACKS ----------
+
+-- TRA-001: Obtener tratamientos disponibles
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_tratamientos_disponibles()
+BEGIN
+    SELECT 
+        t.id,
+        t.nombre,
+        t.descripcion,
+        t.duracion_sesion_min,
+        t.frecuencia_recomendada_dias,
+        COUNT(p.id) AS cantidad_packs
+    FROM tratamiento t
+    LEFT JOIN pack p ON t.id = p.tratamiento_id AND p.activo = TRUE
+    WHERE t.activo = TRUE
+    GROUP BY t.id, t.nombre, t.descripcion, t.duracion_sesion_min, t.frecuencia_recomendada_dias
+    ORDER BY t.nombre;
+END$$
+DELIMITER ;
+
+-- TRA-002: Obtener packs por tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_packs_tratamiento(
+    IN p_tratamiento_id BIGINT
+)
+BEGIN
+    SELECT 
+        p.*,
+        t.nombre AS tratamiento_nombre,
+        CASE 
+            WHEN p.precio_oferta IS NOT NULL 
+                AND (p.fecha_inicio_oferta IS NULL OR p.fecha_inicio_oferta <= CURDATE())
+                AND (p.fecha_fin_oferta IS NULL OR p.fecha_fin_oferta >= CURDATE())
+            THEN p.precio_oferta
+            ELSE p.precio_regular
+        END AS precio_actual
+    FROM pack p
+    JOIN tratamiento t ON p.tratamiento_id = t.id
+    WHERE p.tratamiento_id = p_tratamiento_id
+      AND p.activo = TRUE
+      AND t.activo = TRUE
+    ORDER BY p.nombre;
+END$$
+DELIMITER ;
+
+-- TRA-003: Obtener zonas del cuerpo por categoría
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_zonas_cuerpo(
+    IN p_categoria VARCHAR(50)
+)
+BEGIN
+    SELECT 
+        codigo,
+        nombre,
+        categoria,
+        precio_base
+    FROM zona_cuerpo
+    WHERE (p_categoria IS NULL OR categoria = p_categoria)
+      AND activo = TRUE
+    ORDER BY nombre;
+END$$
+DELIMITER ;
+
+-- TRA-004: Calcular precio pack con zonas adicionales
+DELIMITER $$
+CREATE PROCEDURE sp_calcular_precio_pack_zonas(
+    IN p_pack_id BIGINT,
+    IN p_zonas_adicionales JSON,
+    OUT p_precio_final DECIMAL(12,2)
+)
+BEGIN
+    DECLARE v_precio_base DECIMAL(12,2);
+    DECLARE v_precio_zonas DECIMAL(12,2) DEFAULT 0;
+    DECLARE v_zonas_incluidas JSON;
+    DECLARE v_precio_por_zona JSON;
+    DECLARE v_zona VARCHAR(50);
+    DECLARE v_precio_zona DECIMAL(12,2);
+    DECLARE i INT DEFAULT 0;
+    DECLARE v_total_zonas INT;
+    
+    -- Obtener información del pack
+    SELECT precio_regular, zonas_incluidas, precio_por_zona INTO v_precio_base, v_zonas_incluidas, v_precio_por_zona
+    FROM pack WHERE id = p_pack_id;
+    
+    -- Calcular precio de zonas adicionales
+    IF p_zonas_adicionales IS NOT NULL THEN
+        SET v_total_zonas = JSON_LENGTH(p_zonas_adicionales);
+        
+        WHILE i < v_total_zonas DO
+            SET v_zona = JSON_UNQUOTE(JSON_EXTRACT(p_zonas_adicionales, CONCAT('$[', i, ']')));
+            
+            -- Verificar si la zona no está incluida en el pack
+            IF JSON_SEARCH(v_zonas_incluidas, 'one', v_zona) IS NULL THEN
+                -- Obtener precio de la zona
+                SET v_precio_zona = JSON_UNQUOTE(JSON_EXTRACT(v_precio_por_zona, CONCAT('$.', v_zona)));
+                IF v_precio_zona IS NOT NULL THEN
+                    SET v_precio_zonas = v_precio_zonas + CAST(v_precio_zona AS DECIMAL(12,2));
+                END IF;
+            END IF;
+            
+            SET i = i + 1;
+        END WHILE;
+    END IF;
+    
+    SET p_precio_final = v_precio_base + v_precio_zonas;
+END$$
+DELIMITER ;
+
+-- TRA-005: Obtener historial de tratamientos de un paciente
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_historial_tratamientos(
+    IN p_ficha_id BIGINT
+)
+BEGIN
+    SELECT 
+        v.id AS venta_id,
+        v.fecha_creacion,
+        t.nombre AS tratamiento_nombre,
+        p.nombre AS pack_nombre,
+        v.cantidad_sesiones,
+        v.precio_lista,
+        v.total_pagado,
+        v.estado,
+        COUNT(s.id) AS sesiones_realizadas,
+        v.cantidad_sesiones - COUNT(s.id) AS sesiones_pendientes
+    FROM venta v
+    JOIN tratamiento t ON v.tratamiento_id = t.id
+    LEFT JOIN pack p ON v.pack_id = p.id
+    LEFT JOIN sesion s ON v.id = s.venta_id AND s.estado = 'realizada'
+    WHERE v.ficha_id = p_ficha_id
+    GROUP BY v.id, v.fecha_creacion, t.nombre, p.nombre, v.cantidad_sesiones, v.precio_lista, v.total_pagado, v.estado
+    ORDER BY v.fecha_creacion DESC;
+END$$
+DELIMITER ;
+
 -- =============================================================================
 -- NOTA IMPORTANTE: TODA LA LÓGICA DE NEGOCIO ESTÁ EN LA BASE DE DATOS
 -- =============================================================================
@@ -1634,16 +2275,36 @@ DELIMITER ;
 -- ✓ BR-006: Arquitectura server-based (sin modo offline)
 -- ✓ BR-007: Tabla zona_cuerpo y campos pack.zonas_incluidas, pack.precio_por_zona
 -- ✓ BR-008: Campo sesion.intensidades_zonas para tracking de intensidades
--- ✓ BR-009: Firma digital almacenada en ficha_especifica.datos
+-- ✓ BR-009: Firma digital almacenada en consentimiento_firma.firma_blob
+-- ✓ BR-010: Gestión de precios por tratamiento y pack
+-- ✓ BR-011: Sistema de ofertas múltiples (pack, tratamiento, combo)
+-- ✓ BR-012: Gestión completa de pagos con detalles
+-- ✓ BR-013: Integración con Google Calendar (google_calendar_event_id)
 -- 
 -- Vistas disponibles para consultas complejas:
 -- ✓ v_venta_progreso: Progreso de sesiones por venta
 -- ✓ v_plan_vs_ejecucion: Comparación plan vs ejecución
 -- ✓ v_ofertas_aplicables: Ofertas activas y en fecha
 -- ✓ v_ofertas_pack: Ofertas por pack con descuentos
--- ✓ v_ofertas_combo: Ofertas combo
+-- ✓ v_ofertas_tratamiento: Ofertas por tratamiento
+-- ✓ v_ofertas_combo: Ofertas combo con descuento adicional
 -- ✓ v_sesiones_completas: Sesiones con toda la información
 -- ✓ v_ventas_completas: Ventas con toda la información
 -- ✓ v_reporte_ofertas: Reporte de ofertas aplicadas
 -- ✓ v_disponibilidad_profesionales: Disponibilidad para agenda
+-- 
+-- Stored Procedures por categoría:
+-- ✓ FICHAS: sp_crear_ficha, sp_buscar_fichas, sp_agregar_ficha_especifica
+-- ✓ EVALUACIONES: sp_crear_evaluacion
+-- ✓ VENTAS: sp_crear_venta, sp_aplicar_descuento_manual, sp_aplicar_ofertas
+-- ✓ AGENDA: sp_agendar_sesion, sp_generar_plan_sesiones, sp_confirmar_paciente, sp_abrir_sesion, sp_cerrar_sesion, sp_reprogramar_sesion
+-- ✓ OFERTAS: sp_crear_oferta_pack, sp_crear_oferta_tratamiento, sp_crear_oferta_combo
+-- ✓ PROFESIONALES: sp_crear_profesional, sp_obtener_disponibilidad
+-- ✓ REPORTES: sp_reporte_progreso_ventas, sp_reporte_plan_vs_ejecucion
+-- ✓ PRECIOS: sp_crear_precio_tratamiento, sp_obtener_precio_tratamiento, sp_actualizar_precio_pack
+-- ✓ PAGOS: sp_crear_pago, sp_agregar_detalle_pago, sp_confirmar_pago, sp_obtener_pagos_venta
+-- ✓ DEPILACIÓN: sp_guardar_intensidades_zonas, sp_cargar_intensidades_anteriores, sp_calcular_precio_zonas
+-- ✓ CONSENTIMIENTOS: sp_guardar_firma_digital, sp_verificar_consentimiento_firmado, sp_obtener_firma_consentimiento
+-- ✓ UTILITARIOS: sp_ofertas_aplicables_venta, sp_sesiones_venta, sp_venta_completa
+-- ✓ TRATAMIENTOS: sp_obtener_tratamientos_disponibles, sp_obtener_packs_tratamiento, sp_obtener_zonas_cuerpo, sp_calcular_precio_pack_zonas, sp_obtener_historial_tratamientos
 -- =============================================================================
