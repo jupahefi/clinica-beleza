@@ -375,6 +375,87 @@ class VentasModule {
     getVentas() {
         return this.ventas;
     }
+
+    // Método para cargar ventas (usado por main.js)
+    async loadVentas() {
+        try {
+            // Cargar todas las ventas usando API client
+            this.ventas = await ventasAPI.getAll();
+            console.log('✅ Ventas cargadas:', this.ventas.length);
+        } catch (error) {
+            console.error('❌ Error cargando ventas:', error);
+            mostrarNotificacion('Error cargando ventas', 'error');
+        }
+    }
+
+    // Método para cargar pacientes (usado por main.js)
+    async loadPacientes() {
+        try {
+            // Cargar pacientes para el select de cliente
+            const pacientes = await fichasAPI.getAll();
+            this.cargarPacientesEnSelect(pacientes);
+            console.log('✅ Pacientes cargados para ventas:', pacientes.length);
+        } catch (error) {
+            console.error('❌ Error cargando pacientes para ventas:', error);
+            mostrarNotificacion('Error cargando pacientes', 'error');
+        }
+    }
+
+    cargarPacientesEnSelect(pacientes) {
+        const selectCliente = document.getElementById('cliente');
+        if (!selectCliente) return;
+
+        // Limpiar opciones existentes
+        selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>';
+
+        // Agregar pacientes
+        pacientes.forEach(paciente => {
+            const option = document.createElement('option');
+            option.value = paciente.id;
+            option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut}`;
+            selectCliente.appendChild(option);
+        });
+    }
+
+    // Método para buscar ventas (usado por main.js)
+    buscarVentas(termino) {
+        if (!termino) {
+            // Si no hay término de búsqueda, mostrar todas las ventas
+            this.renderHistorial();
+            return;
+        }
+
+        const ventasFiltradas = this.ventas.filter(venta => 
+            venta.tratamiento?.toLowerCase().includes(termino.toLowerCase()) ||
+            venta.cliente?.toLowerCase().includes(termino.toLowerCase()) ||
+            venta.id?.toString().includes(termino)
+        );
+
+        // Renderizar ventas filtradas
+        this.renderVentasFiltradas(ventasFiltradas);
+    }
+
+    renderVentasFiltradas(ventas) {
+        const lista = document.getElementById('historialLista');
+        if (!lista) return;
+
+        if (ventas.length === 0) {
+            lista.textContent = 'No se encontraron ventas.';
+            return;
+        }
+
+        lista.innerHTML = '';
+        ventas.forEach((venta, i) => {
+            const div = document.createElement('div');
+            div.className = 'venta-item';
+            div.innerHTML = `
+                <strong>#${i + 1}</strong> - ${venta.tratamiento}  
+                → $${venta.precio?.toLocaleString() || 'N/A'}<br>
+                <small>${venta.detalle || ''}</small>
+            `;
+            lista.appendChild(div);
+        });
+    }
 }
 
 // Exportar instancia del módulo
