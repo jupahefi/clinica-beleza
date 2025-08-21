@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Clínica Beleza</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -12,9 +13,24 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --calypso-pastel: #7FB3D3;
+            --calypso-light: #A8D1E7;
+            --calypso-dark: #5A8BA8;
+            --white: #FFFFFF;
+            --light-gray: #F8F9FA;
+            --gray: #6C757D;
+            --dark-gray: #343A40;
+            --success: #28A745;
+            --warning: #FFC107;
+            --danger: #DC3545;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--calypso-light) 0%, var(--calypso-pastel) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -35,10 +51,10 @@
             margin-bottom: 30px;
         }
 
-        .logo i {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 10px;
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
         }
 
         .logo h1 {
@@ -89,15 +105,15 @@
 
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--calypso-pastel);
             background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(127, 179, 211, 0.1);
         }
 
         .btn-login {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--calypso-pastel) 0%, var(--calypso-dark) 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -110,7 +126,7 @@
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(127, 179, 211, 0.3);
         }
 
         .btn-login:disabled {
@@ -162,9 +178,9 @@
         .demo-credentials {
             margin-top: 20px;
             padding: 15px;
-            background: #f8f9fa;
+            background: var(--light-gray);
             border-radius: 10px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--calypso-pastel);
         }
 
         .demo-credentials h4 {
@@ -187,7 +203,7 @@
 <body>
     <div class="login-container">
         <div class="logo">
-            <i class="fas fa-heartbeat"></i>
+            <img src="logo.png" alt="Clínica Beleza" class="logo-img">
             <h1>Clínica Beleza</h1>
             <p>Sistema de Gestión</p>
         </div>
