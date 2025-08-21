@@ -273,19 +273,21 @@ function handleFichas($db, $method, $id, $data) {
             break;
             
         case 'PUT':
-            // Actualizar ficha
-            $result = $db->update("UPDATE ficha SET codigo = ?, nombres = ?, apellidos = ?, rut = ?, telefono = ?, email = ?, fecha_nacimiento = ?, direccion = ?, observaciones = ? WHERE id = ?", [
-                $data['codigo'], $data['nombres'], $data['apellidos'],
+            // Actualizar ficha usando stored procedure
+            $result = $db->executeRaw("CALL sp_actualizar_ficha(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @filas_actualizadas)", [
+                $id, $data['codigo'], $data['nombres'], $data['apellidos'],
                 $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null,
-                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? '', $id
+                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? ''
             ]);
-            echo json_encode(['success' => true, 'data' => ['updated' => $result]]);
+            $filasActualizadas = $db->selectOne("SELECT @filas_actualizadas as filas")['filas'];
+            echo json_encode(['success' => true, 'data' => ['updated' => $filasActualizadas]]);
             break;
             
         case 'DELETE':
-            // Soft delete - cambiar estado
-            $result = $db->update("UPDATE ficha SET activo = FALSE WHERE id = ?", [$id]);
-            echo json_encode(['success' => true, 'data' => ['deleted' => $result]]);
+            // Soft delete - cambiar estado usando stored procedure
+            $result = $db->executeRaw("CALL sp_eliminar_ficha(?, @filas_actualizadas)", [$id]);
+            $filasActualizadas = $db->selectOne("SELECT @filas_actualizadas as filas")['filas'];
+            echo json_encode(['success' => true, 'data' => ['deleted' => $filasActualizadas]]);
             break;
     }
 }
@@ -330,11 +332,12 @@ function handleTiposFichaEspecifica($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos) VALUES (?, ?, ?, ?, ?)", [
+            $result = $db->executeRaw("CALL sp_crear_tipo_ficha_especifica(?, ?, ?, ?, ?, @tipo_id)", [
                 $data['nombre'], $data['descripcion'] ?? '', $data['requiere_consentimiento'] ?? false,
                 $data['template_consentimiento'] ?? '', json_encode($data['campos_requeridos'] ?? [])
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $tipoId = $db->selectOne("SELECT @tipo_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $tipoId]]);
             break;
     }
 }
@@ -461,17 +464,12 @@ function handlePagos($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            // Registrar pago
-            $result = $db->insert("INSERT INTO pago (venta_id, monto, metodo_pago, fecha_pago, observaciones) VALUES (?, ?, ?, NOW(), ?)", [
+            // Registrar pago usando stored procedure
+            $result = $db->executeRaw("CALL sp_crear_pago(?, ?, ?, ?, @pago_id)", [
                 $data['venta_id'], $data['monto'], $data['metodo_pago'], $data['observaciones'] ?? null
             ]);
-            
-            // Actualizar total_pagado en venta
-            $db->update("UPDATE venta SET total_pagado = total_pagado + ? WHERE id = ?", [
-                $data['monto'], $data['venta_id']
-            ]);
-            
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $pagoId = $db->selectOne("SELECT @pago_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $pagoId]]);
             break;
     }
 }
@@ -598,10 +596,11 @@ function handleOfertasCombo($db, $method, $id, $data) {
             
         case 'POST':
             // Agregar pack a oferta combo
-            $result = $db->insert("INSERT INTO oferta_combo_pack (oferta_combo_id, pack_id) VALUES (?, ?)", [
+            $result = $db->executeRaw("CALL sp_agregar_pack_oferta_combo(?, ?, @relacion_id)", [
                 $data['oferta_combo_id'], $data['pack_id']
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $relacionId = $db->selectOne("SELECT @relacion_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $relacionId]]);
             break;
     }
 }
@@ -620,10 +619,11 @@ function handleTratamientos($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica) VALUES (?, ?, ?)", [
+            $result = $db->executeRaw("CALL sp_crear_tratamiento(?, ?, ?, @tratamiento_id)", [
                 $data['nombre'], $data['descripcion'] ?? null, $data['requiere_ficha_especifica'] ?? false
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $tratamientoId = $db->selectOne("SELECT @tratamiento_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $tratamientoId]]);
             break;
     }
 }
@@ -645,10 +645,11 @@ function handlePacks($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min) VALUES (?, ?, ?, ?)", [
+            $result = $db->executeRaw("CALL sp_crear_pack(?, ?, ?, ?, @pack_id)", [
                 $data['tratamiento_id'], $data['nombre'], $data['descripcion'] ?? null, $data['duracion_sesion_min'] ?? 0
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $packId = $db->selectOne("SELECT @pack_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $packId]]);
             break;
     }
 }
@@ -665,10 +666,11 @@ function handleSucursales($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO sucursal (nombre, direccion, telefono) VALUES (?, ?, ?)", [
+            $result = $db->executeRaw("CALL sp_crear_sucursal(?, ?, ?, @sucursal_id)", [
                 $data['nombre'], $data['direccion'] ?? null, $data['telefono'] ?? null
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $sucursalId = $db->selectOne("SELECT @sucursal_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $sucursalId]]);
             break;
     }
 }
@@ -690,10 +692,11 @@ function handleBoxes($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            $result = $db->insert("INSERT INTO box (sucursal_id, nombre) VALUES (?, ?)", [
+            $result = $db->executeRaw("CALL sp_crear_box(?, ?, @box_id)", [
                 $data['sucursal_id'], $data['nombre']
             ]);
-            echo json_encode(['success' => true, 'data' => ['id' => $result]]);
+            $boxId = $db->selectOne("SELECT @box_id as id")['id'];
+            echo json_encode(['success' => true, 'data' => ['id' => $boxId]]);
             break;
     }
 }
@@ -810,8 +813,8 @@ function handleAuth($db, $method, $id, $data) {
                 return;
             }
             
-            // Actualizar último login
-            $db->update("UPDATE usuario SET ultimo_login = NOW() WHERE id = ?", [$usuario['id']]);
+            // Actualizar último login usando stored procedure
+            $db->executeRaw("CALL sp_actualizar_ultimo_login(?)", [$usuario['id']]);
             
             // Obtener datos del profesional si existe
             $profesional = null;

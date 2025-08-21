@@ -272,7 +272,7 @@ class VentasModule {
                 mostrarNotificacion('Venta registrada exitosamente con evaluación y ficha específica.', 'success');
             }
 
-        } catch (error) {
+  } catch (error) {
             console.error('Error confirmando venta:', error);
             mostrarNotificacion('Error registrando venta: ' + error.message, 'error');
         }
@@ -382,7 +382,7 @@ class VentasModule {
             // Cargar todas las ventas usando API client
             this.ventas = await ventasAPI.getAll();
             console.log('✅ Ventas cargadas:', this.ventas.length);
-        } catch (error) {
+  } catch (error) {
             console.error('❌ Error cargando ventas:', error);
             mostrarNotificacion('Error cargando ventas', 'error');
         }

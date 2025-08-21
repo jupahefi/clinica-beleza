@@ -43,7 +43,7 @@ class ClinicaBelezaApp {
             window.location.href = '/login.html';
             return;
         }
-        
+
         // Inicializar cliente API primero
         initializeApiClient();
         
@@ -92,12 +92,12 @@ class ClinicaBelezaApp {
             
             console.log('✅ Autenticación exitosa');
             return true;
-        } catch (error) {
+  } catch (error) {
             console.error('❌ Error verificando autenticación:', error);
             return false;
-        }
     }
-    
+}
+
     setupNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {

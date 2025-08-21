@@ -17,6 +17,7 @@ export class PacientesModule {
     init() {
         this.cargarPacientesSelect();
         this.configurarEventosPacientes();
+        this.configurarValidacionFecha();
         
         // Actualizar estadísticas después de cargar pacientes
         setTimeout(() => {
@@ -209,6 +210,11 @@ export class PacientesModule {
         const nombreElement = document.getElementById('nombrePaciente');
         if (nombreElement) {
             nombreElement.value = `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim();
+        }
+        
+        const rutElement = document.getElementById('rutPaciente');
+        if (rutElement) {
+            rutElement.value = paciente.rut || '';
         }
         
         const fechaElement = document.getElementById('fechaNacimiento');
@@ -416,6 +422,28 @@ export class PacientesModule {
         return true;
     }
     
+    configurarValidacionFecha() {
+        const fechaInput = document.getElementById('fechaNacimiento');
+        if (fechaInput) {
+            // Establecer fecha máxima como hoy (no puede nacer en el futuro)
+            const hoy = new Date();
+            const fechaMaxima = hoy.toISOString().split('T')[0];
+            fechaInput.setAttribute('max', fechaMaxima);
+            
+            // Agregar validación adicional en tiempo real
+            fechaInput.addEventListener('change', () => {
+                const fechaSeleccionada = new Date(fechaInput.value);
+                const fechaActual = new Date();
+                
+                if (fechaSeleccionada > fechaActual) {
+                    mostrarNotificacion('La fecha de nacimiento no puede ser futura', 'error');
+                    fechaInput.value = '';
+                    fechaInput.focus();
+                }
+            });
+        }
+    }
+    
     validarFormularioPaciente() {
   const errores = [];
   
@@ -423,6 +451,22 @@ export class PacientesModule {
         const nombre = document.getElementById('nombrePaciente').value.trim();
   if (!nombre) {
             errores.push('El nombre es obligatorio');
+  }
+  
+        // Validar RUT
+        const rut = document.getElementById('rutPaciente').value.trim();
+  if (!rut) {
+            errores.push('El RUT es obligatorio');
+        }
+        
+        // Validar fecha de nacimiento
+        const fechaNacimiento = document.getElementById('fechaNacimiento').value;
+        if (fechaNacimiento) {
+            const fechaSeleccionada = new Date(fechaNacimiento);
+            const fechaActual = new Date();
+            if (fechaSeleccionada > fechaActual) {
+                errores.push('La fecha de nacimiento no puede ser futura');
+            }
         }
         
         // Validar email
@@ -489,6 +533,7 @@ export class PacientesModule {
             codigo: 'PAC' + Date.now(), // Generar código único
             nombres: nombres,
             apellidos: apellidos,
+            rut: document.getElementById('rutPaciente').value.trim(),
     fecha_nacimiento: document.getElementById('fechaNacimiento').value,
     telefono: document.getElementById('telefonoPaciente').value.trim(),
     email: document.getElementById('emailPaciente').value.trim(),
@@ -582,7 +627,7 @@ export class PacientesModule {
     limpiarFormularioPaciente() {
         // Limpiar campos principales con verificación de existencia
         const campos = [
-            'nombrePaciente', 'telefonoPaciente', 'emailPaciente', 
+            'nombrePaciente', 'rutPaciente', 'telefonoPaciente', 'emailPaciente', 
             'fechaNacimiento', 'direccionPaciente', 'observacionesPaciente'
         ];
         

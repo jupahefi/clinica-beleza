@@ -75,6 +75,15 @@ DROP PROCEDURE IF EXISTS sp_obtener_packs_tratamiento;
 DROP PROCEDURE IF EXISTS sp_obtener_zonas_cuerpo;
 DROP PROCEDURE IF EXISTS sp_calcular_precio_pack_zonas;
 DROP PROCEDURE IF EXISTS sp_obtener_historial_tratamientos;
+DROP PROCEDURE IF EXISTS sp_crear_tipo_ficha_especifica;
+DROP PROCEDURE IF EXISTS sp_actualizar_ficha;
+DROP PROCEDURE IF EXISTS sp_eliminar_ficha;
+DROP PROCEDURE IF EXISTS sp_actualizar_ultimo_login;
+DROP PROCEDURE IF EXISTS sp_crear_tratamiento;
+DROP PROCEDURE IF EXISTS sp_crear_pack;
+DROP PROCEDURE IF EXISTS sp_crear_sucursal;
+DROP PROCEDURE IF EXISTS sp_crear_box;
+DROP PROCEDURE IF EXISTS sp_agregar_pack_oferta_combo;
 
 DELIMITER $$
 
@@ -2185,6 +2194,154 @@ BEGIN
     WHERE v.ficha_id = p_ficha_id
     GROUP BY v.id, v.fecha_creacion, t.nombre, p.nombre, v.cantidad_sesiones, v.precio_lista, v.total_pagado, v.estado
     ORDER BY v.fecha_creacion DESC;
+END$$
+DELIMITER ;
+
+-- =============================================================================
+-- STORED PROCEDURES ADICIONALES PARA API
+-- =============================================================================
+
+-- Crear tipo de ficha específica
+DELIMITER $$
+CREATE PROCEDURE sp_crear_tipo_ficha_especifica(
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_requiere_consentimiento BOOLEAN,
+    IN p_template_consentimiento TEXT,
+    IN p_campos_requeridos JSON,
+    OUT p_tipo_id BIGINT
+)
+BEGIN
+    INSERT INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos, activo)
+    VALUES (p_nombre, p_descripcion, p_requiere_consentimiento, p_template_consentimiento, p_campos_requeridos, TRUE);
+    SET p_tipo_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Actualizar ficha
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_ficha(
+    IN p_id BIGINT,
+    IN p_codigo VARCHAR(40),
+    IN p_nombres VARCHAR(120),
+    IN p_apellidos VARCHAR(120),
+    IN p_rut VARCHAR(20),
+    IN p_telefono VARCHAR(50),
+    IN p_email VARCHAR(120),
+    IN p_fecha_nacimiento DATE,
+    IN p_direccion TEXT,
+    IN p_observaciones TEXT,
+    OUT p_filas_actualizadas INT
+)
+BEGIN
+    UPDATE ficha SET 
+        codigo = p_codigo,
+        nombres = p_nombres,
+        apellidos = p_apellidos,
+        rut = p_rut,
+        telefono = p_telefono,
+        email = p_email,
+        fecha_nacimiento = p_fecha_nacimiento,
+        direccion = p_direccion,
+        observaciones = p_observaciones
+    WHERE id = p_id;
+    SET p_filas_actualizadas = ROW_COUNT();
+END$$
+DELIMITER ;
+
+-- Eliminar ficha (soft delete)
+DELIMITER $$
+CREATE PROCEDURE sp_eliminar_ficha(
+    IN p_id BIGINT,
+    OUT p_filas_actualizadas INT
+)
+BEGIN
+    UPDATE ficha SET activo = FALSE WHERE id = p_id;
+    SET p_filas_actualizadas = ROW_COUNT();
+END$$
+DELIMITER ;
+
+-- Actualizar último login de usuario
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_ultimo_login(
+    IN p_usuario_id BIGINT
+)
+BEGIN
+    UPDATE usuario SET ultimo_login = NOW() WHERE id = p_usuario_id;
+END$$
+DELIMITER ;
+
+-- Crear tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_crear_tratamiento(
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_requiere_ficha_especifica BOOLEAN,
+    OUT p_tratamiento_id BIGINT
+)
+BEGIN
+    INSERT INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, activo)
+    VALUES (p_nombre, p_descripcion, p_requiere_ficha_especifica, TRUE);
+    SET p_tratamiento_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Crear pack
+DELIMITER $$
+CREATE PROCEDURE sp_crear_pack(
+    IN p_tratamiento_id BIGINT,
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_duracion_sesion_min INT,
+    OUT p_pack_id BIGINT
+)
+BEGIN
+    INSERT INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, activo)
+    VALUES (p_tratamiento_id, p_nombre, p_descripcion, p_duracion_sesion_min, TRUE);
+    SET p_pack_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Crear sucursal
+DELIMITER $$
+CREATE PROCEDURE sp_crear_sucursal(
+    IN p_nombre VARCHAR(100),
+    IN p_direccion TEXT,
+    IN p_telefono VARCHAR(50),
+    OUT p_sucursal_id BIGINT
+)
+BEGIN
+    INSERT INTO sucursal (nombre, direccion, telefono, activo)
+    VALUES (p_nombre, p_direccion, p_telefono, TRUE);
+    SET p_sucursal_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Crear box
+DELIMITER $$
+CREATE PROCEDURE sp_crear_box(
+    IN p_sucursal_id BIGINT,
+    IN p_nombre VARCHAR(100),
+    OUT p_box_id BIGINT
+)
+BEGIN
+    INSERT INTO box (sucursal_id, nombre, activo)
+    VALUES (p_sucursal_id, p_nombre, TRUE);
+    SET p_box_id = LAST_INSERT_ID();
+END$$
+DELIMITER ;
+
+-- Agregar pack a oferta combo
+DELIMITER $$
+CREATE PROCEDURE sp_agregar_pack_oferta_combo(
+    IN p_oferta_combo_id BIGINT,
+    IN p_pack_id BIGINT,
+    OUT p_relacion_id BIGINT
+)
+BEGIN
+    INSERT INTO oferta_combo_pack (oferta_combo_id, pack_id)
+    VALUES (p_oferta_combo_id, p_pack_id);
+    SET p_relacion_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
 
