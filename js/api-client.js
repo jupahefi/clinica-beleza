@@ -105,13 +105,13 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
                     }
                 } catch (parseError) {
                     // Si no es JSON válido, usar el texto como está
+                    throw new Error(errorBody);
                 }
                 
             } catch (e) {
                 console.error('🚨 No se pudo leer el cuerpo del error');
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         return response;
