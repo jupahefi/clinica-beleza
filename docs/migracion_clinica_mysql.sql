@@ -1,11 +1,11 @@
 -- =============================================================================
--- Clínica Estética - Esquema base
+-- Clinica Estetica - Esquema base
 -- MySQL migration - v2 (Sistema de Login + Campos Requeridos)
 -- =============================================================================
 
 -- ---------- DROP DATABASE (DESARROLLO/TESTING) ----------
 DROP DATABASE IF EXISTS clinica_estetica;
--- MANTENER COMENTADO PARA PRODUCCIÓN
+-- MANTENER COMENTADO PARA PRODUCCIoN
 
 -- ---------- Helper: create database if not exists ----------
 CREATE DATABASE IF NOT EXISTS clinica_estetica;
@@ -184,9 +184,9 @@ CREATE TABLE IF NOT EXISTS zona_cuerpo (
   activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Las inserciones de datos se moverán después de la creación de todas las tablas
+-- Las inserciones de datos se moveran despues de la creacion de todas las tablas
 
--- Las inserciones de datos se moverán después de la creación de todas las tablas
+-- Las inserciones de datos se moveran despues de la creacion de todas las tablas
 
 CREATE TABLE IF NOT EXISTS box (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS profesional (
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  -- Foreign key se agregará con función idempotente
+  -- Foreign key se agregara con funcion idempotente
 );
 
 CREATE TABLE IF NOT EXISTS ficha (
@@ -258,7 +258,7 @@ CREATE TABLE IF NOT EXISTS ficha (
 CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
 CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
 
--- Primera definición eliminada (duplicada)
+-- Primera definicion eliminada (duplicada)
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -310,7 +310,7 @@ CREATE TABLE IF NOT EXISTS consentimiento_firma (
   contenido_leido TEXT NOT NULL,
   fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   observaciones TEXT NOT NULL
-  -- Unique key se agregará con función idempotente
+  -- Unique key se agregara con funcion idempotente
 );
 
 CALL AddIndexIfNotExists('ix_evaluacion_ficha', 'evaluacion', 'ficha_id', FALSE);
@@ -589,9 +589,9 @@ CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_descuento_ad
 
 -- ---------- Triggers ----------
 
--- Validar que la venta tenga evaluación y ficha específica requeridas
--- La evaluación es obligatoria para todas las ventas
--- La ficha específica nace en la evaluación
+-- Validar que la venta tenga evaluacion y ficha especifica requeridas
+-- La evaluacion es obligatoria para todas las ventas
+-- La ficha especifica nace en la evaluacion
 
 DELIMITER $$
 
@@ -603,26 +603,26 @@ BEGIN
   DECLARE eval_id BIGINT;
   DECLARE ficha_esp_id BIGINT;
   
-  -- Validar que la evaluación existe y pertenece a la misma ficha
+  -- Validar que la evaluacion existe y pertenece a la misma ficha
   SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
   IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluación debe existir y pertenecer a la misma ficha';
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
   END IF;
   
-  -- Validar que la ficha específica existe y pertenece a la evaluación
+  -- Validar que la ficha especifica existe y pertenece a la evaluacion
   SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
   IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica debe existir y pertenecer a la evaluación';
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
   END IF;
   
-  -- Validar que la ficha específica pertenece a la misma ficha
+  -- Validar que la ficha especifica pertenece a la misma ficha
   SELECT fe.id INTO ficha_esp_id 
   FROM ficha_especifica fe
   JOIN evaluacion e ON fe.evaluacion_id = e.id
   WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
   
   IF ficha_esp_id IS NULL THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica debe pertenecer a la evaluación de la misma ficha';
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
   END IF;
 END$$
 
@@ -903,7 +903,7 @@ JOIN pack p ON ocp.pack_id = p.id
 JOIN tratamiento t ON p.tratamiento_id = t.id
 WHERE o.activo = TRUE AND p.activo = TRUE;
 
--- Vista para sesiones con información completa
+-- Vista para sesiones con informacion completa
 CREATE OR REPLACE VIEW v_sesiones_completas AS
 SELECT 
   s.*,
@@ -931,7 +931,7 @@ JOIN profesional prof ON s.profesional_id = prof.id
 JOIN sucursal suc ON s.sucursal_id = suc.id
 JOIN box b ON s.box_id = b.id;
 
--- Vista para ventas con información completa
+-- Vista para ventas con informacion completa
 CREATE OR REPLACE VIEW v_ventas_completas AS
 SELECT 
   v.*,
@@ -1010,12 +1010,12 @@ WHERE prof.activo = TRUE
 GROUP BY prof.id, prof.nombre, prof.tipo_profesional, suc.id, suc.nombre, b.id, b.nombre;
 
 -- =============================================================================
--- STORED PROCEDURES - TODA LA LÓGICA DE NEGOCIO
+-- STORED PROCEDURES - TODA LA LoGICA DE NEGOCIO
 -- =============================================================================
 
 -- ---------- FICHAS ----------
 
--- FIC-001: Crear ficha con código único
+-- FIC-001: Crear ficha con codigo unico
 DELIMITER $$
 CREATE PROCEDURE sp_crear_ficha(
     IN p_codigo VARCHAR(40),
@@ -1039,7 +1039,7 @@ BEGIN
     
     START TRANSACTION;
     
-    -- Verificar si ya existe una ficha con el mismo código o email
+    -- Verificar si ya existe una ficha con el mismo codigo o email
     SELECT id INTO v_existing_id FROM ficha WHERE codigo = p_codigo OR email = p_email LIMIT 1;
     
     IF v_existing_id IS NOT NULL THEN
@@ -1073,7 +1073,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- FIC-003: Agregar ficha específica desde evaluación
+-- FIC-003: Agregar ficha especifica desde evaluacion
 DELIMITER $$
 CREATE PROCEDURE sp_agregar_ficha_especifica(
     IN p_evaluacion_id BIGINT,
@@ -1102,7 +1102,7 @@ DELIMITER ;
 
 -- ---------- EVALUACIONES ----------
 
--- EVA-001: Crear evaluación
+-- EVA-001: Crear evaluacion
 DELIMITER $$
 CREATE PROCEDURE sp_crear_evaluacion(
     IN p_ficha_id BIGINT,
@@ -1135,7 +1135,7 @@ DELIMITER ;
 
 -- ---------- VENTAS ----------
 
--- VEN-001: Crear venta desde evaluación
+-- VEN-001: Crear venta desde evaluacion
 DELIMITER $$
 CREATE PROCEDURE sp_crear_venta(
     IN p_ficha_id BIGINT,
@@ -1189,7 +1189,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- VEN-003: Aplicar ofertas automáticamente
+-- VEN-003: Aplicar ofertas automaticamente
 DELIMITER $$
 CREATE PROCEDURE sp_aplicar_ofertas(
     IN p_venta_id BIGINT
@@ -1270,7 +1270,7 @@ DELIMITER ;
 
 -- ---------- AGENDA ----------
 
--- AGE-001: Agendar sesión
+-- AGE-001: Agendar sesion
 DELIMITER $$
 CREATE PROCEDURE sp_agendar_sesion(
     IN p_venta_id BIGINT,
@@ -1331,7 +1331,7 @@ BEGIN
     
     -- Generar sesiones faltantes
     WHILE v_sesion_actual <= v_cantidad_sesiones DO
-        -- Verificar si la sesión ya existe
+        -- Verificar si la sesion ya existe
         IF NOT EXISTS (SELECT 1 FROM sesion WHERE venta_id = p_venta_id AND numero_sesion = v_sesion_actual) THEN
             INSERT INTO sesion (venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada)
             VALUES (p_venta_id, v_sesion_actual, p_sucursal_id, p_box_id, p_profesional_id, v_fecha_actual);
@@ -1367,7 +1367,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- AGE-004: Abrir sesión
+-- AGE-004: Abrir sesion
 DELIMITER $$
 CREATE PROCEDURE sp_abrir_sesion(
     IN p_sesion_id BIGINT
@@ -1389,7 +1389,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- AGE-005: Cerrar sesión
+-- AGE-005: Cerrar sesion
 DELIMITER $$
 CREATE PROCEDURE sp_cerrar_sesion(
     IN p_sesion_id BIGINT,
@@ -1414,7 +1414,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- AGE-006: Reprogramar sesión
+-- AGE-006: Reprogramar sesion
 DELIMITER $$
 CREATE PROCEDURE sp_reprogramar_sesion(
     IN p_sesion_id BIGINT,
@@ -1629,7 +1629,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- REP-002: Reporte plan vs ejecución
+-- REP-002: Reporte plan vs ejecucion
 DELIMITER $$
 CREATE PROCEDURE sp_reporte_plan_vs_ejecucion(
     IN p_fecha_inicio DATE,
@@ -1727,7 +1727,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Obtener venta completa con toda la información
+-- Obtener venta completa con toda la informacion
 DELIMITER $$
 CREATE PROCEDURE sp_venta_completa(
     IN p_venta_id BIGINT
@@ -1738,7 +1738,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ---------- DEPILACIÓN Y ZONAS DEL CUERPO ----------
+-- ---------- DEPILACIoN Y ZONAS DEL CUERPO ----------
 
 -- DEP-001: Guardar intensidades por zona del cuerpo
 DELIMITER $$
@@ -1794,7 +1794,7 @@ BEGIN
     DECLARE v_zonas_incluidas JSON;
     DECLARE v_precio_por_zona JSON;
     
-    -- Obtener información del pack
+    -- Obtener informacion del pack
     SELECT zonas_incluidas, precio_por_zona INTO v_zonas_incluidas, v_precio_por_zona
     FROM pack WHERE id = p_pack_id;
     
@@ -1803,7 +1803,7 @@ BEGIN
     FROM venta WHERE pack_id = p_pack_id LIMIT 1;
     
     -- Calcular diferencia de zonas
-    -- (Esta lógica se puede expandir según necesidades específicas)
+    -- (Esta logica se puede expandir segun necesidades especificas)
     SET p_precio_total = v_precio_base + v_precio_zonas;
 END$$
 DELIMITER ;
@@ -1878,7 +1878,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ---------- GESTIÓN DE PRECIOS ----------
+-- ---------- GESTIoN DE PRECIOS ----------
 
 -- PRE-001: Crear precio de tratamiento
 DELIMITER $$
@@ -1962,7 +1962,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ---------- GESTIÓN DE PAGOS ----------
+-- ---------- GESTIoN DE PAGOS ----------
 
 -- PAG-001: Crear pago
 DELIMITER $$
@@ -2061,7 +2061,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ---------- GESTIÓN DE TRATAMIENTOS Y PACKS ----------
+-- ---------- GESTIoN DE TRATAMIENTOS Y PACKS ----------
 
 -- TRA-001: Obtener tratamientos disponibles
 DELIMITER $$
@@ -2107,7 +2107,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- TRA-003: Obtener zonas del cuerpo por categoría
+-- TRA-003: Obtener zonas del cuerpo por categoria
 DELIMITER $$
 CREATE PROCEDURE sp_obtener_zonas_cuerpo(
     IN p_categoria VARCHAR(50)
@@ -2142,7 +2142,7 @@ BEGIN
     DECLARE i INT DEFAULT 0;
     DECLARE v_total_zonas INT;
     
-    -- Obtener información del pack
+    -- Obtener informacion del pack
     SELECT precio_regular, zonas_incluidas, precio_por_zona INTO v_precio_base, v_zonas_incluidas, v_precio_por_zona
     FROM pack WHERE id = p_pack_id;
     
@@ -2153,7 +2153,7 @@ BEGIN
         WHILE i < v_total_zonas DO
             SET v_zona = JSON_UNQUOTE(JSON_EXTRACT(p_zonas_adicionales, CONCAT('$[', i, ']')));
             
-            -- Verificar si la zona no está incluida en el pack
+            -- Verificar si la zona no esta incluida en el pack
             IF JSON_SEARCH(v_zonas_incluidas, 'one', v_zona) IS NULL THEN
                 -- Obtener precio de la zona
                 SET v_precio_zona = JSON_UNQUOTE(JSON_EXTRACT(v_precio_por_zona, CONCAT('$.', v_zona)));
@@ -2201,7 +2201,7 @@ DELIMITER ;
 -- STORED PROCEDURES ADICIONALES PARA API
 -- =============================================================================
 
--- Crear tipo de ficha específica
+-- Crear tipo de ficha especifica
 DELIMITER $$
 CREATE PROCEDURE sp_crear_tipo_ficha_especifica(
     IN p_nombre VARCHAR(100),
@@ -2261,7 +2261,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Actualizar último login de usuario
+-- Actualizar ultimo login de usuario
 DELIMITER $$
 CREATE PROCEDURE sp_actualizar_ultimo_login(
     IN p_usuario_id BIGINT
@@ -2346,7 +2346,7 @@ END$$
 DELIMITER ;
 
 -- =============================================================================
--- DATOS INICIALES - INSERTAR DESPUÉS DE CREAR TODAS LAS TABLAS
+-- DATOS INICIALES - INSERTAR DESPUeS DE CREAR TODAS LAS TABLAS
 -- =============================================================================
 
 -- ---------- ZONAS DEL CUERPO ----------
@@ -2354,44 +2354,44 @@ INSERT IGNORE INTO zona_cuerpo (codigo, nombre, categoria, precio_base) VALUES
 ('PIERNAS', 'Piernas', 'DEPILACION', 45000),
 ('BRAZOS', 'Brazos', 'DEPILACION', 35000),
 ('REBAJE', 'Rebaje', 'DEPILACION', 25000),
-('INTERGLUTEO', 'Interglúteo', 'DEPILACION', 20000),
+('INTERGLUTEO', 'Intergluteo', 'DEPILACION', 20000),
 ('ROSTRO_C', 'Rostro C', 'DEPILACION', 30000),
 ('CUELLO', 'Cuello', 'DEPILACION', 25000),
 ('BOZO', 'Bozo', 'DEPILACION', 15000),
 ('AXILA', 'Axila', 'DEPILACION', 20000),
-('MENTON', 'Mentón', 'DEPILACION', 15000),
+('MENTON', 'Menton', 'DEPILACION', 15000),
 ('PATILLAS', 'Patillas', 'DEPILACION', 15000),
 ('ESPALDA', 'Espalda', 'DEPILACION', 40000),
 ('ABDOMEN', 'Abdomen', 'DEPILACION', 30000),
-('GLUTEOS', 'Glúteos', 'DEPILACION', 25000),
+('GLUTEOS', 'Gluteos', 'DEPILACION', 25000),
 ('PECHO', 'Pecho', 'DEPILACION', 30000),
 ('BARBA', 'Barba', 'DEPILACION', 25000),
 ('DEDOS_MANOS', 'Dedos Manos', 'DEPILACION', 10000),
 ('EMPEINE_DEDOS', 'Empeine Dedos', 'DEPILACION', 15000),
-('LINEA_ALBA', 'Línea Alba', 'DEPILACION', 20000);
+('LINEA_ALBA', 'Linea Alba', 'DEPILACION', 20000);
 
 -- ---------- TRATAMIENTOS BASE ----------
 INSERT IGNORE INTO tratamiento (nombre, descripcion, requiere_ficha_especifica, duracion_sesion_min, frecuencia_recomendada_dias, activo) VALUES
-('FACIAL', 'Tratamientos faciales y estéticos', TRUE, 60, 7, TRUE),
+('FACIAL', 'Tratamientos faciales y esteticos', TRUE, 60, 7, TRUE),
 ('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, TRUE),
-('DEPILACION', 'Depilación láser y tratamientos corporales', TRUE, 45, 30, TRUE);
+('DEPILACION', 'Depilacion laser y tratamientos corporales', TRUE, 45, 30, TRUE);
 
--- ---------- TIPOS DE FICHA ESPECÍFICA ----------
+-- ---------- TIPOS DE FICHA ESPECiFICA ----------
 INSERT IGNORE INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos) VALUES
-('DEPILACION', 'Ficha específica para depilación láser', TRUE, 'Consentimiento informado para depilación láser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text')),
-('CORPORAL', 'Ficha específica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text')),
-('FACIAL', 'Ficha específica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text')),
-('CAPILAR', 'Ficha específica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'));
+('DEPILACION', 'Ficha especifica para depilacion laser', TRUE, 'Consentimiento informado para depilacion laser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text')),
+('CORPORAL', 'Ficha especifica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text')),
+('FACIAL', 'Ficha especifica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text')),
+('CAPILAR', 'Ficha especifica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'));
 
 -- ---------- SUCURSAL ----------
 INSERT IGNORE INTO sucursal (nombre, direccion, telefono, email, activo) VALUES
-('Clínica Beleza Principal', 'Av. Principal 123, Santiago', '+56 2 2345 6789', 'contacto@clinica-beleza.cl', TRUE);
+('Clinica Beleza Principal', 'Av. Principal 123, Santiago', '+56 2 2345 6789', 'contacto@clinica-beleza.cl', TRUE);
 
 -- ---------- BOXES ----------
 INSERT IGNORE INTO box (sucursal_id, nombre, descripcion, activo) VALUES
 ((SELECT id FROM sucursal LIMIT 1), 'Box 1', 'Box principal para tratamientos faciales y corporales', TRUE),
 ((SELECT id FROM sucursal LIMIT 1), 'Box 2', 'Box secundario para tratamientos especializados', TRUE),
-((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box exclusivo para depilación láser', TRUE);
+((SELECT id FROM sucursal LIMIT 1), 'Box 3', 'Box exclusivo para depilacion laser', TRUE);
 
 -- ---------- USUARIOS ----------
 INSERT IGNORE INTO usuario (username, password_hash, email, rol, activo) VALUES
@@ -2402,49 +2402,49 @@ INSERT IGNORE INTO usuario (username, password_hash, email, rol, activo) VALUES
 
 -- ---------- PROFESIONALES ----------
 INSERT IGNORE INTO profesional (usuario_id, nombre, apellidos, rut, telefono, email, tipo_profesional, bio, foto_url, especialidad, titulo_profesional, numero_colegio, fecha_nacimiento, direccion, estado_civil, grupo_sanguineo, contacto_emergencia, telefono_emergencia, activo) VALUES
-((SELECT id FROM usuario WHERE username = 'juan.herrera'), 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador', 'Administrador del sistema y desarrollador principal. Especialista en gestión de clínicas estéticas y sistemas de información médica.', '/assets/profesionales/juan-herrera.jpg', 'Administración y Desarrollo', 'Ingeniero en Informática', 'ADM-00001', '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'María Herrera', '+56 9 8888 8888', TRUE),
-((SELECT id FROM usuario WHERE username = 'maria.gonzalez'), 'María', 'González', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesióloga', 'Especialista en tratamientos faciales y corporales con más de 8 años de experiencia. Certificada en técnicas avanzadas de radiofrecuencia y criolipolisis.', '/assets/profesionales/maria-gonzalez.jpg', 'Tratamientos Faciales y Corporales', 'Kinesióloga', 'KIN-12345', '1985-03-15', 'Av. Providencia 1234, Providencia, Santiago', 'Casada', 'O+', 'Carlos González', '+56 9 8765 4321', TRUE),
-((SELECT id FROM usuario WHERE username = 'ana.rodriguez'), 'Ana', 'Rodríguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Técnico Estético', 'Especialista en depilación láser con certificación internacional. Experta en todos los tipos de piel y zonas corporales.', '/assets/profesionales/ana-rodriguez.jpg', 'Depilación Láser', 'Técnico Estético', 'TEC-67890', '1990-07-22', 'Calle Las Condes 567, Las Condes, Santiago', 'Soltera', 'A+', 'María Rodríguez', '+56 9 1111 2222', TRUE),
-((SELECT id FROM usuario WHERE username = 'carmen.silva'), 'Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetóloga', 'Especialista en tratamientos capilares y regenerativos. Certificada en PRP y fotobiomodulación para el cabello.', '/assets/profesionales/carmen-silva.jpg', 'Tratamientos Capilares', 'Cosmetóloga', 'COS-11111', '1988-11-08', 'Av. Vitacura 890, Vitacura, Santiago', 'Divorciada', 'B+', 'Pedro Silva', '+56 9 3333 4444', TRUE);
+((SELECT id FROM usuario WHERE username = 'juan.herrera'), 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador', 'Administrador del sistema y desarrollador principal. Especialista en gestion de clinicas esteticas y sistemas de informacion medica.', '/assets/profesionales/juan-herrera.jpg', 'Administracion y Desarrollo', 'Ingeniero en Informatica', 'ADM-00001', '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'Maria Herrera', '+56 9 8888 8888', TRUE),
+((SELECT id FROM usuario WHERE username = 'maria.gonzalez'), 'Maria', 'Gonzalez', '12.345.678-9', '+56 9 1234 5678', 'maria.gonzalez@clinica-beleza.cl', 'Kinesiologa', 'Especialista en tratamientos faciales y corporales con mas de 8 años de experiencia. Certificada en tecnicas avanzadas de radiofrecuencia y criolipolisis.', '/assets/profesionales/maria-gonzalez.jpg', 'Tratamientos Faciales y Corporales', 'Kinesiologa', 'KIN-12345', '1985-03-15', 'Av. Providencia 1234, Providencia, Santiago', 'Casada', 'O+', 'Carlos Gonzalez', '+56 9 8765 4321', TRUE),
+((SELECT id FROM usuario WHERE username = 'ana.rodriguez'), 'Ana', 'Rodriguez', '23.456.789-0', '+56 9 2345 6789', 'ana.rodriguez@clinica-beleza.cl', 'Tecnico Estetico', 'Especialista en depilacion laser con certificacion internacional. Experta en todos los tipos de piel y zonas corporales.', '/assets/profesionales/ana-rodriguez.jpg', 'Depilacion Laser', 'Tecnico Estetico', 'TEC-67890', '1990-07-22', 'Calle Las Condes 567, Las Condes, Santiago', 'Soltera', 'A+', 'Maria Rodriguez', '+56 9 1111 2222', TRUE),
+((SELECT id FROM usuario WHERE username = 'carmen.silva'), 'Carmen', 'Silva', '34.567.890-1', '+56 9 3456 7890', 'carmen.silva@clinica-beleza.cl', 'Cosmetologa', 'Especialista en tratamientos capilares y regenerativos. Certificada en PRP y fotobiomodulacion para el cabello.', '/assets/profesionales/carmen-silva.jpg', 'Tratamientos Capilares', 'Cosmetologa', 'COS-11111', '1988-11-08', 'Av. Vitacura 890, Vitacura, Santiago', 'Divorciada', 'B+', 'Pedro Silva', '+56 9 3333 4444', TRUE);
 
 -- ---------- PACKS DE TRATAMIENTOS FACIAL ----------
 INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, 39900, 24900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, 250000, 199000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinámica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, 399000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, 299000, 299000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, 199000, 149900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, 450000, 390000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnología Plasmática Párpados', 'Tratamiento plasmático para párpados', 45, 1, 350000, 250000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
+((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, 350000, 250000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'FACIAL'), 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, 189000, 139900, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
 
 -- ---------- PACKS DE TRATAMIENTOS CAPILAR ----------
 INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
 ((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
 ((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT()),
-((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulación Capilar', 'Fotobiomodulación para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
+((SELECT id FROM tratamiento WHERE nombre = 'CAPILAR'), 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, 579000, 499000, '2024-01-01', '2024-12-31', TRUE, JSON_ARRAY(), JSON_OBJECT());
 
 -- ---------- PACKS DE TRATAMIENTOS DEPILACION ----------
 INSERT IGNORE INTO pack (tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo, zonas_incluidas, precio_por_zona) VALUES
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilación láser cuerpo completo', 120, 6, 499000, 499000, '2024-01-01', '2024-12-31', TRUE, 
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo', 'Depilacion laser cuerpo completo', 120, 6, 499000, 499000, '2024-01-01', '2024-12-31', TRUE, 
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilación láser cuerpo completo sin rostro', 90, 6, 399000, 399000, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Cuerpo Completo Sin Rostro', 'Depilacion laser cuerpo completo sin rostro', 90, 6, 399000, 399000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilación láser rostro completo', 45, 8, 149900, 149900, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Rostro Completo', 'Depilacion laser rostro completo', 45, 8, 149900, 149900, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
  JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilación láser full body: piernas, brazos, axilas, rebaje, interglúteo', 75, 6, 259000, 199000, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Full Body', 'Depilacion laser full body: piernas, brazos, axilas, rebaje, intergluteo', 75, 6, 259000, 199000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilación láser semi full: piernas, axilas, rebaje, interglúteo', 60, 6, 199000, 159000, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Semi Full', 'Depilacion laser semi full: piernas, axilas, rebaje, intergluteo', 60, 6, 199000, 159000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilación láser bikini full: rebaje e interglúteo', 30, 6, 99000, 79900, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full', 'Depilacion laser bikini full: rebaje e intergluteo', 30, 6, 99000, 79900, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000)),
-((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilación láser bikini full con axilas', 35, 6, 120000, 99000, '2024-01-01', '2024-12-31', TRUE,
+((SELECT id FROM tratamiento WHERE nombre = 'DEPILACION'), 'Bikini Full + Axilas', 'Depilacion laser bikini full con axilas', 35, 6, 120000, 99000, '2024-01-01', '2024-12-31', TRUE,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000));
 
@@ -2459,22 +2459,22 @@ INSERT IGNORE INTO oferta (nombre, tipo, descripcion, porc_descuento, fecha_inic
 -- Ofertas FACIAL
 ('Promo Limpieza Facial', 'pack_temporal', 'Descuento especial en limpieza facial profunda', 37.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 ('Promo Radiofrecuencia Facial', 'pack_temporal', 'Descuento en radiofrecuencia facial reafirmante', 20.4, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Criolipolisis Facial', 'pack_temporal', 'Descuento en criolipolisis facial dinámica', 25.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Criolipolisis Facial', 'pack_temporal', 'Descuento en criolipolisis facial dinamica', 25.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 ('Promo Plasma Rico en Plaquetas', 'pack_temporal', 'Descuento en tratamiento con PRP', 24.7, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 ('Promo Radiofrecuencia Fraccionada', 'pack_temporal', 'Descuento en radiofrecuencia fraccionada + vitamina C', 13.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Tecnología Plasmática', 'pack_temporal', 'Descuento en tecnología plasmática para párpados', 28.6, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Tecnologia Plasmatica', 'pack_temporal', 'Descuento en tecnologia plasmatica para parpados', 28.6, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 ('Promo Pink Glow', 'pack_temporal', 'Descuento en Pink Glow con ultrasonido', 26.0, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 
 -- Ofertas CAPILAR
 ('Promo Carboxiterapia Capilar', 'pack_temporal', 'Descuento en carboxiterapia para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 ('Promo PRP Capilar', 'pack_temporal', 'Descuento en PRP para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Fotobiomodulación Capilar', 'pack_temporal', 'Descuento en fotobiomodulación para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Fotobiomodulacion Capilar', 'pack_temporal', 'Descuento en fotobiomodulacion para el cabello', 13.8, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
 
 -- Ofertas DEPILACION
-('Promo Full Body', 'pack_temporal', 'Descuento en depilación láser full body', 23.2, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Semi Full', 'pack_temporal', 'Descuento en depilación láser semi full', 20.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Bikini Full', 'pack_temporal', 'Descuento en depilación láser bikini full', 19.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
-('Promo Bikini Full + Axilas', 'pack_temporal', 'Descuento en depilación láser bikini full + axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1);
+('Promo Full Body', 'pack_temporal', 'Descuento en depilacion laser full body', 23.2, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Semi Full', 'pack_temporal', 'Descuento en depilacion laser semi full', 20.1, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Bikini Full', 'pack_temporal', 'Descuento en depilacion laser bikini full', 19.3, '2024-01-01', '2024-12-31', TRUE, TRUE, 1),
+('Promo Bikini Full + Axilas', 'pack_temporal', 'Descuento en depilacion laser bikini full + axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, TRUE, 1);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS FACIAL ----------
 INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
@@ -2483,13 +2483,13 @@ INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
 ((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Facial'), 
  (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Facial'), 20.4),
 ((SELECT id FROM oferta WHERE nombre = 'Promo Criolipolisis Facial'), 
- (SELECT id FROM pack WHERE nombre = 'Criolipolisis Facial Dinámica'), 25.1),
+ (SELECT id FROM pack WHERE nombre = 'Criolipolisis Facial Dinamica'), 25.1),
 ((SELECT id FROM oferta WHERE nombre = 'Promo Plasma Rico en Plaquetas'), 
  (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas'), 24.7),
 ((SELECT id FROM oferta WHERE nombre = 'Promo Radiofrecuencia Fraccionada'), 
  (SELECT id FROM pack WHERE nombre = 'Radiofrecuencia Fraccionada + Vitamina C'), 13.3),
-((SELECT id FROM oferta WHERE nombre = 'Promo Tecnología Plasmática'), 
- (SELECT id FROM pack WHERE nombre = 'Tecnología Plasmática Párpados'), 28.6),
+((SELECT id FROM oferta WHERE nombre = 'Promo Tecnologia Plasmatica'), 
+ (SELECT id FROM pack WHERE nombre = 'Tecnologia Plasmatica Parpados'), 28.6),
 ((SELECT id FROM oferta WHERE nombre = 'Promo Pink Glow'), 
  (SELECT id FROM pack WHERE nombre = 'Pink Glow + Ultrasonido'), 26.0);
 
@@ -2499,8 +2499,8 @@ INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
  (SELECT id FROM pack WHERE nombre = 'Carboxiterapia Capilar'), 13.8),
 ((SELECT id FROM oferta WHERE nombre = 'Promo PRP Capilar'), 
  (SELECT id FROM pack WHERE nombre = 'Plasma Rico en Plaquetas Capilar'), 13.8),
-((SELECT id FROM oferta WHERE nombre = 'Promo Fotobiomodulación Capilar'), 
- (SELECT id FROM pack WHERE nombre = 'Fotobiomodulación Capilar'), 13.8);
+((SELECT id FROM oferta WHERE nombre = 'Promo Fotobiomodulacion Capilar'), 
+ (SELECT id FROM pack WHERE nombre = 'Fotobiomodulacion Capilar'), 13.8);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS DEPILACION ----------
 INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
@@ -2514,42 +2514,42 @@ INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
  (SELECT id FROM pack WHERE nombre = 'Bikini Full + Axilas'), 17.5);
 
 -- =============================================================================
--- NOTA IMPORTANTE: TODA LA LÓGICA DE NEGOCIO ESTÁ EN LA BASE DE DATOS
+-- NOTA IMPORTANTE: TODA LA LoGICA DE NEGOCIO ESTa EN LA BASE DE DATOS
 -- =============================================================================
 -- 
--- Esta migración implementa el proceso correcto del negocio:
+-- Esta migracion implementa el proceso correcto del negocio:
 -- 
 -- FLUJO CORRECTO:
 -- 1. FICHA GENERAL (libre) - se puede crear en cualquier momento
--- 2. EVALUACIÓN (obligatoria) - se agenda o se hace inmediatamente
--- 3. FICHA ESPECÍFICA (nace en la evaluación) - depilación o corporal
--- 4. VENTA (requiere evaluación y ficha específica) - con validaciones
--- 5. CONSENTIMIENTO (solo para depilación) - con firma digital
+-- 2. EVALUACIoN (obligatoria) - se agenda o se hace inmediatamente
+-- 3. FICHA ESPECiFICA (nace en la evaluacion) - depilacion o corporal
+-- 4. VENTA (requiere evaluacion y ficha especifica) - con validaciones
+-- 5. CONSENTIMIENTO (solo para depilacion) - con firma digital
 -- 
 -- CAMBIOS PRINCIPALES:
--- ✓ EVALUACIÓN es obligatoria para todas las ventas
--- ✓ FICHA_ESPECÍFICA nace en la evaluación (no antes)
--- ✓ VENTA requiere tanto evaluación como ficha específica
--- ✓ CONSENTIMIENTO vinculado a ficha específica de depilación
+-- ✓ EVALUACIoN es obligatoria para todas las ventas
+-- ✓ FICHA_ESPECiFICA nace en la evaluacion (no antes)
+-- ✓ VENTA requiere tanto evaluacion como ficha especifica
+-- ✓ CONSENTIMIENTO vinculado a ficha especifica de depilacion
 -- ✓ Trigger trg_venta_requiere_evaluacion_ficha_especifica
--- ✓ Campos actualizados según ERD.mmd
+-- ✓ Campos actualizados segun ERD.mmd
 -- 
 -- La API debe ser un simple passthrough a la base de datos.
--- NO implementar lógica de negocio en la API.
+-- NO implementar logica de negocio en la API.
 -- 
 -- Vistas disponibles para consultas complejas:
 -- ✓ v_venta_progreso: Progreso de sesiones por venta
--- ✓ v_plan_vs_ejecucion: Comparación plan vs ejecución
+-- ✓ v_plan_vs_ejecucion: Comparacion plan vs ejecucion
 -- ✓ v_ofertas_aplicables: Ofertas activas y en fecha
 -- ✓ v_ofertas_pack: Ofertas por pack con descuentos
 -- ✓ v_ofertas_tratamiento: Ofertas por tratamiento
 -- ✓ v_ofertas_combo: Ofertas combo con descuento adicional
--- ✓ v_sesiones_completas: Sesiones con toda la información
--- ✓ v_ventas_completas: Ventas con toda la información
+-- ✓ v_sesiones_completas: Sesiones con toda la informacion
+-- ✓ v_ventas_completas: Ventas con toda la informacion
 -- ✓ v_reporte_ofertas: Reporte de ofertas aplicadas
 -- ✓ v_disponibilidad_profesionales: Disponibilidad para agenda
 -- 
--- Stored Procedures por categoría:
+-- Stored Procedures por categoria:
 -- ✓ FICHAS: sp_crear_ficha, sp_buscar_fichas, sp_agregar_ficha_especifica
 -- ✓ EVALUACIONES: sp_crear_evaluacion
 -- ✓ VENTAS: sp_crear_venta, sp_aplicar_descuento_manual, sp_aplicar_ofertas
@@ -2559,7 +2559,7 @@ INSERT IGNORE INTO oferta_pack (oferta_id, pack_id, porc_descuento) VALUES
 -- ✓ REPORTES: sp_reporte_progreso_ventas, sp_reporte_plan_vs_ejecucion
 -- ✓ PRECIOS: sp_crear_precio_tratamiento, sp_obtener_precio_tratamiento, sp_actualizar_precio_pack
 -- ✓ PAGOS: sp_crear_pago, sp_agregar_detalle_pago, sp_confirmar_pago, sp_obtener_pagos_venta
--- ✓ DEPILACIÓN: sp_guardar_intensidades_zonas, sp_cargar_intensidades_anteriores, sp_calcular_precio_zonas
+-- ✓ DEPILACIoN: sp_guardar_intensidades_zonas, sp_cargar_intensidades_anteriores, sp_calcular_precio_zonas
 -- ✓ CONSENTIMIENTOS: sp_guardar_firma_digital, sp_verificar_consentimiento_firmado, sp_obtener_firma_consentimiento
 -- ✓ UTILITARIOS: sp_ofertas_aplicables_venta, sp_sesiones_venta, sp_venta_completa
 -- ✓ TRATAMIENTOS: sp_obtener_tratamientos_disponibles, sp_obtener_packs_tratamiento, sp_obtener_zonas_cuerpo, sp_calcular_precio_pack_zonas, sp_obtener_historial_tratamientos
