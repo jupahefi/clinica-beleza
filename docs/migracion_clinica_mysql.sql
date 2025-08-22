@@ -492,8 +492,8 @@ CREATE TABLE IF NOT EXISTS sesion (
   abierta_en TIMESTAMP NULL, -- NULL hasta abrir la sesión
   cerrada_en TIMESTAMP NULL, -- NULL hasta cerrar la sesión
   observaciones TEXT NULL, -- NULL si no hay observaciones
-  intensidades_zonas JSON NOT NULL DEFAULT '{}', -- JSON vacío por defecto
-  datos_sesion JSON NOT NULL DEFAULT '{}', -- JSON vacío por defecto
+            intensidades_zonas JSON NOT NULL, -- JSON vacío por defecto
+          datos_sesion JSON NOT NULL, -- JSON vacío por defecto
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -1330,14 +1330,14 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO sesion (
-        venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
-        fecha_planificada, observaciones
-    )
-    VALUES (
-        p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id,
-        p_fecha_planificada, p_observaciones
-    );
+            INSERT INTO sesion (
+            venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
+            fecha_planificada, observaciones, intensidades_zonas, datos_sesion
+        )
+        VALUES (
+            p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id,
+            p_fecha_planificada, p_observaciones, '{}', '{}'
+        );
     
     SET p_sesion_id = LAST_INSERT_ID();
     

@@ -326,8 +326,8 @@ erDiagram
     timestamptz abierta_en "NULL hasta abrir la sesión"
     timestamptz cerrada_en "NULL hasta cerrar la sesión"
     text observaciones "NULL si no hay observaciones"
-    jsonb intensidades_zonas NOT NULL DEFAULT empty_object "JSON vacío por defecto"
-    jsonb datos_sesion NOT NULL DEFAULT empty_object "JSON vacío por defecto"
+          jsonb intensidades_zonas NOT NULL "JSON vacío por defecto"
+      jsonb datos_sesion NOT NULL "JSON vacío por defecto"
     timestamptz fecha_creacion
     timestamptz fecha_actualizacion
   }
