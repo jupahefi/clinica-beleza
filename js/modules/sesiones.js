@@ -102,10 +102,17 @@ export class SesionesModule {
     }
     
     setupEventListeners() {
-        document.addEventListener('DOMContentLoaded', () => {
+        // Si el DOM ya está listo, configurar inmediatamente
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.setupSesionForm();
+                this.setupIntensidadesForm();
+            });
+        } else {
+            // DOM ya está listo, configurar inmediatamente
             this.setupSesionForm();
             this.setupIntensidadesForm();
-        });
+        }
     }
     
     setupSesionForm() {
@@ -908,26 +915,37 @@ export class SesionesModule {
             
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
-            for (const venta of ventasPaciente) {
-                const option = document.createElement('option');
-                option.value = venta.id.toString();
-                
-                // Mejorar el texto mostrado
-                let ventaText = `Venta #${venta.id}`;
-                if (venta.tratamiento?.nombre) {
-                    ventaText += ` - ${venta.tratamiento.nombre}`;
-                }
-                if (venta.precio_total) {
-                    ventaText += ` - $${venta.precio_total.toLocaleString()}`;
-                }
-                if (venta.fecha_venta) {
-                    const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
-                    ventaText += ` - ${fecha}`;
-                }
-                
-                option.textContent = ventaText;
-                select.appendChild(option);
-            }
+                         for (const venta of ventasPaciente) {
+                 const option = document.createElement('option');
+                 option.value = venta.id.toString();
+                 
+                 // Crear texto descriptivo más útil
+                 let ventaText = `#${venta.id}`;
+                 
+                 // Agregar nombre del tratamiento
+                 if (venta.tratamiento?.nombre) {
+                     ventaText += ` ${venta.tratamiento.nombre}`;
+                 }
+                 
+                 // Agregar información de sesiones
+                 if (venta.cantidad_sesiones) {
+                     ventaText += ` (${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''})`;
+                 }
+                 
+                 // Agregar precio si existe
+                 if (venta.precio_total && venta.precio_total > 0) {
+                     ventaText += ` - $${venta.precio_total.toLocaleString()}`;
+                 }
+                 
+                 // Agregar fecha si existe
+                 if (venta.fecha_venta) {
+                     const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
+                     ventaText += ` - ${fecha}`;
+                 }
+                 
+                 option.textContent = ventaText;
+                 select.appendChild(option);
+             }
             
             console.log('✅ Ventas del paciente cargadas:', ventasPaciente.length);
         } catch (error) {
