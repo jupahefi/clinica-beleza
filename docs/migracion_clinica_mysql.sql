@@ -1166,8 +1166,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
-    VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, observaciones)
+    VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, 'Venta normal');
     
     SET p_venta_id = LAST_INSERT_ID();
     
@@ -1196,8 +1196,8 @@ BEGIN
     START TRANSACTION;
     
     -- Para evaluación, evaluacion_id y ficha_especifica_id son NULL
-    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
-    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, observaciones)
+    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, 'Venta de evaluación inicial');
     
     SET p_venta_id = LAST_INSERT_ID();
     
