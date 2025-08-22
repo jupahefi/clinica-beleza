@@ -457,6 +457,13 @@ class VentasModule {
     }
 
     limpiarFormulario() {
+        // Limpiar Select2 del cliente
+        const clienteSelect = document.getElementById('cliente');
+        if (clienteSelect && typeof $ !== 'undefined' && $.fn.select2) {
+            $(clienteSelect).val(null).trigger('change');
+        }
+        
+        // Limpiar otros campos
         const selectTratamiento = document.getElementById('tratamiento');
         const packSelect = document.getElementById('pack');
         const inputSesiones = document.getElementById('cantidadSesiones');
@@ -471,6 +478,12 @@ class VentasModule {
 
         const packsDiv = document.getElementById('packsDiv');
         if (packsDiv) packsDiv.style.display = 'none';
+        
+        // Resetear cliente seleccionado
+        this.clienteSeleccionado = null;
+        
+        // Mostrar notificación
+        mostrarNotificacion('Formulario de venta limpiado', 'info');
     }
 
     // Método para obtener ventas (usado por main.js)
