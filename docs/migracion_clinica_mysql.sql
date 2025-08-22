@@ -636,10 +636,10 @@ BEGIN
   END IF;
   
   -- Validar que la ficha especifica pertenece a la misma ficha
-  SELECT fe.id INTO ficha_esp_id 
-  FROM ficha_especifica fe
-  JOIN evaluacion e ON fe.evaluacion_id = e.id
-  WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
+  SELECT ficha_especifica.id INTO ficha_esp_id 
+  FROM ficha_especifica
+  JOIN evaluacion ON ficha_especifica.evaluacion_id = evaluacion.id
+  WHERE ficha_especifica.id = NEW.ficha_especifica_id AND evaluacion.ficha_id = NEW.ficha_id;
   
   IF ficha_esp_id IS NULL THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
