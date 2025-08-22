@@ -628,7 +628,7 @@ BEGIN
   -- Validar que la ficha especifica existe y pertenece a la evaluacion
   IF NEW.ficha_especifica_id IS NULL THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica es obligatoria para ventas normales';
-    END IF;
+  END IF;
   
   SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
   IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
