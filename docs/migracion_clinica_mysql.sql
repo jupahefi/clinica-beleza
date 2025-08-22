@@ -606,7 +606,7 @@ BEGIN
   DECLARE EXIT HANDLER FOR NOT FOUND
   BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Registro no encontrado en validacion';
-  END;
+  END$$
   
   -- Verificar si es una venta de evaluación
   SELECT TRUE INTO es_evaluacion FROM tratamiento WHERE id = NEW.tratamiento_id AND nombre = 'EVALUACION';
