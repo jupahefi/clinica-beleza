@@ -2523,10 +2523,139 @@ CALL sp_crear_tratamiento('DEPILACION', 'Depilacion laser y tratamientos corpora
 
 -- ---------- TIPOS DE FICHA ESPECiFICA ----------
 -- Usando SP para crear tipos de ficha específica con validaciones
-CALL sp_crear_tipo_ficha_especifica('DEPILACION', 'Ficha especifica para depilacion laser', TRUE, 'Consentimiento informado para depilacion laser', JSON_OBJECT('zonas', 'array', 'intensidad_anterior', 'text', 'observaciones_medicas', 'text'), @tipo_depilacion_id);
-CALL sp_crear_tipo_ficha_especifica('CORPORAL', 'Ficha especifica para tratamientos corporales', TRUE, 'Consentimiento informado para tratamientos corporales', JSON_OBJECT('medidas_antes', 'object', 'medidas_despues', 'object', 'objetivo_estetico', 'text'), @tipo_corporal_id);
-CALL sp_crear_tipo_ficha_especifica('FACIAL', 'Ficha especifica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text'), @tipo_facial_id);
-CALL sp_crear_tipo_ficha_especifica('CAPILAR', 'Ficha especifica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'), @tipo_capilar_id);
+-- DEPILACION: Definición completa basada en ficha_depilacion.htm
+CALL sp_crear_tipo_ficha_especifica('DEPILACION', 'Ficha específica para depilación láser', TRUE, 
+'CONSENTIMIENTO INFORMADO - DEPILACIÓN LÁSER
+
+He sido informado/a sobre el procedimiento de depilación láser y entiendo que:
+
+1. El láser actúa sobre el folículo piloso para reducir el crecimiento del vello
+2. Se requieren múltiples sesiones para resultados óptimos
+3. Los resultados varían según el tipo de piel y color del vello
+4. Pueden existir efectos secundarios temporales como enrojecimiento o inflamación
+5. Es importante evitar la exposición solar antes y después del tratamiento
+6. Debo informar sobre cualquier cambio en mi estado de salud
+
+Declaro que:
+- He leído y comprendido toda la información proporcionada
+- He tenido la oportunidad de hacer preguntas
+- Consiento voluntariamente al tratamiento
+- Entiendo que los resultados no están garantizados
+- Me comprometo a seguir las indicaciones post-tratamiento
+
+Fecha: {fecha}',
+JSON_OBJECT(
+    'antecedentes_personales', JSON_OBJECT(
+        'nombre_completo', 'text',
+        'fecha_nacimiento', 'date',
+        'edad', 'number',
+        'ocupacion', 'text',
+        'telefono_fijo', 'text',
+        'celular', 'text',
+        'email', 'email',
+        'medio_conocimiento', 'text'
+    ),
+    'evaluacion_medica', JSON_OBJECT(
+        'medicamentos', 'boolean',
+        'isotretinoina', 'boolean',
+        'alergias', 'boolean',
+        'enfermedades_piel', 'boolean',
+        'antecedentes_cancer', 'boolean',
+        'embarazo', 'boolean',
+        'lactancia', 'boolean',
+        'tatuajes', 'boolean',
+        'antecedentes_herpes', 'boolean',
+        'patologias_hormonales', 'boolean',
+        'exposicion_sol', 'text',
+        'tipo_piel_fitzpatrick', 'select',
+        'metodo_depilacion_actual', 'text',
+        'ultima_depilacion', 'date',
+        'otros', 'text'
+    ),
+    'zonas_tratamiento', JSON_OBJECT(
+        'zonas_seleccionadas', 'array',
+        'observaciones_medicas', 'text'
+    )
+), @tipo_depilacion_id);
+
+-- CORPORAL_FACIAL: Definición completa basada en ficha_corporal_nueva.htm
+CALL sp_crear_tipo_ficha_especifica('CORPORAL_FACIAL', 'Ficha específica para tratamientos corporales y faciales (LIPO WITH ICE)', FALSE, NULL,
+JSON_OBJECT(
+    'antecedentes_personales', JSON_OBJECT(
+        'nombre_completo', 'text',
+        'fecha_nacimiento', 'date',
+        'edad', 'number',
+        'ocupacion', 'text',
+        'telefono_fijo', 'text',
+        'celular', 'text',
+        'email', 'email',
+        'medio_conocimiento', 'text'
+    ),
+    'antecedentes_clinicos', JSON_OBJECT(
+        'enfermedades_cardiacas', 'boolean',
+        'enfermedades_renales', 'boolean',
+        'enfermedades_hepaticas', 'boolean',
+        'enfermedades_digestivas', 'boolean',
+        'enfermedades_neuromusculares', 'boolean',
+        'trastorno_coagulacion', 'boolean',
+        'alergias', 'boolean',
+        'epilepsia', 'boolean',
+        'embarazo', 'boolean',
+        'dispositivo_intrauterino', 'boolean',
+        'cancer', 'boolean',
+        'protesis_metalicas', 'boolean',
+        'implantes_colageno', 'boolean',
+        'medicamentos_actuales', 'boolean',
+        'cirugias', 'boolean',
+        'fuma', 'boolean',
+        'ingiere_alcohol', 'boolean',
+        'horas_sueno', 'number',
+        'periodo_menstrual_regular', 'boolean',
+        'lesiones_timpano', 'boolean'
+    ),
+    'medidas_corporales', JSON_OBJECT(
+        'imc_antes', 'number',
+        'imc_despues', 'number',
+        'porcentaje_musculo_antes', 'number',
+        'porcentaje_musculo_despues', 'number',
+        'porcentaje_grasa_antes', 'number',
+        'porcentaje_grasa_despues', 'number',
+        'grasa_visceral_antes', 'number',
+        'grasa_visceral_despues', 'number',
+        'peso_corporal_antes', 'number',
+        'peso_corporal_despues', 'number',
+        'edad_corporal_antes', 'number',
+        'edad_corporal_despues', 'number',
+        'metabolismo_basal_antes', 'number',
+        'metabolismo_basal_despues', 'number'
+    ),
+    'medidas_pliegues', JSON_OBJECT(
+        'abdomen_alto_antes', 'number',
+        'abdomen_alto_despues', 'number',
+        'abdomen_bajo_antes', 'number',
+        'abdomen_bajo_despues', 'number',
+        'cintura_antes', 'number',
+        'cintura_despues', 'number',
+        'cadera_antes', 'number',
+        'cadera_despues', 'number',
+        'flanco_derecho_antes', 'number',
+        'flanco_derecho_despues', 'number',
+        'flanco_izquierdo_antes', 'number',
+        'flanco_izquierdo_despues', 'number'
+    ),
+    'tratamiento', JSON_OBJECT(
+        'tratamientos_previos', 'text',
+        'objetivo_estetico', 'text'
+    )
+), @tipo_corporal_id);
+
+-- FACIAL: Definición básica (se puede expandir según necesidad)
+CALL sp_crear_tipo_ficha_especifica('FACIAL', 'Ficha especifica para tratamientos faciales', TRUE, 'Consentimiento informado para tratamientos faciales', 
+JSON_OBJECT('tipo_piel', 'text', 'alergias', 'text', 'tratamientos_previos', 'text'), @tipo_facial_id);
+
+-- CAPILAR: Definición básica (se puede expandir según necesidad)
+CALL sp_crear_tipo_ficha_especifica('CAPILAR', 'Ficha especifica para tratamientos capilares', TRUE, 'Consentimiento informado para tratamientos capilares', 
+JSON_OBJECT('tipo_cabello', 'text', 'problemas_capilares', 'text', 'tratamientos_previos', 'text'), @tipo_capilar_id);
 
 -- ---------- SUCURSAL ----------
 -- Usando SP para crear sucursal con validaciones
