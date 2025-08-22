@@ -484,16 +484,16 @@ CREATE TABLE IF NOT EXISTS sesion (
   sucursal_id BIGINT NOT NULL,
   box_id BIGINT NOT NULL,
   profesional_id BIGINT NOT NULL,
-  google_calendar_event_id VARCHAR(255) NOT NULL,
+  google_calendar_event_id VARCHAR(255) NULL, -- NULL hasta integrar con Google Calendar
   fecha_planificada TIMESTAMP NOT NULL,
-  fecha_ejecucion TIMESTAMP NOT NULL,
+  fecha_ejecucion TIMESTAMP NULL, -- NULL hasta ejecutar la sesión
   estado VARCHAR(30) NOT NULL DEFAULT 'planificada', -- planificada|confirmada|realizada|no_show|cancelada
   paciente_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
-  abierta_en TIMESTAMP NOT NULL,
-  cerrada_en TIMESTAMP NOT NULL,
-  observaciones TEXT NOT NULL,
-  intensidades_zonas JSON NOT NULL,
-  datos_sesion JSON NOT NULL,
+  abierta_en TIMESTAMP NULL, -- NULL hasta abrir la sesión
+  cerrada_en TIMESTAMP NULL, -- NULL hasta cerrar la sesión
+  observaciones TEXT NULL, -- NULL si no hay observaciones
+  intensidades_zonas JSON NOT NULL DEFAULT '{}', -- JSON vacío por defecto
+  datos_sesion JSON NOT NULL DEFAULT '{}', -- JSON vacío por defecto
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -616,19 +616,19 @@ BEGIN
     IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
     END IF;
-    
+
     -- Validar que la ficha especifica existe y pertenece a la evaluacion
     SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
     IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
     END IF;
-    
+
     -- Validar que la ficha especifica pertenece a la misma ficha
     SELECT fe.id INTO ficha_esp_id 
     FROM ficha_especifica fe
     JOIN evaluacion e ON fe.evaluacion_id = e.id
     WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
-    
+
     IF ficha_esp_id IS NULL THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
     END IF;
@@ -1058,8 +1058,8 @@ BEGIN
         -- Si no existe, crear nueva ficha
         INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email, fecha_nacimiento, direccion, observaciones)
         VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email, p_fecha_nacimiento, p_direccion, p_observaciones);
-        
-        SET p_ficha_id = LAST_INSERT_ID();
+    
+    SET p_ficha_id = LAST_INSERT_ID();
     END IF;
     
     COMMIT;
@@ -1332,14 +1332,11 @@ BEGIN
     
     INSERT INTO sesion (
         venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
-        google_calendar_event_id, fecha_planificada, fecha_ejecucion, 
-        abierta_en, cerrada_en, observaciones, intensidades_zonas, datos_sesion
+        fecha_planificada, observaciones
     )
     VALUES (
         p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id,
-        '', p_fecha_planificada, p_fecha_planificada, 
-        '1970-01-01 00:00:00', '1970-01-01 00:00:00', 
-        COALESCE(p_observaciones, ''), '{}', '{}'
+        p_fecha_planificada, p_observaciones
     );
     
     SET p_sesion_id = LAST_INSERT_ID();

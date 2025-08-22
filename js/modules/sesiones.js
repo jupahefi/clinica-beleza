@@ -409,7 +409,7 @@ export class SesionesModule {
             box_id: boxId,
             profesional_id: 1, // Por defecto profesional principal
             fecha_planificada: fechaPlanificadaCompleta,
-            observaciones: observaciones
+            observaciones: observaciones || null // NULL si está vacío
         };
         
         console.log('📤 Datos finales a enviar:', formData);
