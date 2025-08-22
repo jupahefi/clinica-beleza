@@ -602,15 +602,15 @@ BEGIN
   DECLARE eval_ficha BIGINT;
   DECLARE eval_id BIGINT;
   DECLARE ficha_esp_id BIGINT;
-  DECLARE es_evaluacion BOOLEAN DEFAULT FALSE;
+  DECLARE requiere_ficha_especifica BOOLEAN DEFAULT TRUE;
   
-  -- Verificar si es una venta de evaluación
-  SELECT t.requiere_ficha_especifica INTO es_evaluacion 
+  -- Verificar si el tratamiento requiere ficha específica
+  SELECT t.requiere_ficha_especifica INTO requiere_ficha_especifica 
   FROM tratamiento t 
   WHERE t.id = NEW.tratamiento_id;
   
-  -- Si es evaluación, no requiere ficha específica
-  IF es_evaluacion = FALSE THEN
+  -- Si requiere ficha específica, validar evaluación y ficha específica
+  IF requiere_ficha_especifica = TRUE THEN
     -- Validar que la evaluacion existe y pertenece a la misma ficha
     SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
     IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
