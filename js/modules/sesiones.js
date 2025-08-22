@@ -438,7 +438,161 @@ export class SesionesModule {
     showAbrirSesionModal(sesion) {
         const modal = document.createElement('div');
         modal.className = 'sesion-modal';
-        modal.innerHTML = `
+        
+        // Detectar tipo de tratamiento para renderizado dinámico
+        const isEvaluacion = sesion.tratamiento_nombre && sesion.tratamiento_nombre.toUpperCase().includes('EVALUACION');
+        const isDepilacion = sesion.tratamiento_nombre && (
+            sesion.tratamiento_nombre.toUpperCase().includes('DEPILACION') || 
+            sesion.tratamiento_nombre.toUpperCase().includes('DEPILACIÓN')
+        );
+        
+        console.log('🔍 Tipo de tratamiento detectado:', {
+            tratamiento: sesion.tratamiento_nombre,
+            isEvaluacion,
+            isDepilacion
+        });
+        
+        // Generar contenido dinámico según el tratamiento
+        let modalContent = '';
+        
+        if (isEvaluacion) {
+            modalContent = this.generarModalEvaluacion(sesion);
+        } else if (isDepilacion) {
+            modalContent = this.generarModalDepilacion(sesion);
+        } else {
+            modalContent = this.generarModalGenerico(sesion);
+        }
+        
+        modal.innerHTML = modalContent;
+        document.body.appendChild(modal);
+        
+        // Configurar eventos específicos según el tipo
+        if (isEvaluacion) {
+            this.configurarEventosEvaluacion(sesion);
+        } else if (isDepilacion) {
+            this.configurarEventosDepilacion(sesion);
+        } else {
+            this.configurarEventosGenerico(sesion);
+        }
+    }
+    
+    generarModalEvaluacion(sesion) {
+        return `
+            <div class="sesion-modal-content">
+                <div class="sesion-modal-header">
+                    <h3>🔍 Evaluar Paciente - ${sesion.paciente_nombre}</h3>
+                    <button class="close-btn" onclick="this.closest('.sesion-modal').remove()">×</button>
+                </div>
+                
+                <div class="sesion-modal-body">
+                    <div class="sesion-info">
+                        <p><strong>Paciente:</strong> ${sesion.paciente_nombre}</p>
+                        <p><strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}</p>
+                        <p><strong>Box:</strong> ${sesion.box_nombre}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}</p>
+                        <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
+                    </div>
+                    
+                    <div class="evaluacion-section">
+                        <h4>📋 Proceso de Evaluación</h4>
+                        <div class="alert alert-info">
+                            <p><strong>Durante esta evaluación:</strong></p>
+                            <ul>
+                                <li>Examine al paciente según el protocolo</li>
+                                <li>Complete la ficha específica correspondiente</li>
+                                <li>Al cerrar la sesión, se creará automáticamente la ficha específica</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tipo-ficha-selector">
+                            <label><strong>Tipo de ficha específica a crear:</strong></label>
+                            <select id="tipo-ficha-evaluacion" class="form-control">
+                                <option value="">-- Seleccionar tipo --</option>
+                                <option value="DEPILACION">Depilación</option>
+                                <option value="CORPORAL_FACIAL">Corporal/Facial</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="sesion-observaciones">
+                        <label>Observaciones de la evaluación:</label>
+                        <textarea id="sesion-observaciones" rows="4" placeholder="Notas y observaciones de la evaluación..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="sesion-modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.sesion-modal').remove()">
+                        ❌ Cancelar
+                    </button>
+                    <button class="btn btn-success" onclick="sesionesModule.confirmarAbrirSesion(${sesion.id})">
+                        ✅ Iniciar Evaluación
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    generarModalDepilacion(sesion) {
+        return `
+            <div class="sesion-modal-content">
+                <div class="sesion-modal-header">
+                    <h3>⚡ Sesión de Depilación - ${sesion.paciente_nombre}</h3>
+                    <button class="close-btn" onclick="this.closest('.sesion-modal').remove()">×</button>
+                </div>
+                
+                <div class="sesion-modal-body">
+                    <div class="sesion-info">
+                        <p><strong>Paciente:</strong> ${sesion.paciente_nombre}</p>
+                        <p><strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}</p>
+                        <p><strong>Box:</strong> ${sesion.box_nombre}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}</p>
+                        <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
+                    </div>
+                    
+                    <div class="consentimiento-section">
+                        <h4>📝 Consentimiento Informado</h4>
+                        <div class="alert alert-warning">
+                            <p><strong>Antes de iniciar:</strong></p>
+                            <ul>
+                                <li>Verificar que el consentimiento informado esté firmado</li>
+                                <li>Revisar contraindicaciones y medicamentos</li>
+                                <li>Configurar las intensidades según la zona y piel del paciente</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input type="checkbox" id="consentimiento-verificado" class="form-check-input" required>
+                            <label for="consentimiento-verificado" class="form-check-label">
+                                ✅ Consentimiento informado verificado y firmado
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="intensidades-section">
+                        <h4>⚡ Intensidades por Zona</h4>
+                        <div id="sesion-intensidades-grid"></div>
+                    </div>
+                    
+                    <div class="sesion-observaciones">
+                        <label>Observaciones de la sesión:</label>
+                        <textarea id="sesion-observaciones" rows="3" placeholder="Reacciones, intensidades utilizadas, observaciones..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="sesion-modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.sesion-modal').remove()">
+                        ❌ Cancelar
+                    </button>
+                    <button class="btn btn-success" onclick="sesionesModule.confirmarAbrirSesion(${sesion.id})">
+                        ✅ Iniciar Depilación
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    generarModalGenerico(sesion) {
+        return `
             <div class="sesion-modal-content">
                 <div class="sesion-modal-header">
                     <h3>🔓 Abrir Sesión - ${sesion.paciente_nombre}</h3>
@@ -454,14 +608,9 @@ export class SesionesModule {
                         <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
                     </div>
                     
-                    <div class="intensidades-section">
-                        <h4>⚡ Intensidades por Zona</h4>
-                        <div id="sesion-intensidades-grid"></div>
-                    </div>
-                    
                     <div class="sesion-observaciones">
                         <label>Observaciones de la sesión:</label>
-                        <textarea id="sesion-observaciones" rows="3" placeholder="Observaciones de la sesión actual..."></textarea>
+                        <textarea id="sesion-observaciones" rows="3" placeholder="Observaciones de la sesión..."></textarea>
                     </div>
                 </div>
                 
@@ -475,28 +624,56 @@ export class SesionesModule {
                 </div>
             </div>
         `;
-        
-        document.body.appendChild(modal);
-        
-        // Cargar intensidades anteriores
-        this.cargarIntensidadesAnteriores(sesion.paciente_id, 'sesion-intensidades-grid');
     }
     
     async confirmarAbrirSesion(sesionId) {
         const observaciones = document.getElementById('sesion-observaciones').value;
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
         
+        // Para evaluaciones, obtener el tipo de ficha específica seleccionado
+        const tipoFichaElement = document.getElementById('tipo-ficha-evaluacion');
+        const tipoFicha = tipoFichaElement ? tipoFichaElement.value : null;
+        
+        // Para depilaciones, verificar consentimiento
+        const consentimientoElement = document.getElementById('consentimiento-verificado');
+        const consentimientoVerificado = consentimientoElement ? consentimientoElement.checked : true;
+        
         try {
+            // Validaciones específicas según el tipo
+            if (tipoFichaElement && !tipoFicha) {
+                mostrarNotificacion('❌ Debe seleccionar el tipo de ficha específica para la evaluación', 'error');
+                return;
+            }
+            
+            if (consentimientoElement && !consentimientoVerificado) {
+                mostrarNotificacion('❌ Debe verificar el consentimiento informado antes de continuar', 'error');
+                return;
+            }
+            
             // Primero abrir la sesión en la base de datos
             const response = await sesionesAPI.abrirSesion(sesionId);
             
             if (response.success) {
-                // Guardar intensidades si existen
+                // Guardar intensidades si existen (para depilaciones)
                 if (Object.keys(intensidades).length > 0) {
                     await this.guardarIntensidades(sesionId, intensidades);
                 }
                 
-                mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
+                // Para evaluaciones, preparar datos para crear ficha específica al cerrar
+                if (tipoFicha) {
+                    // Almacenar temporalmente el tipo de ficha para usar al cerrar la sesión
+                    sessionStorage.setItem(`evaluacion_${sesionId}`, JSON.stringify({
+                        tipo_ficha: tipoFicha,
+                        fecha_evaluacion: new Date().toISOString()
+                    }));
+                    
+                    mostrarNotificacion('✅ Evaluación iniciada. Al cerrar la sesión se creará la ficha específica.', 'success');
+                } else if (consentimientoVerificado) {
+                    mostrarNotificacion('✅ Sesión de depilación iniciada', 'success');
+                } else {
+                    mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
+                }
+                
                 document.querySelector('.sesion-modal').remove();
                 await this.loadSesiones();
             } else {
@@ -513,10 +690,38 @@ export class SesionesModule {
         const observaciones = prompt('Ingrese observaciones de la sesión (opcional):');
         
         try {
+            // Verificar si hay datos de evaluación pendientes
+            const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
+            let fichaCreada = false;
+            
+            if (evaluacionData) {
+                const datos = JSON.parse(evaluacionData);
+                console.log('🔍 Datos de evaluación encontrados:', datos);
+                
+                // Aquí se debería crear la ficha específica
+                // Por ahora, solo mostraremos el proceso pero falta la integración completa
+                if (datos.tipo_ficha) {
+                    mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
+                    
+                    // TODO: Implementar creación automática de ficha específica
+                    // await this.crearFichaEspecificaDesdeEvaluacion(sesionId, datos);
+                    
+                    fichaCreada = true;
+                    
+                    // Limpiar datos temporales
+                    sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                }
+            }
+            
+            // Cerrar la sesión
             const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
             
             if (response.success) {
-                mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
+                if (fichaCreada) {
+                    mostrarNotificacion('✅ Sesión cerrada y ficha específica creada exitosamente', 'success');
+                } else {
+                    mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
+                }
                 await this.loadSesiones();
             } else {
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
@@ -526,6 +731,44 @@ export class SesionesModule {
             const errorMessage = error.message || 'Error desconocido cerrando sesión';
             mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
         }
+    }
+    
+    configurarEventosEvaluacion(sesion) {
+        console.log('🔧 Configurando eventos para sesión de evaluación');
+        // No necesita cargar intensidades, se enfoca en la evaluación
+        // Los eventos específicos de evaluación se manejan en confirmarAbrirSesion
+    }
+    
+    configurarEventosDepilacion(sesion) {
+        console.log('🔧 Configurando eventos para sesión de depilación');
+        // Cargar grid de intensidades para depilación
+        this.cargarIntensidadesAnteriores(sesion.paciente_id, 'sesion-intensidades-grid');
+        
+        // Validar consentimiento antes de permitir continuar
+        const btnConfirmar = document.querySelector('.sesion-modal-footer .btn-success');
+        const checkboxConsentimiento = document.getElementById('consentimiento-verificado');
+        
+        if (btnConfirmar && checkboxConsentimiento) {
+            // Deshabilitar botón inicialmente
+            btnConfirmar.disabled = true;
+            btnConfirmar.classList.add('disabled');
+            
+            // Habilitar solo cuando se marque el consentimiento
+            checkboxConsentimiento.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.classList.remove('disabled');
+                } else {
+                    btnConfirmar.disabled = true;
+                    btnConfirmar.classList.add('disabled');
+                }
+            });
+        }
+    }
+    
+    configurarEventosGenerico(sesion) {
+        console.log('🔧 Configurando eventos para sesión genérica');
+        // Configuración básica sin eventos específicos
     }
     
     async guardarIntensidades(pacienteId, intensidades) {
