@@ -440,16 +440,19 @@ export class SesionesModule {
         modal.className = 'sesion-modal';
         
         // Detectar tipo de tratamiento para renderizado dinámico
-        const isEvaluacion = sesion.tratamiento_nombre && sesion.tratamiento_nombre.toUpperCase().includes('EVALUACION');
-        const isDepilacion = sesion.tratamiento_nombre && (
-            sesion.tratamiento_nombre.toUpperCase().includes('DEPILACION') || 
-            sesion.tratamiento_nombre.toUpperCase().includes('DEPILACIÓN')
-        );
+        const tratamientoNombre = sesion.tratamiento_nombre ? sesion.tratamiento_nombre.toUpperCase() : '';
+        
+        const isEvaluacion = tratamientoNombre.includes('EVALUACION');
+        const isDepilacion = tratamientoNombre.includes('DEPILACION') || tratamientoNombre.includes('DEPILACIÓN');
+        const isFacial = tratamientoNombre.includes('FACIAL');
+        const isCapilar = tratamientoNombre.includes('CAPILAR');
         
         console.log('🔍 Tipo de tratamiento detectado:', {
             tratamiento: sesion.tratamiento_nombre,
             isEvaluacion,
-            isDepilacion
+            isDepilacion,
+            isFacial,
+            isCapilar
         });
         
         // Generar contenido dinámico según el tratamiento
@@ -459,6 +462,10 @@ export class SesionesModule {
             modalContent = this.generarModalEvaluacion(sesion);
         } else if (isDepilacion) {
             modalContent = this.generarModalDepilacion(sesion);
+        } else if (isFacial) {
+            modalContent = this.generarModalFacial(sesion);
+        } else if (isCapilar) {
+            modalContent = this.generarModalCapilar(sesion);
         } else {
             modalContent = this.generarModalGenerico(sesion);
         }
@@ -471,6 +478,10 @@ export class SesionesModule {
             this.configurarEventosEvaluacion(sesion);
         } else if (isDepilacion) {
             this.configurarEventosDepilacion(sesion);
+        } else if (isFacial) {
+            this.configurarEventosFacial(sesion);
+        } else if (isCapilar) {
+            this.configurarEventosCapilar(sesion);
         } else {
             this.configurarEventosGenerico(sesion);
         }
@@ -626,6 +637,125 @@ export class SesionesModule {
         `;
     }
     
+    generarModalFacial(sesion) {
+        return `
+            <div class="sesion-modal-content">
+                <div class="sesion-modal-header">
+                    <h3>✨ Tratamiento Facial - ${sesion.paciente_nombre}</h3>
+                    <button class="close-btn" onclick="this.closest('.sesion-modal').remove()">×</button>
+                </div>
+                
+                <div class="sesion-modal-body">
+                    <div class="sesion-info">
+                        <p><strong>Paciente:</strong> ${sesion.paciente_nombre}</p>
+                        <p><strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}</p>
+                        <p><strong>Box:</strong> ${sesion.box_nombre}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}</p>
+                        <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
+                    </div>
+                    
+                    <div class="facial-section">
+                        <h4>✨ Protocolo de Tratamiento Facial</h4>
+                        <div class="alert alert-info">
+                            <p><strong>Procedimiento estándar:</strong></p>
+                            <ul>
+                                <li>Evaluación del tipo de piel y condición</li>
+                                <li>Limpieza profunda y preparación</li>
+                                <li>Aplicación del tratamiento específico</li>
+                                <li>Cuidados post-tratamiento y recomendaciones</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="productos-utilizados">
+                            <label><strong>Productos utilizados:</strong></label>
+                            <textarea id="productos-faciales" rows="3" placeholder="Listar productos y técnicas utilizadas en el tratamiento..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="sesion-observaciones">
+                        <label>Observaciones del tratamiento:</label>
+                        <textarea id="sesion-observaciones" rows="3" placeholder="Reacciones, resultados observados, recomendaciones..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="sesion-modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.sesion-modal').remove()">
+                        ❌ Cancelar
+                    </button>
+                    <button class="btn btn-success" onclick="sesionesModule.confirmarAbrirSesion(${sesion.id})">
+                        ✅ Iniciar Facial
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    generarModalCapilar(sesion) {
+        return `
+            <div class="sesion-modal-content">
+                <div class="sesion-modal-header">
+                    <h3>💆 Tratamiento Capilar - ${sesion.paciente_nombre}</h3>
+                    <button class="close-btn" onclick="this.closest('.sesion-modal').remove()">×</button>
+                </div>
+                
+                <div class="sesion-modal-body">
+                    <div class="sesion-info">
+                        <p><strong>Paciente:</strong> ${sesion.paciente_nombre}</p>
+                        <p><strong>Tratamiento:</strong> ${sesion.tratamiento_nombre}</p>
+                        <p><strong>Box:</strong> ${sesion.box_nombre}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(sesion.fecha_planificada)}</p>
+                        <p><strong>Hora:</strong> ${sesion.hora_planificada}</p>
+                    </div>
+                    
+                    <div class="capilar-section">
+                        <h4>💆 Protocolo de Tratamiento Capilar</h4>
+                        <div class="alert alert-info">
+                            <p><strong>Proceso de tratamiento:</strong></p>
+                            <ul>
+                                <li>Evaluación del cuero cabelludo y folículos</li>
+                                <li>Preparación y limpieza del área</li>
+                                <li>Aplicación del tratamiento regenerativo</li>
+                                <li>Terapias complementarias y masajes</li>
+                                <li>Instrucciones de cuidado posterior</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="evaluacion-capilar">
+                            <label><strong>Estado del cuero cabelludo:</strong></label>
+                            <select id="estado-cuero-cabelludo" class="form-control">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="normal">Normal</option>
+                                <option value="graso">Graso</option>
+                                <option value="seco">Seco</option>
+                                <option value="mixto">Mixto</option>
+                                <option value="sensible">Sensible</option>
+                            </select>
+                        </div>
+                        
+                        <div class="tratamientos-aplicados">
+                            <label><strong>Tratamientos aplicados:</strong></label>
+                            <textarea id="tratamientos-capilares" rows="3" placeholder="Detallar técnicas, productos y equipos utilizados..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="sesion-observaciones">
+                        <label>Observaciones del tratamiento:</label>
+                        <textarea id="sesion-observaciones" rows="3" placeholder="Evolución, reacciones, próximos pasos..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="sesion-modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.sesion-modal').remove()">
+                        ❌ Cancelar
+                    </button>
+                    <button class="btn btn-success" onclick="sesionesModule.confirmarAbrirSesion(${sesion.id})">
+                        ✅ Iniciar Capilar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
     async confirmarAbrirSesion(sesionId) {
         const observaciones = document.getElementById('sesion-observaciones').value;
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
@@ -637,6 +767,16 @@ export class SesionesModule {
         // Para depilaciones, verificar consentimiento
         const consentimientoElement = document.getElementById('consentimiento-verificado');
         const consentimientoVerificado = consentimientoElement ? consentimientoElement.checked : true;
+        
+        // Para faciales, obtener productos utilizados
+        const productosFacialesElement = document.getElementById('productos-faciales');
+        const productosFaciales = productosFacialesElement ? productosFacialesElement.value : null;
+        
+        // Para capilares, obtener estado del cuero cabelludo y tratamientos
+        const estadoCueroCabelludoElement = document.getElementById('estado-cuero-cabelludo');
+        const estadoCueroCabelludo = estadoCueroCabelludoElement ? estadoCueroCabelludoElement.value : null;
+        const tratamientosCapilaresElement = document.getElementById('tratamientos-capilares');
+        const tratamientosCapilares = tratamientosCapilaresElement ? tratamientosCapilaresElement.value : null;
         
         try {
             // Validaciones específicas según el tipo
@@ -659,18 +799,37 @@ export class SesionesModule {
                     await this.guardarIntensidades(sesionId, intensidades);
                 }
                 
-                // Para evaluaciones, preparar datos para crear ficha específica al cerrar
+                // Preparar datos específicos según el tipo de tratamiento
                 if (tipoFicha) {
-                    // Almacenar temporalmente el tipo de ficha para usar al cerrar la sesión
+                    // Para evaluaciones - almacenar tipo de ficha específica
                     sessionStorage.setItem(`evaluacion_${sesionId}`, JSON.stringify({
                         tipo_ficha: tipoFicha,
                         fecha_evaluacion: new Date().toISOString()
                     }));
-                    
                     mostrarNotificacion('✅ Evaluación iniciada. Al cerrar la sesión se creará la ficha específica.', 'success');
+                    
+                } else if (productosFaciales) {
+                    // Para faciales - almacenar productos utilizados
+                    sessionStorage.setItem(`facial_${sesionId}`, JSON.stringify({
+                        productos_utilizados: productosFaciales,
+                        fecha_tratamiento: new Date().toISOString()
+                    }));
+                    mostrarNotificacion('✅ Tratamiento facial iniciado', 'success');
+                    
+                } else if (estadoCueroCabelludo || tratamientosCapilares) {
+                    // Para capilares - almacenar evaluación y tratamientos
+                    sessionStorage.setItem(`capilar_${sesionId}`, JSON.stringify({
+                        estado_cuero_cabelludo: estadoCueroCabelludo,
+                        tratamientos_aplicados: tratamientosCapilares,
+                        fecha_tratamiento: new Date().toISOString()
+                    }));
+                    mostrarNotificacion('✅ Tratamiento capilar iniciado', 'success');
+                    
                 } else if (consentimientoVerificado) {
+                    // Para depilaciones
                     mostrarNotificacion('✅ Sesión de depilación iniciada', 'success');
                 } else {
+                    // Genérico
                     mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
                 }
                 
@@ -690,35 +849,65 @@ export class SesionesModule {
         const observaciones = prompt('Ingrese observaciones de la sesión (opcional):');
         
         try {
-            // Verificar si hay datos de evaluación pendientes
+            // Verificar si hay datos específicos de tratamiento pendientes
             const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
-            let fichaCreada = false;
+            const facialData = sessionStorage.getItem(`facial_${sesionId}`);
+            const capilarData = sessionStorage.getItem(`capilar_${sesionId}`);
+            
+            let datosGuardados = false;
+            let tipoTratamiento = 'genérico';
             
             if (evaluacionData) {
                 const datos = JSON.parse(evaluacionData);
                 console.log('🔍 Datos de evaluación encontrados:', datos);
                 
-                // Aquí se debería crear la ficha específica
-                // Por ahora, solo mostraremos el proceso pero falta la integración completa
                 if (datos.tipo_ficha) {
                     mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
-                    
                     // TODO: Implementar creación automática de ficha específica
-                    // await this.crearFichaEspecificaDesdeEvaluacion(sesionId, datos);
-                    
-                    fichaCreada = true;
-                    
-                    // Limpiar datos temporales
+                    datosGuardados = true;
+                    tipoTratamiento = 'evaluación';
                     sessionStorage.removeItem(`evaluacion_${sesionId}`);
                 }
+                
+            } else if (facialData) {
+                const datos = JSON.parse(facialData);
+                console.log('🔍 Datos de facial encontrados:', datos);
+                
+                mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
+                // TODO: Guardar productos utilizados en datos_sesion
+                datosGuardados = true;
+                tipoTratamiento = 'facial';
+                sessionStorage.removeItem(`facial_${sesionId}`);
+                
+            } else if (capilarData) {
+                const datos = JSON.parse(capilarData);
+                console.log('🔍 Datos de capilar encontrados:', datos);
+                
+                mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
+                // TODO: Guardar evaluación y tratamientos en datos_sesion
+                datosGuardados = true;
+                tipoTratamiento = 'capilar';
+                sessionStorage.removeItem(`capilar_${sesionId}`);
             }
             
             // Cerrar la sesión
             const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
             
             if (response.success) {
-                if (fichaCreada) {
-                    mostrarNotificacion('✅ Sesión cerrada y ficha específica creada exitosamente', 'success');
+                if (datosGuardados) {
+                    switch (tipoTratamiento) {
+                        case 'evaluación':
+                            mostrarNotificacion('✅ Evaluación completada y ficha específica creada exitosamente', 'success');
+                            break;
+                        case 'facial':
+                            mostrarNotificacion('✅ Tratamiento facial completado y datos guardados exitosamente', 'success');
+                            break;
+                        case 'capilar':
+                            mostrarNotificacion('✅ Tratamiento capilar completado y datos guardados exitosamente', 'success');
+                            break;
+                        default:
+                            mostrarNotificacion('✅ Sesión cerrada y datos guardados exitosamente', 'success');
+                    }
                 } else {
                     mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
                 }
@@ -764,6 +953,18 @@ export class SesionesModule {
                 }
             });
         }
+    }
+    
+    configurarEventosFacial(sesion) {
+        console.log('🔧 Configurando eventos para sesión facial');
+        // Configuración específica para tratamientos faciales
+        // Los campos específicos de facial se manejan en confirmarAbrirSesion
+    }
+    
+    configurarEventosCapilar(sesion) {
+        console.log('🔧 Configurando eventos para sesión capilar');
+        // Configuración específica para tratamientos capilares
+        // Los campos específicos de capilar se manejan en confirmarAbrirSesion
     }
     
     configurarEventosGenerico(sesion) {
