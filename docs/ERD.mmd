@@ -208,12 +208,12 @@ erDiagram
     bigint pack_id FK NOT NULL
   }
 
-  %% VENTA (requiere evaluación y ficha específica)
+  %% VENTA (requiere evaluación y ficha específica, excepto para EVALUACION)
   VENTA {
     bigserial id PK
     bigint ficha_id FK NOT NULL
-    bigint evaluacion_id FK NOT NULL "REQUERIDA"
-    bigint ficha_especifica_id FK NOT NULL "REQUERIDA"
+    bigint evaluacion_id FK "NULL para EVALUACION"
+    bigint ficha_especifica_id FK "NULL para EVALUACION"
     bigint tratamiento_id FK NOT NULL
     bigint pack_id FK "opcional"
     int cantidad_sesiones NOT NULL

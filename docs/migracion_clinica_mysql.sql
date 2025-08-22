@@ -422,8 +422,8 @@ CALL AddIndexIfNotExists('ux_oferta_combo_pack', 'oferta_combo_pack', 'oferta_co
 CREATE TABLE IF NOT EXISTS venta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ficha_id BIGINT NOT NULL,
-  evaluacion_id BIGINT NOT NULL,
-  ficha_especifica_id BIGINT NOT NULL,
+  evaluacion_id BIGINT NULL,
+  ficha_especifica_id BIGINT NULL,
   tratamiento_id BIGINT NOT NULL,
   pack_id BIGINT,
   cantidad_sesiones INT NOT NULL DEFAULT 1,
