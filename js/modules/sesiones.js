@@ -116,12 +116,21 @@ export class SesionesModule {
     }
     
     setupSesionForm() {
+        console.log('🔧 Configurando formulario de sesión...');
         const form = document.getElementById('sesionForm');
+        console.log('📋 Formulario encontrado:', form);
+        
         if (form) {
+            console.log('✅ Agregando event listener al formulario');
             form.addEventListener('submit', (e) => {
+                console.log('🎯 Evento submit del formulario detectado');
                 e.preventDefault();
+                console.log('✅ PreventDefault ejecutado, llamando crearSesion...');
                 this.crearSesion();
             });
+            console.log('✅ Event listener agregado al formulario');
+        } else {
+            console.error('❌ No se encontró el formulario de sesión');
         }
         
         // Configurar evento para cargar ventas cuando se selecciona un paciente
@@ -318,21 +327,31 @@ export class SesionesModule {
     }
     
     async crearSesion() {
+        console.log('🚀 Iniciando creación de sesión...');
         const formData = this.getSesionFormData();
+        console.log('📋 Datos del formulario:', formData);
         
-        if (!formData.paciente_id || !formData.venta_id || !formData.fecha_planificada || !formData.hora_planificada) {
+        if (!formData.venta_id || !formData.fecha_planificada) {
+            console.error('❌ Campos obligatorios faltantes:', {
+                venta_id: formData.venta_id,
+                fecha_planificada: formData.fecha_planificada
+            });
             mostrarNotificacion('Por favor complete todos los campos obligatorios', 'error');
             return;
         }
         
         try {
+            console.log('📡 Enviando petición a la API...');
             const response = await sesionesAPI.create(formData);
+            console.log('📥 Respuesta de la API:', response);
             
             if (response.success) {
+                console.log('✅ Sesión creada exitosamente');
                 mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
                 this.limpiarFormularioSesion();
                 await this.loadSesiones(); // Recargar sesiones y actualizar calendario
             } else {
+                console.error('❌ Error en la respuesta:', response.error);
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
@@ -359,25 +378,42 @@ export class SesionesModule {
     }
     
     getSesionFormData() {
+        console.log('🔍 Obteniendo datos del formulario...');
+        
         const ventaId = document.getElementById('ventaSesion').value;
         const fechaPlanificada = document.getElementById('fechaSesion').value;
         const horaPlanificada = document.getElementById('horaSesion').value;
+        const boxId = document.getElementById('boxSesion').value;
+        const observaciones = document.getElementById('observacionesSesion').value || '';
+        
+        console.log('📋 Valores obtenidos del formulario:', {
+            ventaId,
+            fechaPlanificada,
+            horaPlanificada,
+            boxId,
+            observaciones
+        });
         
         // Crear fecha_planificada completa
         const fechaPlanificadaCompleta = fechaPlanificada && horaPlanificada 
             ? `${fechaPlanificada} ${horaPlanificada}:00` 
             : null;
         
+        console.log('📅 Fecha planificada completa:', fechaPlanificadaCompleta);
+        
         // Solo enviar los campos que realmente necesita el SP sp_agendar_sesion
-        return {
+        const formData = {
             venta_id: ventaId,
             numero_sesion: 1, // Por defecto es la primera sesión
             sucursal_id: 1, // Por defecto sucursal principal
-            box_id: document.getElementById('boxSesion').value,
+            box_id: boxId,
             profesional_id: 1, // Por defecto profesional principal
             fecha_planificada: fechaPlanificadaCompleta,
-            observaciones: document.getElementById('observacionesSesion').value || ''
+            observaciones: observaciones
         };
+        
+        console.log('📤 Datos finales a enviar:', formData);
+        return formData;
     }
     
     async abrirSesion(sesionId) {
