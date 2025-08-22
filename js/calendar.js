@@ -636,10 +636,10 @@ class Calendar {
             this.loadEvents();
             this.renderCalendar();
             
-            alert('Sesión abierta exitosamente');
+            mostrarNotificacion('Sesión abierta exitosamente', 'success');
         } catch (error) {
             console.error('Error abriendo sesión:', error);
-            alert('Error abriendo sesión: ' + error.message);
+            mostrarNotificacion('Error abriendo sesión: ' + error.message, 'error');
         }
     }
     
@@ -657,10 +657,10 @@ class Calendar {
             this.loadEvents();
             this.renderCalendar();
             
-            alert('Sesión cerrada exitosamente');
+            mostrarNotificacion('Sesión cerrada exitosamente', 'success');
         } catch (error) {
             console.error('Error cerrando sesión:', error);
-            alert('Error cerrando sesión: ' + error.message);
+            mostrarNotificacion('Error cerrando sesión: ' + error.message, 'error');
         }
     }
     

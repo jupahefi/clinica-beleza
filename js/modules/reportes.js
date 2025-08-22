@@ -319,7 +319,7 @@ export class ReportesModule {
     mostrarError(mensaje) {
         console.error(mensaje);
         // Aquí se puede integrar con el sistema de notificaciones del frontend
-        alert(mensaje);
+                    mostrarNotificacion(mensaje, 'info');
     }
     
     async exportarReporte(tipoReporte, formato = 'csv') {
@@ -343,7 +343,7 @@ export class ReportesModule {
     exportarCSV(datos, nombreArchivo) {
         // Implementar exportación a CSV
         console.log('Exportando CSV:', datos);
-        alert('Funcionalidad de exportación CSV en desarrollo');
+        mostrarNotificacion('Funcionalidad de exportación CSV en desarrollo', 'info');
     }
     
     exportarJSON(datos, nombreArchivo) {

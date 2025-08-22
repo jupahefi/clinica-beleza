@@ -47,6 +47,7 @@ DROP PROCEDURE IF EXISTS sp_confirmar_paciente;
 DROP PROCEDURE IF EXISTS sp_abrir_sesion;
 DROP PROCEDURE IF EXISTS sp_cerrar_sesion;
 DROP PROCEDURE IF EXISTS sp_reprogramar_sesion;
+DROP PROCEDURE IF EXISTS sp_cancelar_sesion;
 DROP PROCEDURE IF EXISTS sp_crear_oferta_pack;
 DROP PROCEDURE IF EXISTS sp_crear_oferta_combo;
 DROP PROCEDURE IF EXISTS sp_crear_profesional;
@@ -1482,6 +1483,35 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- AGE-007: Cancelar sesion
+DELIMITER $$
+CREATE PROCEDURE sp_cancelar_sesion(
+    IN p_sesion_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Validar que la sesión existe y no está completada
+    IF NOT EXISTS (SELECT 1 FROM sesion WHERE id = p_sesion_id AND estado != 'completada') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Sesión no encontrada o ya completada';
+    END IF;
+    
+    -- Cancelar la sesión (soft delete)
+    UPDATE sesion 
+    SET estado = 'cancelada',
+        actualizado_en = NOW()
+    WHERE id = p_sesion_id;
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
 -- ---------- OFERTAS ----------
 
 -- OFE-001: Crear oferta pack temporal
@@ -2883,7 +2913,7 @@ CALL sp_asociar_oferta_pack(@oferta_bikini_axilas_id, @pack_bikini_axilas_id, 17
 -- ✓ FICHAS: sp_crear_ficha, sp_buscar_fichas, sp_agregar_ficha_especifica
 -- ✓ EVALUACIONES: sp_crear_evaluacion
 -- ✓ VENTAS: sp_crear_venta, sp_aplicar_descuento_manual, sp_aplicar_ofertas
--- ✓ AGENDA: sp_agendar_sesion, sp_generar_plan_sesiones, sp_confirmar_paciente, sp_abrir_sesion, sp_cerrar_sesion, sp_reprogramar_sesion
+-- ✓ AGENDA: sp_agendar_sesion, sp_generar_plan_sesiones, sp_confirmar_paciente, sp_abrir_sesion, sp_cerrar_sesion, sp_reprogramar_sesion, sp_cancelar_sesion
 -- ✓ OFERTAS: sp_crear_oferta_pack, sp_crear_oferta_tratamiento, sp_crear_oferta_combo
 -- ✓ PROFESIONALES: sp_crear_profesional, sp_obtener_disponibilidad
 -- ✓ REPORTES: sp_reporte_progreso_ventas, sp_reporte_plan_vs_ejecucion

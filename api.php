@@ -638,6 +638,12 @@ function handleSesiones($db, $method, $id, $data) {
             }
             echo json_encode(['success' => true, 'data' => ['updated' => true]]);
             break;
+            
+        case 'DELETE':
+            // Cancelar sesión (soft delete)
+            $db->executeRaw("CALL sp_cancelar_sesion(?)", [$id]);
+            echo json_encode(['success' => true, 'data' => ['deleted' => true]]);
+            break;
     }
 }
 

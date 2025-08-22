@@ -420,10 +420,10 @@ export class SesionesModule {
         try {
             // Obtener datos de la sesión
             const sesion = await sesionesAPI.getById(sesionId);
-            if (!sesion) {
-                alert('No se pudo obtener la información de la sesión');
-                return;
-            }
+                    if (!sesion) {
+            mostrarNotificacion('No se pudo obtener la información de la sesión', 'error');
+            return;
+        }
             
             // Mostrar modal de apertura de sesión
             this.showAbrirSesionModal(sesion);
@@ -431,7 +431,7 @@ export class SesionesModule {
         } catch (error) {
             console.error('Error abriendo sesión:', error);
             const errorMessage = error.message || 'Error desconocido abriendo sesión';
-            alert(`Error abriendo sesión: ${errorMessage}`);
+            mostrarNotificacion(`Error abriendo sesión: ${errorMessage}`, 'error');
         }
     }
     
@@ -846,117 +846,154 @@ export class SesionesModule {
     }
     
     async cerrarSesion(sesionId) {
-        const observaciones = prompt('Ingrese observaciones de la sesión (opcional):');
+        // Crear modal simple para observaciones
+        const modalHtml = `
+            <div class="modal fade" id="observacionesModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Observaciones de la Sesión</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="observacionesSesion" class="form-label">Observaciones (opcional):</label>
+                                <textarea class="form-control" id="observacionesSesion" rows="3" placeholder="Ingrese observaciones adicionales..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="confirmarCerrarSesion">Cerrar Sesión</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        try {
-            // Verificar si hay datos específicos de tratamiento pendientes
-            const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
-            const facialData = sessionStorage.getItem(`facial_${sesionId}`);
-            const capilarData = sessionStorage.getItem(`capilar_${sesionId}`);
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('observacionesModal'));
+        modal.show();
+        
+        // Configurar evento de confirmación
+        document.getElementById('confirmarCerrarSesion').onclick = async () => {
+            const observaciones = document.getElementById('observacionesSesion').value;
             
-            let datosGuardados = false;
-            let tipoTratamiento = 'genérico';
-            
-            if (evaluacionData) {
-                const datos = JSON.parse(evaluacionData);
-                console.log('🔍 Datos de evaluación encontrados:', datos);
+            try {
+                // Verificar si hay datos específicos de tratamiento pendientes
+                const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
+                const facialData = sessionStorage.getItem(`facial_${sesionId}`);
+                const capilarData = sessionStorage.getItem(`capilar_${sesionId}`);
                 
-                if (datos.tipo_ficha) {
-                    mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
+                let datosGuardados = false;
+                let tipoTratamiento = 'genérico';
+                
+                if (evaluacionData) {
+                    const datos = JSON.parse(evaluacionData);
+                    console.log('🔍 Datos de evaluación encontrados:', datos);
+                    
+                    if (datos.tipo_ficha) {
+                        mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
+                        
+                        try {
+                            // Crear ficha específica automáticamente
+                            await this.crearFichaEspecificaDesdeEvaluacion(sesionId, datos);
+                            datosGuardados = true;
+                            tipoTratamiento = 'evaluación';
+                            sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                        } catch (error) {
+                            console.error('Error creando ficha específica:', error);
+                            mostrarNotificacion(`❌ Error creando ficha específica: ${error.message}`, 'error');
+                            return; // No continuar si falla la creación de ficha
+                        }
+                    }
+                    
+                } else if (facialData) {
+                    const datos = JSON.parse(facialData);
+                    console.log('🔍 Datos de facial encontrados:', datos);
+                    
+                    mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
                     
                     try {
-                        // Crear ficha específica automáticamente
-                        await this.crearFichaEspecificaDesdeEvaluacion(sesionId, datos);
+                        // Guardar productos utilizados en datos_sesion
+                        await this.guardarDatosSesion(sesionId, {
+                            tipo_tratamiento: 'facial',
+                            productos_utilizados: datos.productos_utilizados,
+                            fecha_tratamiento: datos.fecha_tratamiento,
+                            observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
+                        });
+                        
                         datosGuardados = true;
-                        tipoTratamiento = 'evaluación';
-                        sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                        tipoTratamiento = 'facial';
+                        sessionStorage.removeItem(`facial_${sesionId}`);
                     } catch (error) {
-                        console.error('Error creando ficha específica:', error);
-                        mostrarNotificacion(`❌ Error creando ficha específica: ${error.message}`, 'error');
-                        return; // No continuar si falla la creación de ficha
+                        console.error('Error guardando datos de facial:', error);
+                        mostrarNotificacion(`❌ Error guardando datos del facial: ${error.message}`, 'error');
+                        return; // No continuar si falla el guardado
+                    }
+                    
+                } else if (capilarData) {
+                    const datos = JSON.parse(capilarData);
+                    console.log('🔍 Datos de capilar encontrados:', datos);
+                    
+                    mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
+                    
+                    try {
+                        // Guardar evaluación y tratamientos en datos_sesion
+                        await this.guardarDatosSesion(sesionId, {
+                            tipo_tratamiento: 'capilar',
+                            estado_cuero_cabelludo: datos.estado_cuero_cabelludo,
+                            tratamientos_aplicados: datos.tratamientos_aplicados,
+                            fecha_tratamiento: datos.fecha_tratamiento,
+                            observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
+                        });
+                        
+                        datosGuardados = true;
+                        tipoTratamiento = 'capilar';
+                        sessionStorage.removeItem(`capilar_${sesionId}`);
+                    } catch (error) {
+                        console.error('Error guardando datos de capilar:', error);
+                        mostrarNotificacion(`❌ Error guardando datos del capilar: ${error.message}`, 'error');
+                        return; // No continuar si falla el guardado
                     }
                 }
                 
-            } else if (facialData) {
-                const datos = JSON.parse(facialData);
-                console.log('🔍 Datos de facial encontrados:', datos);
+                // Cerrar la sesión
+                const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
                 
-                mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
-                
-                try {
-                    // Guardar productos utilizados en datos_sesion
-                    await this.guardarDatosSesion(sesionId, {
-                        tipo_tratamiento: 'facial',
-                        productos_utilizados: datos.productos_utilizados,
-                        fecha_tratamiento: datos.fecha_tratamiento,
-                        observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
-                    });
-                    
-                    datosGuardados = true;
-                    tipoTratamiento = 'facial';
-                    sessionStorage.removeItem(`facial_${sesionId}`);
-                } catch (error) {
-                    console.error('Error guardando datos de facial:', error);
-                    mostrarNotificacion(`❌ Error guardando datos del facial: ${error.message}`, 'error');
-                    return; // No continuar si falla el guardado
-                }
-                
-            } else if (capilarData) {
-                const datos = JSON.parse(capilarData);
-                console.log('🔍 Datos de capilar encontrados:', datos);
-                
-                mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
-                
-                try {
-                    // Guardar evaluación y tratamientos en datos_sesion
-                    await this.guardarDatosSesion(sesionId, {
-                        tipo_tratamiento: 'capilar',
-                        estado_cuero_cabelludo: datos.estado_cuero_cabelludo,
-                        tratamientos_aplicados: datos.tratamientos_aplicados,
-                        fecha_tratamiento: datos.fecha_tratamiento,
-                        observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
-                    });
-                    
-                    datosGuardados = true;
-                    tipoTratamiento = 'capilar';
-                    sessionStorage.removeItem(`capilar_${sesionId}`);
-                } catch (error) {
-                    console.error('Error guardando datos de capilar:', error);
-                    mostrarNotificacion(`❌ Error guardando datos del capilar: ${error.message}`, 'error');
-                    return; // No continuar si falla el guardado
-                }
-            }
-            
-            // Cerrar la sesión
-            const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
-            
-            if (response.success) {
-                if (datosGuardados) {
-                    switch (tipoTratamiento) {
-                        case 'evaluación':
-                            mostrarNotificacion('✅ Evaluación completada y ficha específica creada exitosamente', 'success');
-                            break;
-                        case 'facial':
-                            mostrarNotificacion('✅ Tratamiento facial completado y datos guardados exitosamente', 'success');
-                            break;
-                        case 'capilar':
-                            mostrarNotificacion('✅ Tratamiento capilar completado y datos guardados exitosamente', 'success');
-                            break;
-                        default:
-                            mostrarNotificacion('✅ Sesión cerrada y datos guardados exitosamente', 'success');
+                if (response.success) {
+                    if (datosGuardados) {
+                        switch (tipoTratamiento) {
+                            case 'evaluación':
+                                mostrarNotificacion('✅ Evaluación completada y ficha específica creada exitosamente', 'success');
+                                break;
+                            case 'facial':
+                                mostrarNotificacion('✅ Tratamiento facial completado y datos guardados exitosamente', 'success');
+                                break;
+                            case 'capilar':
+                                mostrarNotificacion('✅ Tratamiento capilar completado y datos guardados exitosamente', 'success');
+                                break;
+                            default:
+                                mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
+                        }
+                    } else {
+                        mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
                     }
+                    
+                    await this.loadSesiones();
                 } else {
-                    mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
+                    mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
                 }
-                await this.loadSesiones();
-            } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+            } catch (error) {
+                console.error('Error cerrando sesión:', error);
+                const errorMessage = error.message || 'Error desconocido cerrando sesión';
+                mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
+            } finally {
+                modal.hide();
+                // Limpiar modal del DOM
+                document.getElementById('observacionesModal').remove();
             }
-        } catch (error) {
-            console.error('Error cerrando sesión:', error);
-            const errorMessage = error.message || 'Error desconocido cerrando sesión';
-            mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
-        }
+        };
     }
     
     async guardarDatosSesion(sesionId, datosTratamiento) {
@@ -1185,14 +1222,14 @@ export class SesionesModule {
             });
             
             if (response.success) {
-                alert('✅ Intensidades guardadas exitosamente');
+                mostrarNotificacion('✅ Intensidades guardadas exitosamente', 'success');
             } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error guardando intensidades:', error);
             const errorMessage = error.message || 'Error desconocido guardando intensidades';
-            alert(`❌ Error guardando intensidades: ${errorMessage}`);
+            mostrarNotificacion(`❌ Error guardando intensidades: ${errorMessage}`, 'error');
         }
     }
     
@@ -1204,14 +1241,14 @@ export class SesionesModule {
                 // Obtener la última configuración de intensidades
                 const ultimaConfig = response[response.length - 1];
                 this.aplicarIntensidades(ultimaConfig.intensidades, 'intensidades-grid');
-                alert('✅ Intensidades anteriores cargadas');
+                mostrarNotificacion('✅ Intensidades anteriores cargadas', 'success');
             } else {
-                alert('No se encontraron intensidades anteriores para este paciente');
+                mostrarNotificacion('No se encontraron intensidades anteriores para este paciente', 'info');
             }
         } catch (error) {
             console.error('Error cargando intensidades:', error);
             const errorMessage = error.message || 'Error desconocido cargando intensidades';
-            alert(`Error cargando intensidades anteriores: ${errorMessage}`);
+            mostrarNotificacion(`Error cargando intensidades anteriores: ${errorMessage}`, 'error');
         }
     }
     
@@ -1367,41 +1404,81 @@ export class SesionesModule {
             const response = await sesionesAPI.confirmarPaciente(sesionId);
             
                         if (response.success) {
-                alert('✅ Paciente confirmado exitosamente');
+                mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
                 await this.loadSesiones();
-  } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+            } else {
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
-  } catch (error) {
+        } catch (error) {
             console.error('Error confirmando paciente:', error);
             const errorMessage = error.message || 'Error desconocido confirmando paciente';
-            alert(`❌ Error confirmando paciente: ${errorMessage}`);
+            mostrarNotificacion(`❌ Error confirmando paciente: ${errorMessage}`, 'error');
         }
     }
     
     async reprogramarSesion(sesionId) {
-        const nuevaFecha = prompt('Ingrese la nueva fecha (YYYY-MM-DD):');
-        const nuevaHora = prompt('Ingrese la nueva hora (HH:MM):');
+        // Crear modal simple para fecha y hora
+        const modalHtml = `
+            <div class="modal fade" id="reprogramarModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Reprogramar Sesión</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="nuevaFecha" class="form-label">Nueva Fecha:</label>
+                                <input type="date" class="form-control" id="nuevaFecha" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nuevaHora" class="form-label">Nueva Hora:</label>
+                                <input type="time" class="form-control" id="nuevaHora" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="confirmarReprogramar">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        if (!nuevaFecha || !nuevaHora) {
-            alert('Por favor ingrese fecha y hora válidas');
-            return;
-        }
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('reprogramarModal'));
+        modal.show();
         
-        try {
-            const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
+        // Configurar evento de confirmación
+        document.getElementById('confirmarReprogramar').onclick = async () => {
+            const nuevaFecha = document.getElementById('nuevaFecha').value;
+            const nuevaHora = document.getElementById('nuevaHora').value;
             
-                        if (response.success) {
-                alert('✅ Sesión reprogramada exitosamente');
-                await this.loadSesiones();
-        } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
-        }
-  } catch (error) {
-            console.error('Error reprogramando sesión:', error);
-            const errorMessage = error.message || 'Error desconocido reprogramando sesión';
-            alert(`❌ Error reprogramando sesión: ${errorMessage}`);
-        }
+            if (!nuevaFecha || !nuevaHora) {
+                mostrarNotificacion('Por favor ingrese fecha y hora válidas', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
+                
+                if (response.success) {
+                    mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
+                    await this.loadSesiones();
+                } else {
+                    mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                }
+            } catch (error) {
+                console.error('Error reprogramando sesión:', error);
+                const errorMessage = error.message || 'Error desconocido reprogramando sesión';
+                mostrarNotificacion(`❌ Error reprogramando sesión: ${errorMessage}`, 'error');
+            } finally {
+                modal.hide();
+                // Limpiar modal del DOM
+                document.getElementById('reprogramarModal').remove();
+            }
+        };
     }
     
     async cancelarSesion(sesionId) {
@@ -1410,16 +1487,16 @@ export class SesionesModule {
         try {
             const response = await sesionesAPI.delete(sesionId);
             
-                        if (response.success) {
-                alert('✅ Sesión cancelada exitosamente');
+            if (response.success) {
+                mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
                 await this.loadSesiones();
-        } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+            } else {
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error cancelando sesión:', error);
             const errorMessage = error.message || 'Error desconocido cancelando sesión';
-            alert(`❌ Error cancelando sesión: ${errorMessage}`);
+            mostrarNotificacion(`❌ Error cancelando sesión: ${errorMessage}`, 'error');
         }
     }
     
@@ -1439,7 +1516,7 @@ export class SesionesModule {
             <strong>Observaciones:</strong> ${sesion.observaciones || 'Sin observaciones'}
         `;
         
-        alert(detalles);
+        mostrarNotificacion(detalles, 'info');
     }
     
     limpiarFormularioSesion() {
@@ -1669,9 +1746,43 @@ export class SesionesModule {
     
     // Métodos auxiliares para el calendario
     calculateEndTime(fecha, hora, duracion) {
-        const start = new Date(`${fecha}T${hora}`);
-        const end = new Date(start.getTime() + (duracion * 60000)); // duracion en minutos
-        return end.toISOString();
+        try {
+            // Validar que los parámetros sean válidos
+            if (!fecha || !hora || !duracion) {
+                console.warn('⚠️ Parámetros inválidos para calculateEndTime:', { fecha, hora, duracion });
+                return null;
+            }
+            
+            // Asegurar formato correcto de fecha y hora
+            const fechaFormateada = fecha.toString().trim();
+            const horaFormateada = hora.toString().trim();
+            
+            // Validar formato de fecha (YYYY-MM-DD)
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaFormateada)) {
+                console.warn('⚠️ Formato de fecha inválido:', fechaFormateada);
+                return null;
+            }
+            
+            // Validar formato de hora (HH:MM)
+            if (!/^\d{2}:\d{2}$/.test(horaFormateada)) {
+                console.warn('⚠️ Formato de hora inválido:', horaFormateada);
+                return null;
+            }
+            
+            const start = new Date(`${fechaFormateada}T${horaFormateada}`);
+            
+            // Validar que la fecha sea válida
+            if (isNaN(start.getTime())) {
+                console.warn('⚠️ Fecha/hora inválida:', `${fechaFormateada}T${horaFormateada}`);
+                return null;
+            }
+            
+            const end = new Date(start.getTime() + (duracion * 60000)); // duracion en minutos
+            return end.toISOString();
+        } catch (error) {
+            console.error('❌ Error en calculateEndTime:', error, { fecha, hora, duracion });
+            return null;
+        }
     }
     
     getEventColor(estado) {

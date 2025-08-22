@@ -256,7 +256,7 @@ export class ConsentimientoModal {
     
     handleAccept() {
         if (!this.signaturePad || !this.signaturePad.isValid()) {
-            alert('⚠️ Por favor, complete su firma antes de continuar.');
+            mostrarNotificacion('⚠️ Por favor, complete su firma antes de continuar.', 'warning');
             return;
         }
         
