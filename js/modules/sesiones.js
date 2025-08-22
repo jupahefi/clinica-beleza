@@ -120,9 +120,24 @@ export class SesionesModule {
         // Configurar evento para cargar ventas cuando se selecciona un paciente
         const pacienteSelect = document.getElementById('pacienteSesion');
         if (pacienteSelect) {
-            pacienteSelect.addEventListener('change', (e) => {
-                this.cargarVentasPorPaciente(e.target.value);
-            });
+            // Para Select2, usar el evento de jQuery
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $(pacienteSelect).on('select2:select', (e) => {
+                    console.log('🔍 Paciente seleccionado:', e.params.data);
+                    this.cargarVentasPorPaciente(e.params.data.id);
+                });
+                
+                $(pacienteSelect).on('select2:clear', () => {
+                    console.log('🔍 Paciente deseleccionado');
+                    this.cargarVentasPorPaciente(null);
+                });
+            } else {
+                // Fallback para select normal
+                pacienteSelect.addEventListener('change', (e) => {
+                    console.log('🔍 Paciente seleccionado (fallback):', e.target.value);
+                    this.cargarVentasPorPaciente(e.target.value);
+                });
+            }
         }
     }
     
@@ -707,7 +722,7 @@ export class SesionesModule {
             // Configurar Select2 con AJAX para búsqueda dinámica
             if (typeof $ !== 'undefined' && $.fn.select2) {
                 $(select).select2({
-                    placeholder: 'Seleccionar paciente...',
+                    placeholder: '-- Selecciona cliente --',
                     allowClear: true,
                     width: '100%',
                     ajax: {
@@ -748,17 +763,20 @@ export class SesionesModule {
                 }));
                 
                 $(select).empty().select2({
-                    placeholder: 'Seleccionar paciente...',
+                    placeholder: '-- Selecciona cliente --',
                     allowClear: true,
                     width: '100%',
                     data: options
                 });
+                
+                // Asegurar que no haya valor seleccionado por defecto
+                $(select).val(null).trigger('change');
             } else {
                 // Fallback sin Select2
                 const { fichasAPI } = await import('../api-client.js');
                 const pacientes = await fichasAPI.getAll();
                 
-                select.innerHTML = '<option value="">Seleccionar paciente...</option>';
+                select.innerHTML = '<option value="">-- Selecciona cliente --</option>';
                 
                 pacientes.forEach(paciente => {
                     const option = document.createElement('option');
@@ -815,10 +833,16 @@ export class SesionesModule {
     async cargarVentasPorPaciente(pacienteId) {
         try {
             const select = document.getElementById('ventaSesion');
-            if (!select) return;
+            if (!select) {
+                console.error('❌ No se encontró el select de ventas');
+                return;
+            }
+            
+            console.log('🔍 Cargando ventas para paciente ID:', pacienteId);
             
             if (!pacienteId) {
                 select.innerHTML = '<option value="">Seleccionar venta...</option>';
+                console.log('✅ Select de ventas limpiado (sin paciente)');
                 return;
             }
             
@@ -826,21 +850,41 @@ export class SesionesModule {
             const { ventasAPI } = await import('../api-client.js');
             const ventas = await ventasAPI.getAll();
             
+            console.log('📊 Total de ventas obtenidas:', ventas.length);
+            
             // Filtrar ventas por paciente
             const ventasPaciente = ventas.filter(venta => venta.ficha_id == pacienteId);
+            
+            console.log('🔍 Ventas filtradas para paciente', pacienteId, ':', ventasPaciente.length);
+            console.log('📋 Ventas del paciente:', ventasPaciente);
             
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
             for (const venta of ventasPaciente) {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
-                option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} - ${venta.precio_total?.toLocaleString() || 'N/A'} - ${venta.fecha_venta || 'N/A'}`;
+                
+                // Mejorar el texto mostrado
+                let ventaText = `Venta #${venta.id}`;
+                if (venta.tratamiento?.nombre) {
+                    ventaText += ` - ${venta.tratamiento.nombre}`;
+                }
+                if (venta.precio_total) {
+                    ventaText += ` - $${venta.precio_total.toLocaleString()}`;
+                }
+                if (venta.fecha_venta) {
+                    const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
+                    ventaText += ` - ${fecha}`;
+                }
+                
+                option.textContent = ventaText;
                 select.appendChild(option);
             }
             
             console.log('✅ Ventas del paciente cargadas:', ventasPaciente.length);
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
+            console.error('Error completo:', error);
         }
     }
     
