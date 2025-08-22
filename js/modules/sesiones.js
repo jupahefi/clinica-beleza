@@ -118,27 +118,48 @@ export class SesionesModule {
         }
         
         // Configurar evento para cargar ventas cuando se selecciona un paciente
+        this.configurarEventosPaciente();
+    }
+    
+    configurarEventosPaciente() {
         const pacienteSelect = document.getElementById('pacienteSesion');
-        if (pacienteSelect) {
-            // Para Select2, usar el evento de jQuery
-            if (typeof $ !== 'undefined' && $.fn.select2) {
-                $(pacienteSelect).on('select2:select', (e) => {
-                    console.log('🔍 Paciente seleccionado:', e.params.data);
-                    this.cargarVentasPorPaciente(e.params.data.id);
-                });
-                
-                $(pacienteSelect).on('select2:clear', () => {
-                    console.log('🔍 Paciente deseleccionado');
-                    this.cargarVentasPorPaciente(null);
-                });
-            } else {
-                // Fallback para select normal
-                pacienteSelect.addEventListener('change', (e) => {
-                    console.log('🔍 Paciente seleccionado (fallback):', e.target.value);
-                    this.cargarVentasPorPaciente(e.target.value);
-                });
-            }
+        if (!pacienteSelect) {
+            console.error('❌ No se encontró el select de pacientes');
+            return;
         }
+        
+        console.log('🔧 Configurando eventos para select de pacientes...');
+        
+        // Para Select2, usar el evento de jQuery
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            console.log('🔧 Usando eventos Select2');
+            
+            // Remover eventos anteriores si existen
+            $(pacienteSelect).off('select2:select select2:clear');
+            
+            $(pacienteSelect).on('select2:select', (e) => {
+                console.log('🔍 Paciente seleccionado (Select2):', e.params.data);
+                this.cargarVentasPorPaciente(e.params.data.id);
+            });
+            
+            $(pacienteSelect).on('select2:clear', () => {
+                console.log('🔍 Paciente deseleccionado (Select2)');
+                this.cargarVentasPorPaciente(null);
+            });
+            
+            console.log('✅ Eventos Select2 configurados');
+        } else {
+            console.log('🔧 Usando eventos nativos');
+            // Fallback para select normal
+            pacienteSelect.removeEventListener('change', this.handlePacienteChange);
+            pacienteSelect.addEventListener('change', this.handlePacienteChange.bind(this));
+            console.log('✅ Eventos nativos configurados');
+        }
+    }
+    
+    handlePacienteChange(e) {
+        console.log('🔍 Paciente seleccionado (nativo):', e.target.value);
+        this.cargarVentasPorPaciente(e.target.value);
     }
     
     setupIntensidadesForm() {
@@ -307,7 +328,7 @@ export class SesionesModule {
             } else {
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
-  } catch (error) {
+        } catch (error) {
             console.error('Error:', error);
             const errorMessage = error.message || 'Error desconocido creando sesión';
             mostrarNotificacion(`❌ Error creando sesión: ${errorMessage}`, 'error');
@@ -706,6 +727,27 @@ export class SesionesModule {
         if (form) {
             form.reset();
         }
+        
+        // Limpiar selects de Select2 específicamente
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            const pacienteSelect = document.getElementById('pacienteSesion');
+            const ventaSelect = document.getElementById('ventaSesion');
+            const boxSelect = document.getElementById('boxSesion');
+            
+            if (pacienteSelect) {
+                $(pacienteSelect).val(null).trigger('change');
+            }
+            
+            if (ventaSelect) {
+                $(ventaSelect).val(null).trigger('change');
+            }
+            
+            if (boxSelect) {
+                $(boxSelect).val(null).trigger('change');
+            }
+        }
+        
+        console.log('✅ Formulario de sesión limpiado');
     }
 
     async loadPacientes() {
@@ -771,6 +813,9 @@ export class SesionesModule {
                 
                 // Asegurar que no haya valor seleccionado por defecto
                 $(select).val(null).trigger('change');
+                
+                // Configurar eventos después de inicializar Select2
+                this.configurarEventosPaciente();
             } else {
                 // Fallback sin Select2
                 const { fichasAPI } = await import('../api-client.js');
@@ -784,6 +829,9 @@ export class SesionesModule {
                     option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
                     select.appendChild(option);
                 });
+                
+                // Configurar eventos para select nativo
+                this.configurarEventosPaciente();
             }
             
             console.log('✅ Select de pacientes cargado');
