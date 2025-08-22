@@ -355,7 +355,7 @@ export class SesionesModule {
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error en crearSesion:', error);
             
             // Extraer el mensaje de error real de la respuesta
             let errorMessage = 'Error desconocido creando sesión';
@@ -373,6 +373,7 @@ export class SesionesModule {
                 }
             }
             
+            // Mostrar el error real de la base de datos
             mostrarNotificacion(`❌ ${errorMessage}`, 'error');
         }
     }
@@ -1417,6 +1418,12 @@ export class SesionesModule {
     }
     
     async reprogramarSesion(sesionId) {
+        // Verificar que Bootstrap esté disponible
+        if (typeof bootstrap === 'undefined') {
+            mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
+            return;
+        }
+        
         // Crear modal simple para fecha y hora
         const modalHtml = `
             <div class="modal fade" id="reprogramarModal" tabindex="-1">
@@ -1447,57 +1454,108 @@ export class SesionesModule {
         
         // Agregar modal al DOM
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        const modal = new bootstrap.Modal(document.getElementById('reprogramarModal'));
-        modal.show();
         
-        // Configurar evento de confirmación
-        document.getElementById('confirmarReprogramar').onclick = async () => {
-            const nuevaFecha = document.getElementById('nuevaFecha').value;
-            const nuevaHora = document.getElementById('nuevaHora').value;
-            
-            if (!nuevaFecha || !nuevaHora) {
-                mostrarNotificacion('Por favor ingrese fecha y hora válidas', 'warning');
-                return;
-            }
-            
-            try {
-                const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
+        // Esperar a que el modal se agregue al DOM
+        setTimeout(() => {
+            const modalElement = document.getElementById('reprogramarModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
                 
-                if (response.success) {
-                    mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
-                    await this.loadSesiones();
-                } else {
-                    mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
-                }
-            } catch (error) {
-                console.error('Error reprogramando sesión:', error);
-                const errorMessage = error.message || 'Error desconocido reprogramando sesión';
-                mostrarNotificacion(`❌ Error reprogramando sesión: ${errorMessage}`, 'error');
-            } finally {
-                modal.hide();
-                // Limpiar modal del DOM
-                document.getElementById('reprogramarModal').remove();
+                // Configurar evento de confirmación
+                document.getElementById('confirmarReprogramar').onclick = async () => {
+                    const nuevaFecha = document.getElementById('nuevaFecha').value;
+                    const nuevaHora = document.getElementById('nuevaHora').value;
+                    
+                    if (!nuevaFecha || !nuevaHora) {
+                        mostrarNotificacion('Por favor ingrese fecha y hora válidas', 'warning');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
+                        
+                        if (response.success) {
+                            mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
+                            await this.loadSesiones();
+                        } else {
+                            mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error reprogramando sesión:', error);
+                        const errorMessage = error.message || 'Error desconocido reprogramando sesión';
+                        mostrarNotificacion(`❌ Error reprogramando sesión: ${errorMessage}`, 'error');
+                    } finally {
+                        modal.hide();
+                        // Limpiar modal del DOM
+                        document.getElementById('reprogramarModal').remove();
+                    }
+                };
             }
-        };
+        }, 100);
     }
     
     async cancelarSesion(sesionId) {
-        if (!confirm('¿Está seguro de que desea cancelar esta sesión?')) return;
-        
-        try {
-            const response = await sesionesAPI.delete(sesionId);
-            
-            if (response.success) {
-                mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
-                await this.loadSesiones();
-            } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
-            }
-        } catch (error) {
-            console.error('Error cancelando sesión:', error);
-            const errorMessage = error.message || 'Error desconocido cancelando sesión';
-            mostrarNotificacion(`❌ Error cancelando sesión: ${errorMessage}`, 'error');
+        // Verificar que Bootstrap esté disponible
+        if (typeof bootstrap === 'undefined') {
+            mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
+            return;
         }
+        
+        // Crear modal de confirmación
+        const modalHtml = `
+            <div class="modal fade" id="cancelarModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirmar Cancelación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>¿Está seguro de que desea cancelar esta sesión?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, mantener</button>
+                            <button type="button" class="btn btn-danger" id="confirmarCancelar">Sí, cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Esperar a que el modal se agregue al DOM
+        setTimeout(() => {
+            const modalElement = document.getElementById('cancelarModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                
+                // Configurar evento de confirmación
+                document.getElementById('confirmarCancelar').onclick = async () => {
+                    try {
+                        const response = await sesionesAPI.delete(sesionId);
+                        
+                        if (response.success) {
+                            mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
+                            await this.loadSesiones();
+                        } else {
+                            mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error cancelando sesión:', error);
+                        const errorMessage = error.message || 'Error desconocido cancelando sesión';
+                        mostrarNotificacion(`❌ Error cancelando sesión: ${errorMessage}`, 'error');
+                    } finally {
+                        modal.hide();
+                        // Limpiar modal del DOM
+                        document.getElementById('cancelarModal').remove();
+                    }
+                };
+            }
+        }, 100);
     }
     
     async verDetalles(sesionId) {

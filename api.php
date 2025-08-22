@@ -588,62 +588,77 @@ function handlePagos($db, $method, $id, $data) {
 // ---------- AGENDA ----------
 
 function handleSesiones($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM v_sesiones_completas WHERE id = ?", [$id]);
-            } else {
-                $ventaId = $_GET['venta_id'] ?? null;
-                if ($ventaId) {
-                    $result = $db->executeRaw("CALL sp_sesiones_venta(?)", [$ventaId]);
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("SELECT * FROM v_sesiones_completas WHERE id = ?", [$id]);
                 } else {
-                    $result = $db->select("SELECT * FROM v_sesiones_completas ORDER BY fecha_planificada DESC");
+                    $ventaId = $_GET['venta_id'] ?? null;
+                    if ($ventaId) {
+                        $result = $db->executeRaw("CALL sp_sesiones_venta(?)", [$ventaId]);
+                    } else {
+                        $result = $db->select("SELECT * FROM v_sesiones_completas ORDER BY fecha_planificada DESC");
+                    }
                 }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Agendar sesión
-            $result = $db->executeRaw("CALL sp_agendar_sesion(?, ?, ?, ?, ?, ?, ?, @sesion_id)", [
-                $data['venta_id'], $data['numero_sesion'], $data['sucursal_id'],
-                $data['box_id'], $data['profesional_id'], $data['fecha_planificada'],
-                $data['observaciones'] ?? null
-            ]);
-            $sesionId = $db->selectOne("SELECT @sesion_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $sesionId]]);
-            break;
-            
-        case 'PUT':
-            if (isset($data['accion'])) {
-                switch ($data['accion']) {
-                    case 'confirmar':
-                        $db->executeRaw("CALL sp_confirmar_paciente(?)", [$id]);
-                        break;
-                    case 'abrir':
-                        $db->executeRaw("CALL sp_abrir_sesion(?)", [$id]);
-                        break;
-                    case 'cerrar':
-                        $db->executeRaw("CALL sp_cerrar_sesion(?, ?)", [$id, $data['observaciones'] ?? null]);
-                        break;
-                    case 'reprogramar':
-                        $db->executeRaw("CALL sp_reprogramar_sesion(?, ?)", [$id, $data['nueva_fecha']]);
-                        break;
-                    case 'actualizar_datos':
-                        // Actualizar datos_sesion como JSON
-                        $datosJson = json_encode($data['datos_sesion']);
-                        $db->executeRaw("UPDATE sesion SET datos_sesion = ? WHERE id = ?", [$datosJson, $id]);
-                        break;
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+                
+            case 'POST':
+                // Agendar sesión
+                $result = $db->executeRaw("CALL sp_agendar_sesion(?, ?, ?, ?, ?, ?, ?, @sesion_id)", [
+                    $data['venta_id'], $data['numero_sesion'], $data['sucursal_id'],
+                    $data['box_id'], $data['profesional_id'], $data['fecha_planificada'],
+                    $data['observaciones'] ?? null
+                ]);
+                $sesionId = $db->selectOne("SELECT @sesion_id as id")['id'];
+                echo json_encode(['success' => true, 'data' => ['id' => $sesionId]]);
+                break;
+                
+            case 'PUT':
+                if (isset($data['accion'])) {
+                    switch ($data['accion']) {
+                        case 'confirmar':
+                            $db->executeRaw("CALL sp_confirmar_paciente(?)", [$id]);
+                            break;
+                        case 'abrir':
+                            $db->executeRaw("CALL sp_abrir_sesion(?)", [$id]);
+                            break;
+                        case 'cerrar':
+                            $db->executeRaw("CALL sp_cerrar_sesion(?, ?)", [$id, $data['observaciones'] ?? null]);
+                            break;
+                        case 'reprogramar':
+                            $db->executeRaw("CALL sp_reprogramar_sesion(?, ?)", [$id, $data['nueva_fecha']]);
+                            break;
+                        case 'actualizar_datos':
+                            // Actualizar datos_sesion como JSON
+                            $datosJson = json_encode($data['datos_sesion']);
+                            $db->executeRaw("UPDATE sesion SET datos_sesion = ? WHERE id = ?", [$datosJson, $id]);
+                            break;
+                    }
                 }
-            }
-            echo json_encode(['success' => true, 'data' => ['updated' => true]]);
-            break;
-            
-        case 'DELETE':
-            // Cancelar sesión (soft delete)
-            $db->executeRaw("CALL sp_cancelar_sesion(?)", [$id]);
-            echo json_encode(['success' => true, 'data' => ['deleted' => true]]);
-            break;
+                echo json_encode(['success' => true, 'data' => ['updated' => true]]);
+                break;
+                
+            case 'DELETE':
+                // Cancelar sesión (soft delete)
+                $db->executeRaw("CALL sp_cancelar_sesion(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => ['deleted' => true]]);
+                break;
+        }
+    } catch (Exception $e) {
+        // Log del error para debugging
+        error_log("🚨 Error en handleSesiones: " . $e->getMessage());
+        
+        // Devolver error en formato JSON consistente
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'sesiones',
+            'method' => $method
+        ]);
     }
 }
 
