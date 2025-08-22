@@ -4,7 +4,7 @@
  */
 
 // Las zonas se obtienen desde la API, no desde constantes
-import { formatCurrency, formatDate } from '../utils.js';
+import { formatCurrency, formatDate, mostrarNotificacion } from '../utils.js';
 import { sesionesAPI, fichasAPI } from '../api-client.js';
 import '../calendar.js';
 
@@ -343,14 +343,31 @@ export class SesionesModule {
     }
     
     getSesionFormData() {
+        const ventaId = document.getElementById('ventaSesion').value;
+        const fechaPlanificada = document.getElementById('fechaSesion').value;
+        const horaPlanificada = document.getElementById('horaSesion').value;
+        
+        // Crear fecha_planificada completa
+        const fechaPlanificadaCompleta = fechaPlanificada && horaPlanificada 
+            ? `${fechaPlanificada} ${horaPlanificada}:00` 
+            : null;
+        
         return {
-            paciente_id: document.getElementById('pacienteSesion').value,
-            venta_id: document.getElementById('ventaSesion').value,
+            venta_id: ventaId,
+            numero_sesion: 1, // Por defecto es la primera sesión
+            sucursal_id: 1, // Por defecto sucursal principal
             box_id: document.getElementById('boxSesion').value,
-            fecha_planificada: document.getElementById('fechaSesion').value,
-            hora_planificada: document.getElementById('horaSesion').value,
-            duracion: document.getElementById('duracionSesion').value || 60,
-            observaciones: document.getElementById('observacionesSesion').value
+            profesional_id: 1, // Por defecto profesional principal
+            google_calendar_event_id: '', // Se generará automáticamente
+            fecha_planificada: fechaPlanificadaCompleta,
+            fecha_ejecucion: fechaPlanificadaCompleta, // Misma fecha que planificada inicialmente
+            estado: 'planificada',
+            paciente_confirmado: false,
+            abierta_en: null, // Se establecerá cuando se abra la sesión
+            cerrada_en: null, // Se establecerá cuando se cierre la sesión
+            observaciones: document.getElementById('observacionesSesion').value || '',
+            intensidades_zonas: '{}', // JSON vacío inicial
+            datos_sesion: '{}' // JSON vacío inicial
         };
     }
     
