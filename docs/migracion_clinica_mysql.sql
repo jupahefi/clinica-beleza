@@ -599,55 +599,45 @@ CREATE TRIGGER trg_venta_requiere_evaluacion_ficha_especifica
 BEFORE INSERT ON venta
 FOR EACH ROW
 BEGIN
-  DECLARE eval_ficha BIGINT DEFAULT NULL;
-  DECLARE eval_id BIGINT DEFAULT NULL;
-  DECLARE ficha_esp_id BIGINT DEFAULT NULL;
-  DECLARE es_evaluacion BOOLEAN DEFAULT FALSE;
-  DECLARE EXIT HANDLER FOR NOT FOUND
-  BEGIN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Registro no encontrado en validacion';
-  END$$
-  
-  -- Verificar si es una venta de evaluación
-  SELECT TRUE INTO es_evaluacion FROM tratamiento WHERE id = NEW.tratamiento_id AND nombre = 'EVALUACION';
-  
-  -- Si es evaluación, permitir sin evaluación_id y ficha_especifica_id
-  IF es_evaluacion THEN
+  DECLARE eval_ficha BIGINT;
+  DECLARE eval_id BIGINT;
+  DECLARE ficha_esp_id BIGINT;
+  DECLARE es_evaluacion INT;
+
+  -- Verificar si es una venta de evaluación (1 si existe, 0 si no)
+  SELECT COUNT(*) INTO es_evaluacion 
+  FROM tratamiento 
+  WHERE id = NEW.tratamiento_id AND nombre = 'EVALUACION';
+
+  -- Si es evaluación
+  IF es_evaluacion > 0 THEN
     IF NEW.evaluacion_id IS NOT NULL OR NEW.ficha_especifica_id IS NOT NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta de evaluacion no debe tener evaluacion_id ni ficha_especifica_id inicialmente';
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta de evaluacion no debe tener evaluacion_id ni ficha_especifica_id';
     END IF;
-    LEAVE;
-  END IF;
-  
-  -- Para ventas normales, validar que la evaluacion existe y pertenece a la misma ficha
-  IF NEW.evaluacion_id IS NULL THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion es obligatoria para ventas normales';
-  END IF;
+  ELSE
+    -- Para ventas normales: validar evaluacion
+    IF NEW.evaluacion_id IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion es obligatoria para ventas normales';
+    END IF;
 
-  SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
-  IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
-  END IF;
+    SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
+    IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
+    END IF;
 
-  -- Validar que la ficha especifica existe y pertenece a la evaluacion
-  IF NEW.ficha_especifica_id IS NULL THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica es obligatoria para ventas normales';
-  END IF;
-  
-  SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
-  IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
-  END IF;
-  
-  -- Validar que la ficha especifica pertenece a la misma ficha
-  SELECT ficha_especifica.id INTO ficha_esp_id 
-  FROM ficha_especifica, evaluacion 
-  WHERE ficha_especifica.evaluacion_id = evaluacion.id 
-    AND ficha_especifica.id = NEW.ficha_especifica_id 
-    AND evaluacion.ficha_id = NEW.ficha_id;
-  
-  IF ficha_esp_id IS NULL THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
+    SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
+    IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
+    END IF;
+
+    SELECT fe.id INTO ficha_esp_id 
+    FROM ficha_especifica fe
+    JOIN evaluacion e ON fe.evaluacion_id = e.id
+    WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
+
+    IF ficha_esp_id IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
+    END IF;
   END IF;
 END$$
 
