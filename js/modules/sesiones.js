@@ -352,22 +352,15 @@ export class SesionesModule {
             ? `${fechaPlanificada} ${horaPlanificada}:00` 
             : null;
         
+        // Solo enviar los campos que realmente necesita la API
         return {
             venta_id: ventaId,
             numero_sesion: 1, // Por defecto es la primera sesión
             sucursal_id: 1, // Por defecto sucursal principal
             box_id: document.getElementById('boxSesion').value,
             profesional_id: 1, // Por defecto profesional principal
-            google_calendar_event_id: '', // Se generará automáticamente
             fecha_planificada: fechaPlanificadaCompleta,
-            fecha_ejecucion: fechaPlanificadaCompleta, // Misma fecha que planificada inicialmente
-            estado: 'planificada',
-            paciente_confirmado: false,
-            abierta_en: null, // Se establecerá cuando se abra la sesión
-            cerrada_en: null, // Se establecerá cuando se cierre la sesión
-            observaciones: document.getElementById('observacionesSesion').value || '',
-            intensidades_zonas: '{}', // JSON vacío inicial
-            datos_sesion: '{}' // JSON vacío inicial
+            observaciones: document.getElementById('observacionesSesion').value || ''
         };
     }
     
