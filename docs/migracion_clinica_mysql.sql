@@ -616,14 +616,14 @@ BEGIN
   END IF;
   
   -- Para ventas normales, validar que la evaluacion existe y pertenece a la misma ficha
-    IF NEW.evaluacion_id IS NULL THEN
+  IF NEW.evaluacion_id IS NULL THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion es obligatoria para ventas normales';
-    END IF;
+  END IF;
 
-    SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
-    IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
+  SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
+  IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
-    END IF;
+  END IF;
 
   -- Validar que la ficha especifica existe y pertenece a la evaluacion
   IF NEW.ficha_especifica_id IS NULL THEN
