@@ -1330,8 +1330,17 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO sesion (venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada, observaciones)
-    VALUES (p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id, p_fecha_planificada, p_observaciones);
+    INSERT INTO sesion (
+        venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
+        google_calendar_event_id, fecha_planificada, fecha_ejecucion, 
+        abierta_en, cerrada_en, observaciones, intensidades_zonas, datos_sesion
+    )
+    VALUES (
+        p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id,
+        '', p_fecha_planificada, p_fecha_planificada, 
+        '1970-01-01 00:00:00', '1970-01-01 00:00:00', 
+        COALESCE(p_observaciones, ''), '{}', '{}'
+    );
     
     SET p_sesion_id = LAST_INSERT_ID();
     

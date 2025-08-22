@@ -337,8 +337,24 @@ export class SesionesModule {
             }
         } catch (error) {
             console.error('Error:', error);
-            const errorMessage = error.message || 'Error desconocido creando sesión';
-            mostrarNotificacion(`❌ Error creando sesión: ${errorMessage}`, 'error');
+            
+            // Extraer el mensaje de error real de la respuesta
+            let errorMessage = 'Error desconocido creando sesión';
+            
+            if (error.message) {
+                try {
+                    // Intentar parsear el error como JSON
+                    const errorData = JSON.parse(error.message);
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    // Si no es JSON, usar el mensaje directo
+                    errorMessage = error.message;
+                }
+            }
+            
+            mostrarNotificacion(`❌ ${errorMessage}`, 'error');
         }
     }
     
@@ -352,7 +368,7 @@ export class SesionesModule {
             ? `${fechaPlanificada} ${horaPlanificada}:00` 
             : null;
         
-        // Solo enviar los campos que realmente necesita la API
+        // Solo enviar los campos que realmente necesita el SP sp_agendar_sesion
         return {
             venta_id: ventaId,
             numero_sesion: 1, // Por defecto es la primera sesión
