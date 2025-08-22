@@ -345,15 +345,12 @@ export class SesionesModule {
             const response = await sesionesAPI.create(formData);
             console.log('📥 Respuesta de la API:', response);
             
-            if (response.success) {
-                console.log('✅ Sesión creada exitosamente');
-                mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
-                this.limpiarFormularioSesion();
-                await this.loadSesiones(); // Recargar sesiones y actualizar calendario
-            } else {
-                console.error('❌ Error en la respuesta:', response.error);
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
-            }
+            // Si llegamos aquí, la petición fue exitosa
+            console.log('✅ Sesión creada exitosamente');
+            mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
+            this.limpiarFormularioSesion();
+            await this.loadSesiones(); // Recargar sesiones y actualizar calendario
+            
         } catch (error) {
             console.error('❌ Error en crearSesion:', error);
             
