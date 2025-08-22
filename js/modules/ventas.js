@@ -245,113 +245,144 @@ class VentasModule {
         const venta = this.calcularPrecio();
         if (!venta) {
             mostrarNotificacion('Selecciona un tratamiento válido.', 'warning');
-    return;
-  }
-  
-  try {
-            // Implementar el proceso de 3 pasos: Evaluación -> Ficha Específica -> Venta
-            const evaluacion = await evaluacionesAPI.create({
-                ficha_id: cliente,
-                profesional_id: 1, // Por ahora hardcodeado
-                tratamiento_id: parseInt(document.getElementById('tratamiento').value),
-                pack_id: null, // Por ahora null
-                precio_sugerido: venta.precio,
-                sesiones_sugeridas: venta.sesiones,
-                recomendaciones: `Venta de ${venta.tratamiento}`
-            });
+            return;
+        }
+        
+        try {
+            const tratamientoId = parseInt(document.getElementById('tratamiento').value);
+            const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
+            
+            // Verificar si es una venta de evaluación
+            if (tratamiento && tratamiento.nombre.toUpperCase().includes('EVALUACION')) {
+                // FLUJO DE EVALUACIÓN: Venta directa sin evaluación previa
+                const ventaEvaluacion = await ventasAPI.create({
+                    ficha_id: cliente,
+                    evaluacion_id: null, // No requiere evaluación previa
+                    ficha_especifica_id: null, // No requiere ficha específica
+                    tratamiento_id: tratamientoId,
+                    pack_id: document.getElementById('pack').value || null,
+                    cantidad_sesiones: venta.sesiones,
+                    precio_lista: venta.precio,
+                    total_pagado: venta.precio
+                });
 
-            const fichaEspecifica = await fichasEspecificasAPI.create({
-                evaluacion_id: evaluacion.id,
-                tipo_id: this.obtenerTipoFichaId(venta.tratamiento),
-                datos: {
-                    // Estructura básica según el tipo de ficha
-                    antecedentes_personales: {
-                        nombre_completo: this.clienteSeleccionado.text || '',
-                        fecha_nacimiento: '',
-                        edad: 0,
-                        ocupacion: '',
-                        telefono_fijo: '',
-                        celular: '',
-                        email: '',
-                        medio_conocimiento: ''
-                    },
-                    // Para depilación
-                    evaluacion_medica: {
-                        medicamentos: false,
-                        isotretinoina: false,
-                        alergias: false,
-                        enfermedades_piel: false,
-                        antecedentes_cancer: false,
-                        embarazo: false,
-                        lactancia: false,
-                        tatuajes: false,
-                        antecedentes_herpes: false,
-                        patologias_hormonales: false,
-                        exposicion_sol: '',
-                        tipo_piel_fitzpatrick: '',
-                        metodo_depilacion_actual: '',
-                        ultima_depilacion: '',
-                        otros: ''
-                    },
-                    // Para corporal/facial
-                    antecedentes_clinicos: {
-                        enfermedades_cardiacas: false,
-                        enfermedades_renales: false,
-                        enfermedades_hepaticas: false,
-                        enfermedades_digestivas: false,
-                        enfermedades_neuromusculares: false,
-                        trastorno_coagulacion: false,
-                        alergias: false,
-                        epilepsia: false,
-                        embarazo: false,
-                        dispositivo_intrauterino: false,
-                        cancer: false,
-                        protesis_metalicas: false,
-                        implantes_colageno: false,
-                        medicamentos_actuales: false,
-                        cirugias: false,
-                        fuma: false,
-                        ingiere_alcohol: false,
-                        horas_sueno: 0,
-                        periodo_menstrual_regular: false,
-                        lesiones_timpano: false
-                    },
-                    // Campos específicos según tratamiento
-                    zonas_tratamiento: {
-                        zonas_seleccionadas: [],
-                        observaciones_medicas: venta.detalle || ''
-                    },
-                    tratamiento: {
-                        tratamientos_previos: '',
-                        objetivo_estetico: `Tratamiento de ${venta.tratamiento}`
-                    }
-                },
-                observaciones: venta.detalle || ''
-            });
+                // Agregar al historial local
+                this.historial.push({
+                    ...venta,
+                    cliente: this.clienteSeleccionado.text,
+                    fecha: new Date().toLocaleDateString(),
+                    tipo: 'evaluacion'
+                });
 
-            const ventaCreada = await ventasAPI.create({
-                evaluacion_id: evaluacion.id,
-                ficha_especifica_id: fichaEspecifica.id,
-                tratamiento_id: document.getElementById('tratamiento').value,
-                cantidad_sesiones: venta.sesiones,
-                precio_lista: venta.precio,
-                total_pagado: venta.precio
-            });
+                this.renderHistorial();
+                this.limpiarFormulario();
+                mostrarNotificacion('Venta de evaluación registrada exitosamente. Agenda la sesión para completar el proceso.', 'success');
+                
+            } else {
+                // FLUJO NORMAL: Evaluación -> Ficha Específica -> Venta
+                const evaluacion = await evaluacionesAPI.create({
+                    ficha_id: cliente,
+                    profesional_id: 1, // Por ahora hardcodeado
+                    tratamiento_id: tratamientoId,
+                    pack_id: document.getElementById('pack').value || null,
+                    precio_sugerido: venta.precio,
+                    sesiones_sugeridas: venta.sesiones,
+                    recomendaciones: `Venta de ${venta.tratamiento}`
+                });
 
-            // Agregar al historial local
-            this.historial.push({
-                ...venta,
-                cliente: this.clienteSeleccionado.text,
-                fecha: new Date().toLocaleDateString()
-            });
+                const fichaEspecifica = await fichasEspecificasAPI.create({
+                    evaluacion_id: evaluacion.id,
+                    tipo_id: this.obtenerTipoFichaId(venta.tratamiento),
+                    datos: {
+                        // Estructura básica según el tipo de ficha
+                        antecedentes_personales: {
+                            nombre_completo: this.clienteSeleccionado.text || '',
+                            fecha_nacimiento: '',
+                            edad: 0,
+                            ocupacion: '',
+                            telefono_fijo: '',
+                            celular: '',
+                            email: '',
+                            medio_conocimiento: ''
+                        },
+                        // Para depilación
+                        evaluacion_medica: {
+                            medicamentos: false,
+                            isotretinoina: false,
+                            alergias: false,
+                            enfermedades_piel: false,
+                            antecedentes_cancer: false,
+                            embarazo: false,
+                            lactancia: false,
+                            tatuajes: false,
+                            antecedentes_herpes: false,
+                            patologias_hormonales: false,
+                            exposicion_sol: '',
+                            tipo_piel_fitzpatrick: '',
+                            metodo_depilacion_actual: '',
+                            ultima_depilacion: '',
+                            otros: ''
+                        },
+                        // Para corporal/facial
+                        antecedentes_clinicos: {
+                            enfermedades_cardiacas: false,
+                            enfermedades_renales: false,
+                            enfermedades_hepaticas: false,
+                            enfermedades_digestivas: false,
+                            enfermedades_neuromusculares: false,
+                            trastorno_coagulacion: false,
+                            alergias: false,
+                            epilepsia: false,
+                            embarazo: false,
+                            dispositivo_intrauterino: false,
+                            cancer: false,
+                            protesis_metalicas: false,
+                            implantes_colageno: false,
+                            medicamentos_actuales: false,
+                            cirugias: false,
+                            fuma: false,
+                            ingiere_alcohol: false,
+                            horas_sueno: 0,
+                            periodo_menstrual_regular: false,
+                            lesiones_timpano: false
+                        },
+                        // Campos específicos según tratamiento
+                        zonas_tratamiento: {
+                            zonas_seleccionadas: [],
+                            observaciones_medicas: venta.detalle || ''
+                        },
+                        tratamiento: {
+                            tratamientos_previos: '',
+                            objetivo_estetico: `Tratamiento de ${venta.tratamiento}`
+                        }
+                    },
+                    observaciones: venta.detalle || ''
+                });
 
-            this.renderHistorial();
-            this.limpiarFormulario();
-            mostrarNotificacion('Venta registrada exitosamente.', 'success');
+                const ventaCreada = await ventasAPI.create({
+                    evaluacion_id: evaluacion.id,
+                    ficha_especifica_id: fichaEspecifica.id,
+                    tratamiento_id: tratamientoId,
+                    cantidad_sesiones: venta.sesiones,
+                    precio_lista: venta.precio,
+                    total_pagado: venta.precio
+                });
+
+                // Agregar al historial local
+                this.historial.push({
+                    ...venta,
+                    cliente: this.clienteSeleccionado.text,
+                    fecha: new Date().toLocaleDateString(),
+                    tipo: 'normal'
+                });
+
+                this.renderHistorial();
+                this.limpiarFormulario();
+                mostrarNotificacion('Venta registrada exitosamente.', 'success');
+            }
 
         } catch (error) {
             console.error('Error confirmando venta:', error);
-            // Mostrar el error completo como en el módulo de pacientes
             const errorMessage = error.message || 'Error desconocido al registrar la venta';
             mostrarNotificacion(`Error al registrar la venta: ${errorMessage}`, 'error');
         }

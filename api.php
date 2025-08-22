@@ -522,12 +522,24 @@ function handleVentas($db, $method, $id, $data) {
             break;
             
         case 'POST':
-            // Crear venta
-            $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
-                $data['ficha_id'], $data['evaluacion_id'], $data['ficha_especifica_id'],
-                $data['tratamiento_id'], $data['pack_id'] ?? null, $data['cantidad_sesiones'], 
-                $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
-            ]);
+            // Verificar si es una venta de evaluación
+            $tratamiento = $db->selectOne("SELECT requiere_ficha_especifica FROM tratamiento WHERE id = ?", [$data['tratamiento_id']]);
+            
+            if ($tratamiento && $tratamiento['requiere_ficha_especifica'] == 0) {
+                // Es una venta de evaluación - usar sp_crear_venta_evaluacion
+                $result = $db->executeRaw("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, @venta_id)", [
+                    $data['ficha_id'], $data['tratamiento_id'], $data['pack_id'] ?? null,
+                    $data['cantidad_sesiones'], $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
+                ]);
+            } else {
+                // Es una venta normal - usar sp_crear_venta
+                $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                    $data['ficha_id'], $data['evaluacion_id'], $data['ficha_especifica_id'],
+                    $data['tratamiento_id'], $data['pack_id'] ?? null, $data['cantidad_sesiones'], 
+                    $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
+                ]);
+            }
+            
             $ventaId = $db->selectOne("SELECT @venta_id as id")['id'];
             
             // Aplicar ofertas automáticamente

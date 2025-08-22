@@ -602,27 +602,36 @@ BEGIN
   DECLARE eval_ficha BIGINT;
   DECLARE eval_id BIGINT;
   DECLARE ficha_esp_id BIGINT;
+  DECLARE es_evaluacion BOOLEAN DEFAULT FALSE;
   
-  -- Validar que la evaluacion existe y pertenece a la misma ficha
-  SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
-  IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
-  END IF;
+  -- Verificar si es una venta de evaluación
+  SELECT t.requiere_ficha_especifica INTO es_evaluacion 
+  FROM tratamiento t 
+  WHERE t.id = NEW.tratamiento_id;
   
-  -- Validar que la ficha especifica existe y pertenece a la evaluacion
-  SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
-  IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
-  END IF;
-  
-  -- Validar que la ficha especifica pertenece a la misma ficha
-  SELECT fe.id INTO ficha_esp_id 
-  FROM ficha_especifica fe
-  JOIN evaluacion e ON fe.evaluacion_id = e.id
-  WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
-  
-  IF ficha_esp_id IS NULL THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
+  -- Si es evaluación, no requiere ficha específica
+  IF es_evaluacion = FALSE THEN
+    -- Validar que la evaluacion existe y pertenece a la misma ficha
+    SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
+    IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
+    END IF;
+    
+    -- Validar que la ficha especifica existe y pertenece a la evaluacion
+    SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
+    IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
+    END IF;
+    
+    -- Validar que la ficha especifica pertenece a la misma ficha
+    SELECT fe.id INTO ficha_esp_id 
+    FROM ficha_especifica fe
+    JOIN evaluacion e ON fe.evaluacion_id = e.id
+    WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
+    
+    IF ficha_esp_id IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
+    END IF;
   END IF;
 END$$
 
@@ -1166,7 +1175,37 @@ BEGIN
 END$$
 DELIMITER ;
 
--- VEN-002: Aplicar descuento manual
+-- VEN-002: Crear venta de evaluación (sin ficha específica)
+DELIMITER $$
+CREATE PROCEDURE sp_crear_venta_evaluacion(
+    IN p_ficha_id BIGINT,
+    IN p_tratamiento_id BIGINT,
+    IN p_pack_id BIGINT,
+    IN p_cantidad_sesiones INT,
+    IN p_precio_lista DECIMAL(12,2),
+    IN p_descuento_manual_pct DECIMAL(5,2),
+    OUT p_venta_id BIGINT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Para evaluación, evaluacion_id y ficha_especifica_id son NULL
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
+    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
+    
+    SET p_venta_id = LAST_INSERT_ID();
+    
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- VEN-003: Aplicar descuento manual
 DELIMITER $$
 CREATE PROCEDURE sp_aplicar_descuento_manual(
     IN p_venta_id BIGINT,
@@ -2517,6 +2556,7 @@ CALL sp_crear_zona_cuerpo('LINEA_ALBA', 'Linea Alba', 'DEPILACION', 20000, @zona
 
 -- ---------- TRATAMIENTOS BASE ----------
 -- Usando SP para crear tratamientos con validaciones
+CALL sp_crear_tratamiento('EVALUACION', 'Evaluación médica y estética inicial', FALSE, 30, 1, @tratamiento_evaluacion_id);
 CALL sp_crear_tratamiento('FACIAL', 'Tratamientos faciales y esteticos', TRUE, 60, 7, @tratamiento_facial_id);
 CALL sp_crear_tratamiento('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, @tratamiento_capilar_id);
 CALL sp_crear_tratamiento('DEPILACION', 'Depilacion laser y tratamientos corporales', TRUE, 45, 30, @tratamiento_depilacion_id);
@@ -2734,8 +2774,20 @@ CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full + Axilas', 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000),
  120000, 99000, '2024-01-01', '2024-12-31', @pack_bikini_axilas_id);
 
+-- ---------- PACKS DE EVALUACIÓN ----------
+-- Usando SP para crear packs de evaluación con validaciones
+CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Depilación', 'Evaluación médica para depilación láser', 30, 1, 
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_depilacion_id);
+
+CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Corporal/Facial', 'Evaluación médica para tratamientos corporales y faciales', 30, 1, 
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_corporal_id);
+
+CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Completa', 'Evaluación médica para depilación y tratamientos corporales/faciales', 45, 1, 
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_completa_id);
+
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
 -- Usando SP para crear precios de tratamientos con validaciones
+CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, 0, '2024-01-01', '2024-12-31', @precio_evaluacion_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2024-01-01', '2024-12-31', @precio_facial_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2024-01-01', '2024-12-31', @precio_capilar_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2024-01-01', '2024-12-31', @precio_depilacion_id);
