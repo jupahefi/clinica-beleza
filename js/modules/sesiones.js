@@ -28,6 +28,12 @@ export class SesionesModule {
             console.log('✅ Calendario inicializado');
             await this.loadSesiones();
             console.log('✅ Sesiones cargadas');
+            await this.cargarPacientesSelect();
+            console.log('✅ Select de pacientes cargado');
+            await this.cargarVentasSelect();
+            console.log('✅ Select de ventas cargado');
+            await this.cargarBoxesSelect();
+            console.log('✅ Select de boxes cargado');
         } catch (error) {
             console.error('❌ Error inicializando módulo de sesiones:', error);
         }
@@ -108,6 +114,14 @@ export class SesionesModule {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.crearSesion();
+            });
+        }
+        
+        // Configurar evento para cargar ventas cuando se selecciona un paciente
+        const pacienteSelect = document.getElementById('pacienteSesion');
+        if (pacienteSelect) {
+            pacienteSelect.addEventListener('change', (e) => {
+                this.cargarVentasPorPaciente(e.target.value);
             });
         }
     }
@@ -682,6 +696,152 @@ export class SesionesModule {
     async loadPacientes() {
         // Este método se mantiene para compatibilidad con main.js
         // Los pacientes se cargan dinámicamente cuando se necesitan
+        await this.cargarPacientesSelect();
+    }
+    
+    async cargarPacientesSelect() {
+        try {
+            const select = document.getElementById('pacienteSesion');
+            if (!select) return;
+            
+            // Configurar Select2 con AJAX para búsqueda dinámica
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $(select).select2({
+                    placeholder: 'Seleccionar paciente...',
+                    allowClear: true,
+                    width: '100%',
+                    ajax: {
+                        url: '/api.php?endpoint=fichas',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                search: params.term,
+                                page: params.page || 1
+                            };
+                        },
+                        processResults: function (data, params) {
+                            params.page = params.page || 1;
+                            
+                            return {
+                                results: data.data.map(paciente => ({
+                                    id: paciente.id,
+                                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`
+                                })),
+                                pagination: {
+                                    more: false
+                                }
+                            };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 0
+                });
+                
+                // Cargar todos los pacientes inicialmente
+                const { fichasAPI } = await import('../api-client.js');
+                const pacientes = await fichasAPI.getAll();
+                
+                const options = pacientes.map(paciente => ({
+                    id: paciente.id,
+                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`
+                }));
+                
+                $(select).empty().select2({
+                    placeholder: 'Seleccionar paciente...',
+                    allowClear: true,
+                    width: '100%',
+                    data: options
+                });
+            } else {
+                // Fallback sin Select2
+                const { fichasAPI } = await import('../api-client.js');
+                const pacientes = await fichasAPI.getAll();
+                
+                select.innerHTML = '<option value="">Seleccionar paciente...</option>';
+                
+                pacientes.forEach(paciente => {
+                    const option = document.createElement('option');
+                    option.value = paciente.id.toString();
+                    option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
+                    select.appendChild(option);
+                });
+            }
+            
+            console.log('✅ Select de pacientes cargado');
+        } catch (error) {
+            console.error('❌ Error cargando pacientes:', error);
+        }
+    }
+    
+    async cargarVentasSelect() {
+        try {
+            const select = document.getElementById('ventaSesion');
+            if (!select) return;
+            
+            // Inicializar select vacío - se cargará cuando se seleccione un paciente
+            select.innerHTML = '<option value="">Seleccionar venta...</option>';
+            
+            console.log('✅ Select de ventas inicializado');
+        } catch (error) {
+            console.error('❌ Error inicializando select de ventas:', error);
+        }
+    }
+    
+    async cargarBoxesSelect() {
+        try {
+            const select = document.getElementById('boxSesion');
+            if (!select) return;
+            
+            // Importar boxesAPI dinámicamente
+            const { boxesAPI } = await import('../api-client.js');
+            const boxes = await boxesAPI.getAll();
+            
+            select.innerHTML = '<option value="">Seleccionar box...</option>';
+            
+            boxes.forEach(box => {
+                const option = document.createElement('option');
+                option.value = box.id.toString();
+                option.textContent = `${box.nombre} - ${box.estado}`;
+                select.appendChild(option);
+            });
+            
+            console.log('✅ Select de boxes cargado:', boxes.length);
+        } catch (error) {
+            console.error('❌ Error cargando boxes:', error);
+        }
+    }
+    
+    async cargarVentasPorPaciente(pacienteId) {
+        try {
+            const select = document.getElementById('ventaSesion');
+            if (!select) return;
+            
+            if (!pacienteId) {
+                select.innerHTML = '<option value="">Seleccionar venta...</option>';
+                return;
+            }
+            
+            // Importar ventasAPI dinámicamente
+            const { ventasAPI } = await import('../api-client.js');
+            const ventas = await ventasAPI.getAll();
+            
+            // Filtrar ventas por paciente
+            const ventasPaciente = ventas.filter(venta => venta.ficha_id == pacienteId);
+            
+            select.innerHTML = '<option value="">Seleccionar venta...</option>';
+            
+            for (const venta of ventasPaciente) {
+                const option = document.createElement('option');
+                option.value = venta.id.toString();
+                option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} - ${venta.precio_total?.toLocaleString() || 'N/A'} - ${venta.fecha_venta || 'N/A'}`;
+                select.appendChild(option);
+            }
+            
+            console.log('✅ Ventas del paciente cargadas:', ventasPaciente.length);
+        } catch (error) {
+            console.error('❌ Error cargando ventas del paciente:', error);
+        }
     }
     
     // Métodos auxiliares para el calendario
