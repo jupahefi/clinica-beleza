@@ -318,16 +318,16 @@ erDiagram
     bigint sucursal_id FK NOT NULL
     bigint box_id FK NOT NULL
     bigint profesional_id FK NOT NULL
-    varchar google_calendar_event_id "opcional"
+    varchar google_calendar_event_id "NULL hasta integrar con Google Calendar"
     timestamptz fecha_planificada NOT NULL
-    timestamptz fecha_ejecucion "opcional"
-    varchar estado NOT NULL "AGENDADA, EN_PROGRESO, COMPLETADA, CANCELADA"
+    timestamptz fecha_ejecucion "NULL hasta ejecutar la sesión"
+    varchar estado NOT NULL DEFAULT planificada "planificada|confirmada|realizada|no_show|cancelada"
     boolean paciente_confirmado NOT NULL DEFAULT FALSE
-    timestamptz abierta_en "opcional"
-    timestamptz cerrada_en "opcional"
-    text observaciones NOT NULL
-    jsonb intensidades_zonas "opcional"
-    jsonb datos_sesion "opcional"
+    timestamptz abierta_en "NULL hasta abrir la sesión"
+    timestamptz cerrada_en "NULL hasta cerrar la sesión"
+    text observaciones "NULL si no hay observaciones"
+    jsonb intensidades_zonas NOT NULL DEFAULT empty_object "JSON vacío por defecto"
+    jsonb datos_sesion NOT NULL DEFAULT empty_object "JSON vacío por defecto"
     timestamptz fecha_creacion
     timestamptz fecha_actualizacion
   }
