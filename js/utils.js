@@ -12,6 +12,33 @@ export function generarId() {
 }
 
 /**
+ * Obtiene el ID del profesional actual del contexto de sesión
+ * @returns {number} ID del profesional actual o 1 como fallback
+ */
+export function getCurrentProfesionalId() {
+    try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const user = JSON.parse(userData);
+            return user.profesional_id || user.id || 1;
+        }
+        
+        const profesionalData = localStorage.getItem('profesionalData');
+        if (profesionalData) {
+            const profesional = JSON.parse(profesionalData);
+            return profesional.id || 1;
+        }
+        
+        // Fallback - idealmente esto debería mostrar una advertencia
+        console.warn('⚠️ No se pudo obtener profesional_id del contexto, usando fallback');
+        return 1;
+    } catch (error) {
+        console.error('❌ Error obteniendo profesional_id:', error);
+        return 1;
+    }
+}
+
+/**
  * Guarda el contador de IDs en localStorage
  */
 export function guardarContadorIds() {

@@ -3,7 +3,7 @@
  * Maneja fichas de depilación y corporal/facial
  */
 
-import { formatCurrency, formatDate } from '../utils.js';
+import { formatCurrency, formatDate, getCurrentProfesionalId } from '../utils.js';
 import { ConsentimientoModal } from '../components/SignaturePad.js';
 import { fichasEspecificasAPI, zonasAPI } from '../api-client.js';
 
@@ -249,7 +249,7 @@ Fecha: ${new Date().toLocaleDateString()}
             formData.append('tipo_consentimiento', tipoConsentimiento);
             formData.append('firma_blob', signatureBlob, 'firma.png');
             formData.append('tipo_archivo', 'png');
-            formData.append('profesional_id', 1); // TODO: Obtener del contexto de sesión
+            formData.append('profesional_id', getCurrentProfesionalId());
             
             const response = await fichasEspecificasAPI.saveConsentimientoFirma(formData);
             

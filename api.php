@@ -629,6 +629,11 @@ function handleSesiones($db, $method, $id, $data) {
                     case 'reprogramar':
                         $db->executeRaw("CALL sp_reprogramar_sesion(?, ?)", [$id, $data['nueva_fecha']]);
                         break;
+                    case 'actualizar_datos':
+                        // Actualizar datos_sesion como JSON
+                        $datosJson = json_encode($data['datos_sesion']);
+                        $db->executeRaw("UPDATE sesion SET datos_sesion = ? WHERE id = ?", [$datosJson, $id]);
+                        break;
                 }
             }
             echo json_encode(['success' => true, 'data' => ['updated' => true]]);

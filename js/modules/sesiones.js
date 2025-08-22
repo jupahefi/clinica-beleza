@@ -863,10 +863,18 @@ export class SesionesModule {
                 
                 if (datos.tipo_ficha) {
                     mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
-                    // TODO: Implementar creación automática de ficha específica
-                    datosGuardados = true;
-                    tipoTratamiento = 'evaluación';
-                    sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                    
+                    try {
+                        // Crear ficha específica automáticamente
+                        await this.crearFichaEspecificaDesdeEvaluacion(sesionId, datos);
+                        datosGuardados = true;
+                        tipoTratamiento = 'evaluación';
+                        sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                    } catch (error) {
+                        console.error('Error creando ficha específica:', error);
+                        mostrarNotificacion(`❌ Error creando ficha específica: ${error.message}`, 'error');
+                        return; // No continuar si falla la creación de ficha
+                    }
                 }
                 
             } else if (facialData) {
@@ -874,20 +882,49 @@ export class SesionesModule {
                 console.log('🔍 Datos de facial encontrados:', datos);
                 
                 mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
-                // TODO: Guardar productos utilizados en datos_sesion
-                datosGuardados = true;
-                tipoTratamiento = 'facial';
-                sessionStorage.removeItem(`facial_${sesionId}`);
+                
+                try {
+                    // Guardar productos utilizados en datos_sesion
+                    await this.guardarDatosSesion(sesionId, {
+                        tipo_tratamiento: 'facial',
+                        productos_utilizados: datos.productos_utilizados,
+                        fecha_tratamiento: datos.fecha_tratamiento,
+                        observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
+                    });
+                    
+                    datosGuardados = true;
+                    tipoTratamiento = 'facial';
+                    sessionStorage.removeItem(`facial_${sesionId}`);
+                } catch (error) {
+                    console.error('Error guardando datos de facial:', error);
+                    mostrarNotificacion(`❌ Error guardando datos del facial: ${error.message}`, 'error');
+                    return; // No continuar si falla el guardado
+                }
                 
             } else if (capilarData) {
                 const datos = JSON.parse(capilarData);
                 console.log('🔍 Datos de capilar encontrados:', datos);
                 
                 mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
-                // TODO: Guardar evaluación y tratamientos en datos_sesion
-                datosGuardados = true;
-                tipoTratamiento = 'capilar';
-                sessionStorage.removeItem(`capilar_${sesionId}`);
+                
+                try {
+                    // Guardar evaluación y tratamientos en datos_sesion
+                    await this.guardarDatosSesion(sesionId, {
+                        tipo_tratamiento: 'capilar',
+                        estado_cuero_cabelludo: datos.estado_cuero_cabelludo,
+                        tratamientos_aplicados: datos.tratamientos_aplicados,
+                        fecha_tratamiento: datos.fecha_tratamiento,
+                        observaciones_tratamiento: observaciones || 'Sin observaciones adicionales'
+                    });
+                    
+                    datosGuardados = true;
+                    tipoTratamiento = 'capilar';
+                    sessionStorage.removeItem(`capilar_${sesionId}`);
+                } catch (error) {
+                    console.error('Error guardando datos de capilar:', error);
+                    mostrarNotificacion(`❌ Error guardando datos del capilar: ${error.message}`, 'error');
+                    return; // No continuar si falla el guardado
+                }
             }
             
             // Cerrar la sesión
@@ -919,6 +956,174 @@ export class SesionesModule {
             console.error('Error cerrando sesión:', error);
             const errorMessage = error.message || 'Error desconocido cerrando sesión';
             mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
+        }
+    }
+    
+    async guardarDatosSesion(sesionId, datosTratamiento) {
+        try {
+            // Actualizar el campo datos_sesion usando la API de sesiones
+            const response = await sesionesAPI.updateDatosSesion(sesionId, datosTratamiento);
+            
+            if (response.success) {
+                console.log('✅ Datos de sesión guardados exitosamente:', datosTratamiento);
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Error guardando datos de sesión');
+            }
+            
+        } catch (error) {
+            console.error('Error en guardarDatosSesion:', error);
+            throw error;
+        }
+    }
+    
+    async crearFichaEspecificaDesdeEvaluacion(sesionId, datosEvaluacion) {
+        try {
+            // Obtener información de la sesión para extraer datos necesarios
+            const sesion = await sesionesAPI.getById(sesionId);
+            if (!sesion.success) {
+                throw new Error('No se pudo obtener información de la sesión');
+            }
+            
+            const sesionData = sesion.data;
+            const ventaId = sesionData.venta_id;
+            
+            // Obtener información de la venta para extraer evaluacion_id
+            const venta = await ventasAPI.getById(ventaId);
+            if (!venta.success) {
+                throw new Error('No se pudo obtener información de la venta');
+            }
+            
+            const ventaData = venta.data;
+            const evaluacionId = ventaData.evaluacion_id;
+            
+            if (!evaluacionId) {
+                throw new Error('Esta venta no tiene una evaluación asociada');
+            }
+            
+            // Obtener tipo de ficha específica por nombre
+            const tipoFicha = datosEvaluacion.tipo_ficha.toUpperCase();
+            const tipoFichaId = tipoFicha === 'DEPILACION' ? 1 : 2; // Por ahora hardcodeado, debería venir de la DB
+            
+            // Crear datos básicos de ficha específica
+            const fichaData = {
+                evaluacion_id: evaluacionId,
+                tipo_id: tipoFichaId,
+                datos: this.generarDatosFichaEspecifica(tipoFicha, sesionData),
+                observaciones: `Ficha creada automáticamente desde evaluación el ${new Date().toLocaleString()}`
+            };
+            
+            // Crear la ficha específica
+            const response = await fichasEspecificasAPI.create(fichaData);
+            
+            if (response.success) {
+                console.log('✅ Ficha específica creada automáticamente:', response.data);
+                mostrarNotificacion(`✅ Ficha específica de ${tipoFicha} creada exitosamente`, 'success');
+                return response.data;
+            } else {
+                throw new Error(response.error || 'Error creando ficha específica');
+            }
+            
+        } catch (error) {
+            console.error('Error en crearFichaEspecificaDesdeEvaluacion:', error);
+            throw error;
+        }
+    }
+    
+    generarDatosFichaEspecifica(tipoFicha, sesionData) {
+        // Generar estructura básica según el tipo de ficha
+        if (tipoFicha === 'DEPILACION') {
+            return {
+                antecedentes_personales: {
+                    nombre_completo: sesionData.paciente_nombre || '',
+                    fecha_nacimiento: '',
+                    edad: 0,
+                    ocupacion: '',
+                    telefono_fijo: '',
+                    celular: '',
+                    email: '',
+                    medio_conocimiento: ''
+                },
+                evaluacion_medica: {
+                    medicamentos: false,
+                    isotretinoina: false,
+                    alergias: false,
+                    enfermedades_piel: false,
+                    antecedentes_cancer: false,
+                    embarazo: false,
+                    lactancia: false,
+                    tatuajes: false,
+                    antecedentes_herpes: false,
+                    patologias_hormonales: false,
+                    exposicion_sol: '',
+                    tipo_piel_fitzpatrick: '',
+                    metodo_depilacion_actual: '',
+                    ultima_depilacion: '',
+                    otros: 'Datos a completar en próxima cita'
+                },
+                zonas_tratamiento: {
+                    zonas_seleccionadas: [],
+                    observaciones_medicas: 'Pendiente evaluación completa'
+                }
+            };
+        } else {
+            // CORPORAL/FACIAL
+            return {
+                antecedentes_personales: {
+                    nombre_completo: sesionData.paciente_nombre || '',
+                    fecha_nacimiento: '',
+                    edad: 0,
+                    ocupacion: '',
+                    telefono_fijo: '',
+                    celular: '',
+                    email: '',
+                    medio_conocimiento: ''
+                },
+                evaluacion_medica: {
+                    protesis_metalicas: false,
+                    implantes_colageno: false,
+                    medicamentos_actuales: false,
+                    cirugias: false,
+                    fuma: false,
+                    ingiere_alcohol: false,
+                    horas_sueno: 0,
+                    periodo_menstrual_regular: false,
+                    lesiones_timpano: false
+                },
+                medidas_corporales: {
+                    peso_antes: 0,
+                    peso_despues: 0,
+                    altura: 0,
+                    imc_antes: 0,
+                    imc_despues: 0,
+                    grasa_corporal_antes: 0,
+                    grasa_corporal_despues: 0,
+                    masa_muscular_antes: 0,
+                    masa_muscular_despues: 0,
+                    agua_corporal_antes: 0,
+                    agua_corporal_despues: 0,
+                    grasa_visceral_antes: 0,
+                    grasa_visceral_despues: 0
+                },
+                medidas_pliegues: {
+                    abdomen_alto_antes: 0,
+                    abdomen_alto_despues: 0,
+                    abdomen_bajo_antes: 0,
+                    abdomen_bajo_despues: 0,
+                    cintura_antes: 0,
+                    cintura_despues: 0,
+                    cadera_antes: 0,
+                    cadera_despues: 0,
+                    brazo_derecho_antes: 0,
+                    brazo_derecho_despues: 0,
+                    brazo_izquierdo_antes: 0,
+                    brazo_izquierdo_despues: 0,
+                    pierna_derecha_antes: 0,
+                    pierna_derecha_despues: 0,
+                    pierna_izquierda_antes: 0,
+                    pierna_izquierda_despues: 0
+                }
+            };
         }
     }
     

@@ -374,6 +374,12 @@ export const sesionesAPI = {
     // Cerrar sesión
     cerrarSesion: (id, observaciones) => put(`sesiones/${id}`, { accion: 'cerrar', observaciones }),
     
+    // Actualizar datos de sesión
+    updateDatosSesion: (id, datosSesion) => put(`sesiones/${id}`, {
+        accion: 'actualizar_datos',
+        datos_sesion: datosSesion
+    }),
+    
     // Reprogramar sesión
     reprogramar: (id, nuevaFecha) => put(`sesiones/${id}`, { accion: 'reprogramar', nueva_fecha: nuevaFecha })
 };

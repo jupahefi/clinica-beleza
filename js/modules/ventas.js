@@ -4,7 +4,7 @@
  */
 
 import { fichasAPI, evaluacionesAPI, fichasEspecificasAPI, ventasAPI, tratamientosAPI, packsAPI } from '../api-client.js';
-import { mostrarNotificacion } from '../utils.js';
+import { mostrarNotificacion, getCurrentProfesionalId } from '../utils.js';
 
 class VentasModule {
     constructor() {
@@ -282,7 +282,7 @@ class VentasModule {
                 // FLUJO NORMAL: Evaluación -> Ficha Específica -> Venta
                 const evaluacion = await evaluacionesAPI.create({
                     ficha_id: cliente,
-                    profesional_id: 1, // Por ahora hardcodeado
+                    profesional_id: getCurrentProfesionalId(),
                     tratamiento_id: tratamientoId,
                     pack_id: document.getElementById('pack').value || null,
                     precio_sugerido: venta.precio,
