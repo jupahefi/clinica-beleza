@@ -590,7 +590,7 @@ CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_descuento_ad
 -- ---------- Triggers ----------
 
 -- Validar que la venta tenga evaluacion y ficha especifica requeridas
--- La evaluacion es obligatoria para todas las ventas EXCEPTO para evaluaciones
+-- La evaluacion es obligatoria para todas las ventas
 -- La ficha especifica nace en la evaluacion
 
 DELIMITER $$
@@ -602,42 +602,27 @@ BEGIN
   DECLARE eval_ficha BIGINT;
   DECLARE eval_id BIGINT;
   DECLARE ficha_esp_id BIGINT;
-  DECLARE es_evaluacion INT;
-
-  -- Verificar si es una venta de evaluación (1 si existe, 0 si no)
-  SELECT COUNT(*) INTO es_evaluacion 
-  FROM tratamiento 
-  WHERE id = NEW.tratamiento_id AND nombre = 'EVALUACION';
-
-  -- Si es evaluación
-  IF es_evaluacion > 0 THEN
-    IF NEW.evaluacion_id IS NOT NULL OR NEW.ficha_especifica_id IS NOT NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta de evaluacion no debe tener evaluacion_id ni ficha_especifica_id';
-    END IF;
-  ELSE
-    -- Para ventas normales: validar evaluacion
-    IF NEW.evaluacion_id IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion es obligatoria para ventas normales';
-    END IF;
-
-    SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
-    IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
-    END IF;
-
-    SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
-    IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
-    END IF;
-
-    SELECT fe.id INTO ficha_esp_id 
-    FROM ficha_especifica fe
-    JOIN evaluacion e ON fe.evaluacion_id = e.id
-    WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
-
-    IF ficha_esp_id IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
-    END IF;
+  
+  -- Validar que la evaluacion existe y pertenece a la misma ficha
+  SELECT ficha_id INTO eval_ficha FROM evaluacion WHERE id = NEW.evaluacion_id;
+  IF eval_ficha IS NULL OR eval_ficha != NEW.ficha_id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluacion debe existir y pertenecer a la misma ficha';
+  END IF;
+  
+  -- Validar que la ficha especifica existe y pertenece a la evaluacion
+  SELECT evaluacion_id INTO eval_id FROM ficha_especifica WHERE id = NEW.ficha_especifica_id;
+  IF eval_id IS NULL OR eval_id != NEW.evaluacion_id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe existir y pertenecer a la evaluacion';
+  END IF;
+  
+  -- Validar que la ficha especifica pertenece a la misma ficha
+  SELECT fe.id INTO ficha_esp_id 
+  FROM ficha_especifica fe
+  JOIN evaluacion e ON fe.evaluacion_id = e.id
+  WHERE fe.id = NEW.ficha_especifica_id AND e.ficha_id = NEW.ficha_id;
+  
+  IF ficha_esp_id IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha especifica debe pertenecer a la evaluacion de la misma ficha';
   END IF;
 END$$
 
@@ -1064,8 +1049,8 @@ BEGIN
         -- Si no existe, crear nueva ficha
         INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email, fecha_nacimiento, direccion, observaciones)
         VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email, p_fecha_nacimiento, p_direccion, p_observaciones);
-    
-    SET p_ficha_id = LAST_INSERT_ID();
+        
+        SET p_ficha_id = LAST_INSERT_ID();
     END IF;
     
     COMMIT;
@@ -1115,47 +1100,6 @@ BEGIN
 END$$
 DELIMITER ;
 
--- FIC-004: Crear ficha especifica desde sesion de evaluacion
-DELIMITER $$
-CREATE PROCEDURE sp_crear_ficha_especifica_desde_sesion(
-    IN p_sesion_id BIGINT,
-    IN p_tipo_id BIGINT,
-    IN p_datos JSON,
-    IN p_observaciones TEXT,
-    OUT p_ficha_especifica_id BIGINT
-)
-BEGIN
-    DECLARE v_evaluacion_id BIGINT;
-    
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Crear evaluacion desde la sesion si no existe
-    IF NOT EXISTS (SELECT 1 FROM evaluacion e 
-                   JOIN sesion s ON e.ficha_id = (SELECT v.ficha_id FROM venta v WHERE v.id = s.venta_id)
-                   WHERE s.id = p_sesion_id) THEN
-        CALL sp_crear_evaluacion_desde_sesion(p_sesion_id, '', '', v_evaluacion_id);
-    ELSE
-        SELECT e.id INTO v_evaluacion_id FROM evaluacion e 
-        JOIN sesion s ON e.ficha_id = (SELECT v.ficha_id FROM venta v WHERE v.id = s.venta_id)
-        WHERE s.id = p_sesion_id;
-    END IF;
-    
-    -- Crear ficha especifica
-    INSERT INTO ficha_especifica (evaluacion_id, tipo_id, datos, observaciones)
-    VALUES (v_evaluacion_id, p_tipo_id, p_datos, p_observaciones);
-    
-    SET p_ficha_especifica_id = LAST_INSERT_ID();
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
 -- ---------- EVALUACIONES ----------
 
 -- EVA-001: Crear evaluacion
@@ -1189,47 +1133,6 @@ BEGIN
 END$$
 DELIMITER ;
 
--- EVA-002: Crear evaluacion desde sesion (nuevo flujo)
-DELIMITER $$
-CREATE PROCEDURE sp_crear_evaluacion_desde_sesion(
-    IN p_sesion_id BIGINT,
-    IN p_observaciones TEXT,
-    IN p_recomendaciones TEXT,
-    OUT p_evaluacion_id BIGINT
-)
-BEGIN
-    DECLARE v_ficha_id BIGINT;
-    DECLARE v_profesional_id BIGINT;
-    DECLARE v_tratamiento_id BIGINT;
-    DECLARE v_pack_id BIGINT;
-    DECLARE v_precio_lista DECIMAL(12,2);
-    DECLARE v_cantidad_sesiones INT;
-    
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Obtener datos de la sesion y venta
-    SELECT v.ficha_id, s.profesional_id, v.tratamiento_id, v.pack_id, v.precio_lista, v.cantidad_sesiones
-    INTO v_ficha_id, v_profesional_id, v_tratamiento_id, v_pack_id, v_precio_lista, v_cantidad_sesiones
-    FROM sesion s
-    JOIN venta v ON s.venta_id = v.id
-    WHERE s.id = p_sesion_id;
-    
-    -- Crear evaluacion
-    INSERT INTO evaluacion (ficha_id, profesional_id, tratamiento_id, pack_id, precio_sugerido, sesiones_sugeridas, observaciones, recomendaciones, estado)
-    VALUES (v_ficha_id, v_profesional_id, v_tratamiento_id, v_pack_id, v_precio_lista, v_cantidad_sesiones, p_observaciones, p_recomendaciones, 'COMPLETADA');
-    
-    SET p_evaluacion_id = LAST_INSERT_ID();
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
 -- ---------- VENTAS ----------
 
 -- VEN-001: Crear venta desde evaluacion
@@ -1256,35 +1159,6 @@ BEGIN
     
     INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
     VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct);
-    
-    SET p_venta_id = LAST_INSERT_ID();
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
--- VEN-002: Crear venta de evaluacion (sin evaluacion ni ficha especifica)
-DELIMITER $$
-CREATE PROCEDURE sp_crear_venta_evaluacion(
-    IN p_ficha_id BIGINT,
-    IN p_tratamiento_id BIGINT,
-    IN p_pack_id BIGINT,
-    IN p_profesional_id BIGINT,
-    OUT p_venta_id BIGINT
-)
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Para evaluacion, no necesitamos evaluacion_id ni ficha_especifica_id inicialmente
-    -- Se crearán cuando se cierre la sesión de evaluación
-    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct)
-    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, 1, 0, 0);
     
     SET p_venta_id = LAST_INSERT_ID();
     
@@ -1530,71 +1404,6 @@ BEGIN
     
     START TRANSACTION;
     
-    UPDATE sesion 
-    SET cerrada_en = NOW(),
-        fecha_ejecucion = NOW(),
-        observaciones = p_observaciones
-    WHERE id = p_sesion_id;
-    
-    COMMIT;
-END$$
-DELIMITER ;
-
--- AGE-007: Cerrar sesion de evaluacion y completar venta
-DELIMITER $$
-CREATE PROCEDURE sp_cerrar_sesion_evaluacion(
-    IN p_sesion_id BIGINT,
-    IN p_observaciones TEXT,
-    IN p_recomendaciones TEXT,
-    IN p_fichas_especificas JSON -- Array de objetos con tipo_id, datos, observaciones
-)
-BEGIN
-    DECLARE v_venta_id BIGINT;
-    DECLARE v_evaluacion_id BIGINT;
-    DECLARE v_ficha_especifica_id BIGINT;
-    DECLARE v_tipo_id BIGINT;
-    DECLARE v_datos JSON;
-    DECLARE v_observaciones TEXT;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_total_fichas INT;
-    
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Obtener venta_id de la sesion
-    SELECT venta_id INTO v_venta_id FROM sesion WHERE id = p_sesion_id;
-    
-    -- Crear evaluacion desde la sesion
-    CALL sp_crear_evaluacion_desde_sesion(p_sesion_id, p_observaciones, p_recomendaciones, v_evaluacion_id);
-    
-    -- Crear fichas especificas si se proporcionan
-    IF p_fichas_especificas IS NOT NULL THEN
-        SET v_total_fichas = JSON_LENGTH(p_fichas_especificas);
-        
-        WHILE i < v_total_fichas DO
-            SET v_tipo_id = JSON_UNQUOTE(JSON_EXTRACT(p_fichas_especificas, CONCAT('$[', i, '].tipo_id')));
-            SET v_datos = JSON_EXTRACT(p_fichas_especificas, CONCAT('$[', i, '].datos'));
-            SET v_observaciones = JSON_UNQUOTE(JSON_EXTRACT(p_fichas_especificas, CONCAT('$[', i, '].observaciones')));
-            
-            -- Crear ficha especifica
-            CALL sp_agregar_ficha_especifica(v_evaluacion_id, v_tipo_id, v_datos, v_observaciones, v_ficha_especifica_id);
-            
-            SET i = i + 1;
-        END WHILE;
-    END IF;
-    
-    -- Actualizar la venta con la evaluacion y ficha especifica creadas
-    UPDATE venta 
-    SET evaluacion_id = v_evaluacion_id,
-        ficha_especifica_id = v_ficha_especifica_id
-    WHERE id = v_venta_id;
-    
-    -- Cerrar la sesion
     UPDATE sesion 
     SET cerrada_en = NOW(),
         fecha_ejecucion = NOW(),
@@ -2444,41 +2253,6 @@ BEGIN
 END$$
 DELIMITER ;
 
--- TRA-006: Obtener tipos de ficha especifica para evaluacion
-DELIMITER $$
-CREATE PROCEDURE sp_obtener_tipos_ficha_evaluacion(
-    IN p_pack_id BIGINT
-)
-BEGIN
-    DECLARE v_pack_nombre VARCHAR(150);
-    
-    -- Obtener nombre del pack
-    SELECT nombre INTO v_pack_nombre FROM pack WHERE id = p_pack_id;
-    
-    -- Retornar tipos de ficha específica según el pack
-    IF v_pack_nombre LIKE '%Depilacion%' THEN
-        SELECT id, nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos
-        FROM tipo_ficha_especifica 
-        WHERE nombre = 'DEPILACION' AND activo = TRUE;
-    ELSEIF v_pack_nombre LIKE '%Facial%' THEN
-        SELECT id, nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos
-        FROM tipo_ficha_especifica 
-        WHERE nombre = 'FACIAL' AND activo = TRUE;
-    ELSEIF v_pack_nombre LIKE '%Completa%' THEN
-        SELECT id, nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos
-        FROM tipo_ficha_especifica 
-        WHERE nombre IN ('DEPILACION', 'FACIAL') AND activo = TRUE
-        ORDER BY nombre;
-    ELSE
-        -- Pack no reconocido, retornar todos los tipos activos
-        SELECT id, nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos
-        FROM tipo_ficha_especifica 
-        WHERE activo = TRUE
-        ORDER BY nombre;
-    END IF;
-END$$
-DELIMITER ;
-
 -- =============================================================================
 -- STORED PROCEDURES ADICIONALES PARA API
 -- =============================================================================
@@ -2743,7 +2517,6 @@ CALL sp_crear_zona_cuerpo('LINEA_ALBA', 'Linea Alba', 'DEPILACION', 20000, @zona
 
 -- ---------- TRATAMIENTOS BASE ----------
 -- Usando SP para crear tratamientos con validaciones
-CALL sp_crear_tratamiento('EVALUACION', 'Evaluacion inicial del paciente para determinar tratamiento', FALSE, 30, 0, @tratamiento_evaluacion_id);
 CALL sp_crear_tratamiento('FACIAL', 'Tratamientos faciales y esteticos', TRUE, 60, 7, @tratamiento_facial_id);
 CALL sp_crear_tratamiento('CAPILAR', 'Tratamientos capilares y regenerativos', TRUE, 90, 14, @tratamiento_capilar_id);
 CALL sp_crear_tratamiento('DEPILACION', 'Depilacion laser y tratamientos corporales', TRUE, 45, 30, @tratamiento_depilacion_id);
@@ -2832,15 +2605,8 @@ CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full + Axilas', 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000),
  120000, 99000, '2024-01-01', '2024-12-31', @pack_bikini_axilas_id);
 
--- ---------- PACKS DE EVALUACION ----------
--- Usando SP para crear packs de evaluación con validaciones
-CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluacion Depilacion', 'Evaluacion inicial para tratamientos de depilacion laser', 30, 1, JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_depilacion_id);
-CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluacion Facial', 'Evaluacion inicial para tratamientos faciales', 30, 1, JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluacion Completa', 'Evaluacion inicial para tratamientos de depilacion y faciales', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_completa_id);
-
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
 -- Usando SP para crear precios de tratamientos con validaciones
-CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, 0, '2024-01-01', '2024-12-31', @precio_evaluacion_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2024-01-01', '2024-12-31', @precio_facial_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2024-01-01', '2024-12-31', @precio_capilar_id);
 CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2024-01-01', '2024-12-31', @precio_depilacion_id);
@@ -2891,138 +2657,6 @@ CALL sp_asociar_oferta_pack(@oferta_bikini_full_id, @pack_bikini_full_id, 19.3, 
 CALL sp_asociar_oferta_pack(@oferta_bikini_axilas_id, @pack_bikini_axilas_id, 17.5, @asociacion_bikini_axilas);
 
 -- =============================================================================
--- TIPOS DE FICHA ESPECÍFICA (basados en fichas HTML reales)
--- =============================================================================
-
--- Tipo DEPILACION (basado en ficha_depilacion.htm)
-INSERT INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos, activo) VALUES
-('DEPILACION', 'Ficha específica para depilación láser', TRUE, 
-'CONSENTIMIENTO INFORMADO - DEPILACIÓN LÁSER
-
-He sido informado/a sobre el procedimiento de depilación láser y entiendo que:
-
-1. El láser actúa sobre el folículo piloso para reducir el crecimiento del vello
-2. Se requieren múltiples sesiones para resultados óptimos
-3. Los resultados varían según el tipo de piel y color del vello
-4. Pueden existir efectos secundarios temporales como enrojecimiento o inflamación
-5. Es importante evitar la exposición solar antes y después del tratamiento
-6. Debo informar sobre cualquier cambio en mi estado de salud
-
-Declaro que:
-- He leído y comprendido toda la información proporcionada
-- He tenido la oportunidad de hacer preguntas
-- Consiento voluntariamente al tratamiento
-- Entiendo que los resultados no están garantizados
-- Me comprometo a seguir las indicaciones post-tratamiento
-
-Fecha: {fecha}',
-JSON_OBJECT(
-    'antecedentes_personales', JSON_OBJECT(
-        'nombre_completo', 'text',
-        'fecha_nacimiento', 'date',
-        'edad', 'number',
-        'ocupacion', 'text',
-        'telefono_fijo', 'text',
-        'celular', 'text',
-        'email', 'email',
-        'medio_conocimiento', 'text'
-    ),
-    'evaluacion_medica', JSON_OBJECT(
-        'medicamentos', 'boolean',
-        'isotretinoina', 'boolean',
-        'alergias', 'boolean',
-        'enfermedades_piel', 'boolean',
-        'antecedentes_cancer', 'boolean',
-        'embarazo', 'boolean',
-        'lactancia', 'boolean',
-        'tatuajes', 'boolean',
-        'antecedentes_herpes', 'boolean',
-        'patologias_hormonales', 'boolean',
-        'exposicion_sol', 'text',
-        'tipo_piel_fitzpatrick', 'select',
-        'metodo_depilacion_actual', 'text',
-        'ultima_depilacion', 'date',
-        'otros', 'text'
-    ),
-    'zonas_tratamiento', JSON_OBJECT(
-        'zonas_seleccionadas', 'array',
-        'observaciones_medicas', 'text'
-    )
-), TRUE);
-
--- Tipo CORPORAL_FACIAL (basado en ficha_corporal_nueva.htm)
-INSERT INTO tipo_ficha_especifica (nombre, descripcion, requiere_consentimiento, template_consentimiento, campos_requeridos, activo) VALUES
-('CORPORAL_FACIAL', 'Ficha específica para tratamientos corporales y faciales (LIPO WITH ICE)', FALSE, NULL,
-JSON_OBJECT(
-    'antecedentes_personales', JSON_OBJECT(
-        'nombre_completo', 'text',
-        'fecha_nacimiento', 'date',
-        'edad', 'number',
-        'ocupacion', 'text',
-        'telefono_fijo', 'text',
-        'celular', 'text',
-        'email', 'email',
-        'medio_conocimiento', 'text'
-    ),
-    'antecedentes_clinicos', JSON_OBJECT(
-        'enfermedades_cardiacas', 'boolean',
-        'enfermedades_renales', 'boolean',
-        'enfermedades_hepaticas', 'boolean',
-        'enfermedades_digestivas', 'boolean',
-        'enfermedades_neuromusculares', 'boolean',
-        'trastorno_coagulacion', 'boolean',
-        'alergias', 'boolean',
-        'epilepsia', 'boolean',
-        'embarazo', 'boolean',
-        'dispositivo_intrauterino', 'boolean',
-        'cancer', 'boolean',
-        'protesis_metalicas', 'boolean',
-        'implantes_colageno', 'boolean',
-        'medicamentos_actuales', 'boolean',
-        'cirugias', 'boolean',
-        'fuma', 'boolean',
-        'ingiere_alcohol', 'boolean',
-        'horas_sueno', 'number',
-        'periodo_menstrual_regular', 'boolean',
-        'lesiones_timpano', 'boolean'
-    ),
-    'medidas_corporales', JSON_OBJECT(
-        'imc_antes', 'number',
-        'imc_despues', 'number',
-        'porcentaje_musculo_antes', 'number',
-        'porcentaje_musculo_despues', 'number',
-        'porcentaje_grasa_antes', 'number',
-        'porcentaje_grasa_despues', 'number',
-        'grasa_visceral_antes', 'number',
-        'grasa_visceral_despues', 'number',
-        'peso_corporal_antes', 'number',
-        'peso_corporal_despues', 'number',
-        'edad_corporal_antes', 'number',
-        'edad_corporal_despues', 'number',
-        'metabolismo_basal_antes', 'number',
-        'metabolismo_basal_despues', 'number'
-    ),
-    'medidas_pliegues', JSON_OBJECT(
-        'abdomen_alto_antes', 'number',
-        'abdomen_alto_despues', 'number',
-        'abdomen_bajo_antes', 'number',
-        'abdomen_bajo_despues', 'number',
-        'cintura_antes', 'number',
-        'cintura_despues', 'number',
-        'cadera_antes', 'number',
-        'cadera_despues', 'number',
-        'flanco_derecho_antes', 'number',
-        'flanco_derecho_despues', 'number',
-        'flanco_izquierdo_antes', 'number',
-        'flanco_izquierdo_despues', 'number'
-    ),
-    'tratamiento', JSON_OBJECT(
-        'tratamientos_previos', 'text',
-        'objetivo_estetico', 'text'
-    )
-), TRUE);
-
--- =============================================================================
 -- NOTA IMPORTANTE: TODA LA LoGICA DE NEGOCIO ESTa EN LA BASE DE DATOS
 -- =============================================================================
 -- 
@@ -3030,23 +2664,17 @@ JSON_OBJECT(
 -- 
 -- FLUJO CORRECTO:
 -- 1. FICHA GENERAL (libre) - se puede crear en cualquier momento
--- 2. VENTA DE EVALUACIoN (obligatoria) - costo 0, se agenda sesion
--- 3. SESIoN DE EVALUACIoN - profesional llena fichas especificas
--- 4. EVALUACIoN (nace al cerrar sesion) - con observaciones y recomendaciones
--- 5. FICHA ESPECiFICA (nace en la evaluacion) - depilacion o facial
--- 6. VENTA NORMAL (requiere evaluacion y ficha especifica) - con validaciones
--- 7. CONSENTIMIENTO (solo para depilacion) - con firma digital
+-- 2. EVALUACIoN (obligatoria) - se agenda o se hace inmediatamente
+-- 3. FICHA ESPECiFICA (nace en la evaluacion) - depilacion o corporal
+-- 4. VENTA (requiere evaluacion y ficha especifica) - con validaciones
+-- 5. CONSENTIMIENTO (solo para depilacion) - con firma digital
 -- 
 -- CAMBIOS PRINCIPALES:
--- ✓ TRATAMIENTO EVALUACIoN agregado (costo 0, no requiere ficha especifica)
--- ✓ PACKS DE EVALUACIoN agregados (Depilacion, Facial, Completa)
--- ✓ VENTA DE EVALUACIoN permite evaluacion_id y ficha_especifica_id NULL
--- ✓ SESIoN DE EVALUACIoN crea evaluacion y fichas especificas al cerrar
--- ✓ EVALUACIoN nace al cerrar sesion de evaluacion
+-- ✓ EVALUACIoN es obligatoria para todas las ventas
 -- ✓ FICHA_ESPECiFICA nace en la evaluacion (no antes)
--- ✓ VENTA NORMAL requiere tanto evaluacion como ficha especifica
+-- ✓ VENTA requiere tanto evaluacion como ficha especifica
 -- ✓ CONSENTIMIENTO vinculado a ficha especifica de depilacion
--- ✓ Trigger trg_venta_requiere_evaluacion_ficha_especifica actualizado
+-- ✓ Trigger trg_venta_requiere_evaluacion_ficha_especifica
 -- ✓ Campos actualizados segun ERD.mmd
 -- 
 -- La API debe ser un simple passthrough a la base de datos.
@@ -3065,10 +2693,10 @@ JSON_OBJECT(
 -- ✓ v_disponibilidad_profesionales: Disponibilidad para agenda
 -- 
 -- Stored Procedures por categoria:
--- ✓ FICHAS: sp_crear_ficha, sp_buscar_fichas, sp_agregar_ficha_especifica, sp_crear_ficha_especifica_desde_sesion
--- ✓ EVALUACIONES: sp_crear_evaluacion, sp_crear_evaluacion_desde_sesion
--- ✓ VENTAS: sp_crear_venta, sp_crear_venta_evaluacion, sp_aplicar_descuento_manual, sp_aplicar_ofertas
--- ✓ AGENDA: sp_agendar_sesion, sp_generar_plan_sesiones, sp_confirmar_paciente, sp_abrir_sesion, sp_cerrar_sesion, sp_cerrar_sesion_evaluacion, sp_reprogramar_sesion
+-- ✓ FICHAS: sp_crear_ficha, sp_buscar_fichas, sp_agregar_ficha_especifica
+-- ✓ EVALUACIONES: sp_crear_evaluacion
+-- ✓ VENTAS: sp_crear_venta, sp_aplicar_descuento_manual, sp_aplicar_ofertas
+-- ✓ AGENDA: sp_agendar_sesion, sp_generar_plan_sesiones, sp_confirmar_paciente, sp_abrir_sesion, sp_cerrar_sesion, sp_reprogramar_sesion
 -- ✓ OFERTAS: sp_crear_oferta_pack, sp_crear_oferta_tratamiento, sp_crear_oferta_combo
 -- ✓ PROFESIONALES: sp_crear_profesional, sp_obtener_disponibilidad
 -- ✓ REPORTES: sp_reporte_progreso_ventas, sp_reporte_plan_vs_ejecucion
@@ -3077,5 +2705,5 @@ JSON_OBJECT(
 -- ✓ DEPILACIoN: sp_guardar_intensidades_zonas, sp_cargar_intensidades_anteriores, sp_calcular_precio_zonas
 -- ✓ CONSENTIMIENTOS: sp_guardar_firma_digital, sp_verificar_consentimiento_firmado, sp_obtener_firma_consentimiento
 -- ✓ UTILITARIOS: sp_ofertas_aplicables_venta, sp_sesiones_venta, sp_venta_completa
--- ✓ TRATAMIENTOS: sp_obtener_tratamientos_disponibles, sp_obtener_packs_tratamiento, sp_obtener_zonas_cuerpo, sp_calcular_precio_pack_zonas, sp_obtener_historial_tratamientos, sp_obtener_tipos_ficha_evaluacion
+-- ✓ TRATAMIENTOS: sp_obtener_tratamientos_disponibles, sp_obtener_packs_tratamiento, sp_obtener_zonas_cuerpo, sp_calcular_precio_pack_zonas, sp_obtener_historial_tratamientos
 -- =============================================================================
