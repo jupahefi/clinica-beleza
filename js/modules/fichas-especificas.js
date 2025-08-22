@@ -282,42 +282,49 @@ Fecha: ${new Date().toLocaleDateString()}
         }
     }
     
-    async saveFichaDepilacion(pacienteId, data) {
+    async saveFichaDepilacion(evaluacionId, tipoId, data) {
+        // Estructura según la nueva definición en migración
         const fichaData = {
-            tipo: 'depilacion',
-            paciente_id: pacienteId,
-            zonas_tratadas: data.zonas || [],
-            observaciones_medicas: data.observacionesMedicas || '',
-            consentimiento_firmado: data.consentimiento || null,
-            fecha_creacion: new Date().toISOString(),
-            antecedentes: {
-                medicamentos: data.medicamentos || false,
-                isotretinoina: data.isotretinoina || false,
-                alergias: data.alergias || false,
-                enfermedades_piel: data.enfermedadesPiel || false,
-                antecedentes_cancer: data.antecedentesCancer || false,
-                enfermedades_importantes: data.enfermedadesImportantes || false,
-                epilepsia: data.epilepsia || false,
-                hiper_hipopigmentacion: data.hiperHipopigmentacion || false,
-                embarazo: data.embarazo || false,
-                post_parto: data.postParto || false,
-                lactancia: data.lactancia || false,
-                cicatriz_activa: data.cicatrizActiva || false,
-                tatuajes: data.tatuajes || false,
-                antecedentes_herpes: data.antecedentesHerpes || false,
-                patologias_hormonales: data.patologiasHormonales || false,
-                tratamientos_laser_anteriores: data.tratamientosLaserAnteriores || false,
-                antecedentes_cancer: data.antecedentesCancer || false,
-                metodo_depilacion_actual: data.metodoDepilacionActual || '',
-                ultima_depilacion: data.ultimaDepilacion || '',
-                exposicion_sol: data.exposicionSol || '',
-                tipo_piel_fitzpatrick: data.tipoPielFitzpatrick || '',
-                otros: data.otros || ''
-            }
+            evaluacion_id: evaluacionId,
+            tipo_id: tipoId,
+            datos: {
+                antecedentes_personales: {
+                    nombre_completo: data.nombreCompleto || '',
+                    fecha_nacimiento: data.fechaNacimiento || '',
+                    edad: data.edad || 0,
+                    ocupacion: data.ocupacion || '',
+                    telefono_fijo: data.telefonoFijo || '',
+                    celular: data.celular || '',
+                    email: data.email || '',
+                    medio_conocimiento: data.medioConocimiento || ''
+                },
+                evaluacion_medica: {
+                    medicamentos: data.medicamentos || false,
+                    isotretinoina: data.isotretinoina || false,
+                    alergias: data.alergias || false,
+                    enfermedades_piel: data.enfermedadesPiel || false,
+                    antecedentes_cancer: data.antecedentesCancer || false,
+                    embarazo: data.embarazo || false,
+                    lactancia: data.lactancia || false,
+                    tatuajes: data.tatuajes || false,
+                    antecedentes_herpes: data.antecedentesHerpes || false,
+                    patologias_hormonales: data.patologiasHormonales || false,
+                    exposicion_sol: data.exposicionSol || '',
+                    tipo_piel_fitzpatrick: data.tipoPielFitzpatrick || '',
+                    metodo_depilacion_actual: data.metodoDepilacionActual || '',
+                    ultima_depilacion: data.ultimaDepilacion || '',
+                    otros: data.otros || ''
+                },
+                zonas_tratamiento: {
+                    zonas_seleccionadas: data.zonasSeleccionadas || [],
+                    observaciones_medicas: data.observacionesMedicas || ''
+                }
+            },
+            observaciones: data.observaciones || ''
         };
         
         try {
-            const response = await fichasEspecificasAPI.saveFichaEspecifica(fichaData);
+            const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
                 return response.data;
@@ -331,31 +338,84 @@ Fecha: ${new Date().toLocaleDateString()}
         }
     }
     
-    async saveFichaCorporal(pacienteId, data) {
+    async saveFichaCorporal(evaluacionId, tipoId, data) {
+        // Estructura según la nueva definición en migración
         const fichaData = {
-            tipo: 'corporal_facial',
-            paciente_id: pacienteId,
-            tratamientos_previos: data.tratamientosPrevios || '',
-            objetivo_estetico: data.objetivoEstetico || '',
-            fecha_creacion: new Date().toISOString(),
-            antecedentes: {
-                medicamentos: data.medicamentos || false,
-                alergias: data.alergias || false,
-                enfermedades_piel: data.enfermedadesPiel || false,
-                antecedentes_cancer: data.antecedentesCancer || false,
-                embarazo: data.embarazo || false,
-                lactancia: data.lactancia || false,
-                tatuajes: data.tatuajes || false,
-                antecedentes_herpes: data.antecedentesHerpes || false,
-                patologias_hormonales: data.patologiasHormonales || false,
-                exposicion_sol: data.exposicionSol || '',
-                tipo_piel_fitzpatrick: data.tipoPielFitzpatrick || '',
-                otros: data.otros || ''
-            }
+            evaluacion_id: evaluacionId,
+            tipo_id: tipoId,
+            datos: {
+                antecedentes_personales: {
+                    nombre_completo: data.nombreCompleto || '',
+                    fecha_nacimiento: data.fechaNacimiento || '',
+                    edad: data.edad || 0,
+                    ocupacion: data.ocupacion || '',
+                    telefono_fijo: data.telefonoFijo || '',
+                    celular: data.celular || '',
+                    email: data.email || '',
+                    medio_conocimiento: data.medioConocimiento || ''
+                },
+                antecedentes_clinicos: {
+                    enfermedades_cardiacas: data.enfermedadesCardiacas || false,
+                    enfermedades_renales: data.enfermedadesRenales || false,
+                    enfermedades_hepaticas: data.enfermedadesHepaticas || false,
+                    enfermedades_digestivas: data.enfermedadesDigestivas || false,
+                    enfermedades_neuromusculares: data.enfermedadesNeuromusculares || false,
+                    trastorno_coagulacion: data.trastornoCoagulacion || false,
+                    alergias: data.alergias || false,
+                    epilepsia: data.epilepsia || false,
+                    embarazo: data.embarazo || false,
+                    dispositivo_intrauterino: data.dispositivoIntrauterino || false,
+                    cancer: data.cancer || false,
+                    protesis_metalicas: data.protesisMetalicas || false,
+                    implantes_colageno: data.implantesColageno || false,
+                    medicamentos_actuales: data.medicamentosActuales || false,
+                    cirugias: data.cirugias || false,
+                    fuma: data.fuma || false,
+                    ingiere_alcohol: data.ingiereAlcohol || false,
+                    horas_sueno: data.horasSueno || 0,
+                    periodo_menstrual_regular: data.periodoMenstrualRegular || false,
+                    lesiones_timpano: data.lesionesTimpano || false
+                },
+                medidas_corporales: {
+                    imc_antes: data.imcAntes || 0,
+                    imc_despues: data.imcDespues || 0,
+                    porcentaje_musculo_antes: data.porcentajeMusculoAntes || 0,
+                    porcentaje_musculo_despues: data.porcentajeMusculoDespues || 0,
+                    porcentaje_grasa_antes: data.porcentajeGrasaAntes || 0,
+                    porcentaje_grasa_despues: data.porcentajeGrasaDespues || 0,
+                    grasa_visceral_antes: data.grasaVisceralAntes || 0,
+                    grasa_visceral_despues: data.grasaVisceralDespues || 0,
+                    peso_corporal_antes: data.pesoCorporalAntes || 0,
+                    peso_corporal_despues: data.pesoCorporalDespues || 0,
+                    edad_corporal_antes: data.edadCorporalAntes || 0,
+                    edad_corporal_despues: data.edadCorporalDespues || 0,
+                    metabolismo_basal_antes: data.metabolismoBasalAntes || 0,
+                    metabolismo_basal_despues: data.metabolismoBasalDespues || 0
+                },
+                medidas_pliegues: {
+                    abdomen_alto_antes: data.abdomenAltoAntes || 0,
+                    abdomen_alto_despues: data.abdomenAltoDespues || 0,
+                    abdomen_bajo_antes: data.abdomenBajoAntes || 0,
+                    abdomen_bajo_despues: data.abdomenBajoDespues || 0,
+                    cintura_antes: data.cinturaAntes || 0,
+                    cintura_despues: data.cinturaDespues || 0,
+                    cadera_antes: data.caderaAntes || 0,
+                    cadera_despues: data.caderaDespues || 0,
+                    flanco_derecho_antes: data.flancoDerechoAntes || 0,
+                    flanco_derecho_despues: data.flancoDerechoDespues || 0,
+                    flanco_izquierdo_antes: data.flancoIzquierdoAntes || 0,
+                    flanco_izquierdo_despues: data.flancoIzquierdoDespues || 0
+                },
+                tratamiento: {
+                    tratamientos_previos: data.tratamientosPrevios || '',
+                    objetivo_estetico: data.objetivoEstetico || ''
+                }
+            },
+            observaciones: data.observaciones || ''
         };
         
         try {
-            const response = await fichasEspecificasAPI.saveFichaEspecifica(fichaData);
+            const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
                 return response.data;

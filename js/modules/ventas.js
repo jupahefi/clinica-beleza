@@ -264,11 +264,69 @@ class VentasModule {
                 evaluacion_id: evaluacion.id,
                 tipo_id: this.obtenerTipoFichaId(venta.tratamiento),
                 datos: {
-                    tratamiento: venta.tratamiento,
-                    precio: venta.precio,
-                    sesiones: venta.sesiones
+                    // Estructura básica según el tipo de ficha
+                    antecedentes_personales: {
+                        nombre_completo: this.clienteSeleccionado.text || '',
+                        fecha_nacimiento: '',
+                        edad: 0,
+                        ocupacion: '',
+                        telefono_fijo: '',
+                        celular: '',
+                        email: '',
+                        medio_conocimiento: ''
+                    },
+                    // Para depilación
+                    evaluacion_medica: {
+                        medicamentos: false,
+                        isotretinoina: false,
+                        alergias: false,
+                        enfermedades_piel: false,
+                        antecedentes_cancer: false,
+                        embarazo: false,
+                        lactancia: false,
+                        tatuajes: false,
+                        antecedentes_herpes: false,
+                        patologias_hormonales: false,
+                        exposicion_sol: '',
+                        tipo_piel_fitzpatrick: '',
+                        metodo_depilacion_actual: '',
+                        ultima_depilacion: '',
+                        otros: ''
+                    },
+                    // Para corporal/facial
+                    antecedentes_clinicos: {
+                        enfermedades_cardiacas: false,
+                        enfermedades_renales: false,
+                        enfermedades_hepaticas: false,
+                        enfermedades_digestivas: false,
+                        enfermedades_neuromusculares: false,
+                        trastorno_coagulacion: false,
+                        alergias: false,
+                        epilepsia: false,
+                        embarazo: false,
+                        dispositivo_intrauterino: false,
+                        cancer: false,
+                        protesis_metalicas: false,
+                        implantes_colageno: false,
+                        medicamentos_actuales: false,
+                        cirugias: false,
+                        fuma: false,
+                        ingiere_alcohol: false,
+                        horas_sueno: 0,
+                        periodo_menstrual_regular: false,
+                        lesiones_timpano: false
+                    },
+                    // Campos específicos según tratamiento
+                    zonas_tratamiento: {
+                        zonas_seleccionadas: [],
+                        observaciones_medicas: venta.detalle || ''
+                    },
+                    tratamiento: {
+                        tratamientos_previos: '',
+                        objetivo_estetico: `Tratamiento de ${venta.tratamiento}`
+                    }
                 },
-                observaciones: venta.detalle
+                observaciones: venta.detalle || ''
             });
 
             const ventaCreada = await ventasAPI.create({
@@ -300,18 +358,25 @@ class VentasModule {
     }
 
     obtenerTipoFichaId(nombreTratamiento) {
-        // Mapear tratamientos a tipos de ficha específica
+        // Mapear tratamientos a tipos de ficha específica según la migración
         const mapeo = {
-            'DEPILACION': 1, // DEPILACION
-            'CORPORAL': 2,   // CORPORAL
-            'FACIAL': 3,     // FACIAL
-            'CAPILAR': 4     // CAPILAR
+            'DEPILACION': 1,        // DEPILACION
+            'CORPORAL_FACIAL': 2,   // CORPORAL_FACIAL (actualizado)
+            'FACIAL': 3,            // FACIAL
+            'CAPILAR': 4            // CAPILAR
         };
 
-        for (const [tipo, id] of Object.entries(mapeo)) {
-            if (nombreTratamiento.toUpperCase().includes(tipo)) {
-                return id;
-            }
+        // Buscar coincidencias más específicas
+        const nombreUpper = nombreTratamiento.toUpperCase();
+        
+        if (nombreUpper.includes('DEPILACION') || nombreUpper.includes('LASER')) {
+            return 1; // DEPILACION
+        } else if (nombreUpper.includes('CORPORAL') || nombreUpper.includes('FACIAL') || nombreUpper.includes('LIPO')) {
+            return 2; // CORPORAL_FACIAL
+        } else if (nombreUpper.includes('FACIAL')) {
+            return 3; // FACIAL
+        } else if (nombreUpper.includes('CAPILAR') || nombreUpper.includes('CABELLO')) {
+            return 4; // CAPILAR
         }
 
         return 1; // Por defecto DEPILACION

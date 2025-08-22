@@ -258,7 +258,13 @@ export const fichasEspecificasAPI = {
     create: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
     
     // Guardar ficha específica (alias para create)
-    saveFichaEspecifica: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica)
+    saveFichaEspecifica: (fichaEspecifica) => post('fichas-especificas', fichaEspecifica),
+    
+    // Guardar consentimiento y firma
+    saveConsentimientoFirma: (firmaData) => post('consentimiento-firma', firmaData),
+    
+    // Obtener consentimiento por ficha y tipo
+    getConsentimientoFirma: (fichaId, tipoConsentimiento) => get('consentimiento-firma', { ficha_id: fichaId, tipo_consentimiento: tipoConsentimiento })
 };
 
 export const consentimientoFirmaAPI = {
