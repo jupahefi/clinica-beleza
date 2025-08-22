@@ -278,7 +278,7 @@ export class SesionesModule {
             } else {
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
-          } catch (error) {
+  } catch (error) {
             console.error('Error:', error);
             const errorMessage = error.message || 'Error desconocido creando sesión';
             mostrarNotificacion(`❌ Error creando sesión: ${errorMessage}`, 'error');
@@ -520,13 +520,13 @@ export class SesionesModule {
     
     renderSesiones() {
         console.log('🎨 Renderizando sesiones...');
-        const tbody = document.getElementById('cuerpoTablaSesiones');
+    const tbody = document.getElementById('cuerpoTablaSesiones');
         console.log('📋 Tbody encontrado:', tbody);
         if (!tbody) {
             console.error('❌ No se encontró el tbody para sesiones');
-            return;
-        }
-        
+        return;
+    }
+    
         tbody.innerHTML = '';
         console.log('📊 Renderizando', this.sesiones.length, 'sesiones');
         
@@ -602,7 +602,7 @@ export class SesionesModule {
   } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
             }
-          } catch (error) {
+  } catch (error) {
             console.error('Error confirmando paciente:', error);
             const errorMessage = error.message || 'Error desconocido confirmando paciente';
             alert(`❌ Error confirmando paciente: ${errorMessage}`);
@@ -627,7 +627,7 @@ export class SesionesModule {
         } else {
                 alert('❌ Error: ' + (response.error || 'Error desconocido'));
         }
-          } catch (error) {
+  } catch (error) {
             console.error('Error reprogramando sesión:', error);
             const errorMessage = error.message || 'Error desconocido reprogramando sesión';
             alert(`❌ Error reprogramando sesión: ${errorMessage}`);

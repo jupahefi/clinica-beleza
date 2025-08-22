@@ -100,11 +100,11 @@ class ClinicaBelezaApp {
 
     setupNavigation() {
         console.log('🧭 Configurando navegación...');
-        const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.nav-link');
         console.log('🔗 Enlaces encontrados:', navLinks.length);
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
                 const view = link.dataset.view;
                 console.log('🖱️ Clic en enlace:', view);
                 this.switchView(view);
@@ -112,8 +112,8 @@ class ClinicaBelezaApp {
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
                 console.log('📍 URL actualizada:', window.location.hash);
-            });
         });
+    });
     
         // Manejar el botón atrás/adelante del navegador
         window.addEventListener('popstate', (e) => {

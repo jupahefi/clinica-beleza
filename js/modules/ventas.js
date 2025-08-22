@@ -198,12 +198,12 @@ class VentasModule {
         const sesiones = parseInt(inputSesiones.value) || 1;
         const ofertaVenta = parseInt(inputOferta.value) || 0;
         const packIndex = packSelect.value;
-
-        if (!tratamientoId) {
+  
+  if (!tratamientoId) {
             resultado.textContent = "Selecciona un tratamiento.";
-            return;
-        }
-
+    return;
+  }
+  
         const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
         let precio = 0;
         let detalle = "";
@@ -245,10 +245,10 @@ class VentasModule {
         const venta = this.calcularPrecio();
         if (!venta) {
             mostrarNotificacion('Selecciona un tratamiento válido.', 'warning');
-            return;
-        }
-
-        try {
+    return;
+  }
+  
+  try {
             // Implementar el proceso de 3 pasos: Evaluación -> Ficha Específica -> Venta
             const evaluacion = await evaluacionesAPI.create({
                 ficha_id: cliente,
@@ -388,7 +388,7 @@ class VentasModule {
             // Cargar todas las ventas usando API client
             this.ventas = await ventasAPI.getAll();
             console.log('✅ Ventas cargadas:', this.ventas.length);
-        } catch (error) {
+  } catch (error) {
             console.error('❌ Error cargando ventas:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas';
             mostrarNotificacion(`Error cargando ventas: ${errorMessage}`, 'error');

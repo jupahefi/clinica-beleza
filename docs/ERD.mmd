@@ -6,7 +6,7 @@ erDiagram
   FICHA ||--o{ CONSENTIMIENTO_FIRMA : "puede tener múltiples firmas"
   
   %% EVALUACIÓN (obligatoria para ventas)
-  EVALUACION ||--|| FICHA_ESPECIFICA : "genera"
+  EVALUACION ||--o{ FICHA_ESPECIFICA : "puede generar múltiples"
   EVALUACION ||--|| PROFESIONAL : "realizada por"
   EVALUACION ||--|| TRATAMIENTO : "evalúa"
   EVALUACION ||--o{ PACK : "puede sugerir"
@@ -72,7 +72,7 @@ erDiagram
     bigint profesional_id FK NOT NULL
     bigint tratamiento_id FK NOT NULL
     bigint pack_id FK "opcional"
-    numeric precio_sugerido NOT NULL
+    numeric precio_sugerido NOT NULL DEFAULT 0
     int sesiones_sugeridas NOT NULL
     text observaciones NOT NULL
     text recomendaciones NOT NULL
@@ -82,14 +82,14 @@ erDiagram
     timestamptz fecha_actualizacion
   }
 
-  %% TIPOS DE FICHA ESPECÍFICA
+  %% TIPOS DE FICHA ESPECÍFICA (basados en fichas HTML reales)
   TIPO_FICHA_ESPECIFICA {
     bigserial id PK
-    varchar nombre NOT NULL "DEPILACION, CORPORAL"
+    varchar nombre NOT NULL "DEPILACION, CORPORAL_FACIAL"
     text descripcion NOT NULL
     boolean requiere_consentimiento NOT NULL
     text template_consentimiento "solo si requiere_consentimiento"
-    jsonb campos_requeridos NOT NULL
+    jsonb campos_requeridos NOT NULL "estructura de campos según tipo"
     boolean activo NOT NULL DEFAULT TRUE
   }
 
@@ -132,7 +132,7 @@ erDiagram
     varchar nombre NOT NULL
     text descripcion NOT NULL
     boolean requiere_ficha_especifica NOT NULL
-    varchar tipo_ficha_requerida "DEPILACION, CORPORAL, AMBAS"
+    varchar tipo_ficha_requerida "DEPILACION, CORPORAL_FACIAL, AMBAS"
     int duracion_sesion_min NOT NULL
     int frecuencia_recomendada_dias NOT NULL
     boolean activo NOT NULL DEFAULT TRUE
