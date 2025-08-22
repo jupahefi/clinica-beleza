@@ -425,8 +425,8 @@ export class SesionesModule {
                 return;
             }
             
-            // Mostrar modal de intensidades
-            this.showIntensidadesModal(sesion);
+            // Mostrar modal de apertura de sesión
+            this.showAbrirSesionModal(sesion);
             
         } catch (error) {
             console.error('Error abriendo sesión:', error);
@@ -487,23 +487,25 @@ export class SesionesModule {
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
         
         try {
-            const response = await sesionesAPI.updateSesion(sesionId, {
-                accion: 'abrir',
-                observaciones: observaciones,
-                intensidades: intensidades
-            });
+            // Primero abrir la sesión en la base de datos
+            const response = await sesionesAPI.abrirSesion(sesionId);
             
             if (response.success) {
-                alert('✅ Sesión abierta exitosamente');
+                // Guardar intensidades si existen
+                if (Object.keys(intensidades).length > 0) {
+                    await this.guardarIntensidades(sesionId, intensidades);
+                }
+                
+                mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
                 document.querySelector('.sesion-modal').remove();
-                this.loadSesiones();
+                await this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error:', error);
             const errorMessage = error.message || 'Error desconocido abriendo sesión';
-            alert(`❌ Error abriendo sesión: ${errorMessage}`);
+            mostrarNotificacion(`❌ Error abriendo sesión: ${errorMessage}`, 'error');
         }
     }
     
@@ -514,15 +516,15 @@ export class SesionesModule {
             const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
             
             if (response.success) {
-                alert('✅ Sesión cerrada exitosamente');
+                mostrarNotificacion('✅ Sesión cerrada exitosamente', 'success');
                 await this.loadSesiones();
             } else {
-                alert('❌ Error: ' + (response.error || 'Error desconocido'));
+                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
             console.error('Error cerrando sesión:', error);
             const errorMessage = error.message || 'Error desconocido cerrando sesión';
-            alert(`❌ Error cerrando sesión: ${errorMessage}`);
+            mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
         }
     }
     
