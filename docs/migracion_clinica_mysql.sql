@@ -565,6 +565,11 @@ CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_numero_pos', 'numero_ses
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_cantidad_pos', 'cantidad_sesiones >= 1');
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_estado', 'estado IN (''pendiente'',''pagado'',''anulado'')');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_estado', 'estado IN (''planificada'',''confirmada'',''realizada'',''no_show'',''cancelada'')');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_fecha_planificada', 'fecha_planificada IS NOT NULL AND fecha_planificada > CURRENT_TIMESTAMP');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_venta_valida', 'venta_id IS NOT NULL');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_profesional_valido', 'profesional_id IS NOT NULL');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_box_valido', 'box_id IS NOT NULL');
+CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_sucursal_valida', 'sucursal_id IS NOT NULL');
 CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_precio_pos', 'precio_sugerido >= 0');
 CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_sesiones_pos', 'sesiones_sugeridas >= 1');
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_precio_pos', 'precio_lista >= 0');
@@ -784,6 +789,36 @@ BEGIN
   END IF;
 END$$
 
+-- Validate venta has valid ficha and tratamiento before creating session
+CREATE TRIGGER trg_sesion_venta_valida
+BEFORE INSERT ON sesion
+FOR EACH ROW
+BEGIN
+  DECLARE v_ficha_id BIGINT;
+  DECLARE v_tratamiento_id BIGINT;
+  DECLARE v_duracion_tratamiento INT;
+  
+  -- Verificar que la venta existe y tiene ficha y tratamiento válidos
+  SELECT ficha_id, tratamiento_id INTO v_ficha_id, v_tratamiento_id
+  FROM venta WHERE id = NEW.venta_id;
+  
+  IF v_ficha_id IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta debe tener una ficha válida';
+  END IF;
+  
+  IF v_tratamiento_id IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta debe tener un tratamiento válido';
+  END IF;
+  
+  -- Verificar que el tratamiento tiene duración definida
+  SELECT duracion_sesion_min INTO v_duracion_tratamiento
+  FROM tratamiento WHERE id = v_tratamiento_id;
+  
+  IF v_duracion_tratamiento IS NULL OR v_duracion_tratamiento <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tratamiento debe tener duración válida mayor a 0';
+  END IF;
+END$$
+
 DELIMITER ;
 
 -- Optional: Keep sesion.estado transitions coherent (planificada->confirmada/realizada/cancelada/no_show)
@@ -926,7 +961,7 @@ SELECT
   v.estado AS venta_estado,
   t.nombre AS tratamiento_nombre,
   p.nombre AS pack_nombre,
-  p.duracion_sesion_min,
+  COALESCE(p.duracion_sesion_min, t.duracion_sesion_min) AS duracion,
   prof.nombre AS profesional_nombre,
   prof.tipo_profesional,
   suc.nombre AS sucursal_nombre,

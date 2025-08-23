@@ -436,10 +436,10 @@ export class SesionesModule {
         // Solo enviar los campos que realmente necesita el SP sp_agendar_sesion
         const formData = {
             venta_id: ventaId,
-            numero_sesion: 1, // Por defecto es la primera sesión
-            sucursal_id: 1, // Por defecto sucursal principal
+            numero_sesion: 1, // Primera sesión por defecto
+            sucursal_id: 1, // Sucursal principal por defecto
             box_id: boxId,
-            profesional_id: 1, // Por defecto profesional principal
+            profesional_id: getCurrentProfesionalId(),
             fecha_planificada: fechaPlanificadaCompleta,
             observaciones: observaciones || null // NULL si está vacío
         };
