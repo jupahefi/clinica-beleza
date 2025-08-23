@@ -1647,14 +1647,11 @@ export class SesionesModule {
             const select = document.getElementById('pacienteSesion');
             if (!select) return;
             
-            // Configurar Select2 con AJAX para búsqueda dinámica
+            // Configurar Select2 exactamente igual que en ventas
             if (typeof $ !== 'undefined' && $.fn.select2) {
                 $(select).select2({
-                    placeholder: '-- Selecciona cliente --',
-                    allowClear: true,
-                    width: '100%',
                     ajax: {
-                        url: '/api.php?endpoint=fichas',
+                        url: '/api.php/fichas',
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
@@ -1663,42 +1660,33 @@ export class SesionesModule {
                                 page: params.page || 1
                             };
                         },
-                        processResults: function (data, params) {
-                            params.page = params.page || 1;
-                            
+                        processResults: function (data) {
                             return {
                                 results: data.data.map(paciente => ({
                                     id: paciente.id,
-                                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`
+                                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut}`
                                 })),
                                 pagination: {
-                                    more: false
+                                    more: false // Por ahora sin paginación
                                 }
                             };
                         },
                         cache: true
                     },
-                    minimumInputLength: 0
-                });
-                
-                // Cargar todos los pacientes inicialmente
-                const { fichasAPI } = await import('../api-client.js');
-                const pacientes = await fichasAPI.getAll();
-                
-                const options = pacientes.map(paciente => ({
-                    id: paciente.id,
-                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`
-                }));
-                
-                $(select).empty().select2({
                     placeholder: '-- Selecciona cliente --',
-                    allowClear: true,
-                    width: '100%',
-                    data: options
+                    minimumInputLength: 2,
+                    language: {
+                        inputTooShort: function() {
+                            return "Por favor ingresa al menos 2 caracteres";
+                        },
+                        noResults: function() {
+                            return "No se encontraron pacientes";
+                        },
+                        searching: function() {
+                            return "Buscando...";
+                        }
+                    }
                 });
-                
-                // Asegurar que no haya valor seleccionado por defecto
-                $(select).val(null).trigger('change');
                 
                 // Configurar eventos después de inicializar Select2
                 this.configurarEventosPaciente();
@@ -1712,7 +1700,7 @@ export class SesionesModule {
                 pacientes.forEach(paciente => {
                     const option = document.createElement('option');
                     option.value = paciente.id.toString();
-                    option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut || paciente.codigo}`;
+                    option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut}`;
                     select.appendChild(option);
                 });
                 
