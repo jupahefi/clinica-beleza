@@ -565,7 +565,8 @@ CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_numero_pos', 'numero_ses
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_cantidad_pos', 'cantidad_sesiones >= 1');
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_estado', 'estado IN (''pendiente'',''pagado'',''anulado'')');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_estado', 'estado IN (''planificada'',''confirmada'',''realizada'',''no_show'',''cancelada'')');
-CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_fecha_planificada', 'fecha_planificada IS NOT NULL AND fecha_planificada > CURRENT_TIMESTAMP');
+-- CHECK constraint removido porque MySQL no permite CURRENT_TIMESTAMP en CHECK constraints
+-- La validación se hace a nivel de aplicación y triggers
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_venta_valida', 'venta_id IS NOT NULL');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_profesional_valido', 'profesional_id IS NOT NULL');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_box_valido', 'box_id IS NOT NULL');
@@ -816,6 +817,11 @@ BEGIN
   
   IF v_duracion_tratamiento IS NULL OR v_duracion_tratamiento <= 0 THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tratamiento debe tener duración válida mayor a 0';
+  END IF;
+  
+  -- Validar que la fecha_planificada es futura
+  IF NEW.fecha_planificada IS NULL OR NEW.fecha_planificada <= NOW() THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fecha_planificada debe ser futura';
   END IF;
 END$$
 
