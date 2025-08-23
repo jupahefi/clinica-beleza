@@ -169,13 +169,24 @@ class VentasModule {
 
         if (tratamiento && tratamiento.packs && tratamiento.packs.length > 0) {
             packsDiv.style.display = "block";
+            
+            // Mostrar sugerencias de ofertas
+            this.mostrarSugerenciasOfertas(tratamiento);
+            
             tratamiento.packs.forEach((pack, idx) => {
                 const option = document.createElement('option');
                 option.value = idx;
-                const precioTexto = pack.precio_oferta ? 
-                    `$${pack.precio_oferta.toLocaleString()} (oferta)` : 
-                    `$${pack.precio_regular.toLocaleString()}`;
-                option.textContent = `${pack.nombre} - ${precioTexto}`;
+                
+                // Calcular descuento si hay oferta
+                let precioTexto = `$${pack.precio_regular.toLocaleString()}`;
+                if (pack.precio_oferta && pack.precio_oferta < pack.precio_regular) {
+                    const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
+                    precioTexto = `$${pack.precio_oferta.toLocaleString()} (${descuento}% OFF)`;
+                }
+                
+                // Mostrar sesiones incluidas si están definidas
+                const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : '';
+                option.textContent = `${pack.nombre}${sesionesInfo} - ${precioTexto}`;
                 packSelect.appendChild(option);
             });
         } else {
@@ -183,6 +194,44 @@ class VentasModule {
         }
 
         sesionesDiv.style.display = "block"; // siempre hay sesiones individuales
+    }
+    
+    mostrarSugerenciasOfertas(tratamiento) {
+        const sugerenciasDiv = document.getElementById('sugerenciasOfertas');
+        if (!sugerenciasDiv) return;
+        
+        const packsConOfertas = tratamiento.packs.filter(pack => 
+            pack.precio_oferta && pack.precio_oferta < pack.precio_regular
+        );
+        
+        if (packsConOfertas.length === 0) {
+            sugerenciasDiv.style.display = 'none';
+            return;
+        }
+        
+        let html = '<div class="sugerencias-ofertas">';
+        html += '<h4>💡 Sugerencias de Ofertas Disponibles:</h4>';
+        html += '<div class="ofertas-grid">';
+        
+        packsConOfertas.forEach(pack => {
+            const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
+            const ahorro = pack.precio_regular - pack.precio_oferta;
+            
+            html += `
+                <div class="oferta-card">
+                    <h5>${pack.nombre}</h5>
+                    <p class="sesiones">${pack.sesiones_incluidas || 'N/A'} sesiones</p>
+                    <p class="precio-regular">$${pack.precio_regular.toLocaleString()}</p>
+                    <p class="precio-oferta">$${pack.precio_oferta.toLocaleString()}</p>
+                    <p class="descuento">${descuento}% OFF</p>
+                    <p class="ahorro">Ahorras $${ahorro.toLocaleString()}</p>
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+        sugerenciasDiv.innerHTML = html;
+        sugerenciasDiv.style.display = 'block';
     }
 
     calcularPrecio() {
@@ -212,18 +261,48 @@ class VentasModule {
         if (packIndex !== "") {
             const pack = tratamiento.packs[packIndex];
             precio = pack.precio_oferta || pack.precio_regular;
-            detalle = `Pack seleccionado: ${pack.nombre} → $${precio.toLocaleString()}`;
+            
+            // Mostrar información detallada del pack
+            detalle = `Pack seleccionado: ${pack.nombre}`;
+            if (pack.sesiones_incluidas) {
+                detalle += ` (${pack.sesiones_incluidas} sesiones incluidas)`;
+            }
+            
+            // Mostrar descuento si aplica
+            if (pack.precio_oferta && pack.precio_oferta < pack.precio_regular) {
+                const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
+                const ahorro = pack.precio_regular - pack.precio_oferta;
+                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuento}% OFF (Ahorras $${ahorro.toLocaleString()})`;
+                detalle += `<br>Precio regular: $${pack.precio_regular.toLocaleString()} → <strong>Precio oferta: $${pack.precio_oferta.toLocaleString()}</strong>`;
+            } else {
+                detalle += `<br>Precio: $${pack.precio_regular.toLocaleString()}`;
+            }
         } else {
-            // modalidad sesión
+            // modalidad sesión individual
             precio = sesiones * (tratamiento.precio_oferta || tratamiento.precio_regular);
-            detalle = `Sesión x${sesiones}: $${precio.toLocaleString()}`;
+            detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
+            
+            // Mostrar precio por sesión
+            const precioPorSesion = tratamiento.precio_oferta || tratamiento.precio_regular;
+            detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()}`;
         }
 
-        // Oferta adicional a la venta
+        // Oferta adicional a la venta (descuento manual)
         if (ofertaVenta > 0) {
             const descuento = (precio * ofertaVenta) / 100;
             precio = precio - descuento;
-            detalle += `<br>Oferta adicional aplicada: -${ofertaVenta}%`;
+            detalle += `<br>🎯 Descuento adicional aplicado: -${ofertaVenta}%`;
+        }
+        
+        // Calcular sesiones finales considerando ofertas
+        let sesionesFinales = sesiones;
+        if (ofertaVenta > 0) {
+            // Si hay oferta, calcular sesiones adicionales basadas en el descuento
+            const sesionesAdicionales = Math.floor((ofertaVenta / 10)); // Cada 10% = 1 sesión adicional
+            sesionesFinales = sesiones + sesionesAdicionales;
+            if (sesionesAdicionales > 0) {
+                detalle += `<br>🎁 Sesiones adicionales por oferta: +${sesionesAdicionales} (total: ${sesionesFinales})`;
+            }
         }
 
         resultado.innerHTML = `
@@ -232,7 +311,7 @@ class VentasModule {
             <em>${detalle}</em>
         `;
 
-        return { tratamiento: tratamiento.nombre, sesiones, precio, detalle };
+        return { tratamiento: tratamiento.nombre, sesiones: sesionesFinales, precio, detalle };
     }
 
     async confirmarVenta() {
@@ -261,7 +340,7 @@ class VentasModule {
                     ficha_especifica_id: null, // No requiere ficha específica
                     tratamiento_id: tratamientoId,
                     pack_id: document.getElementById('pack').value || null,
-                    cantidad_sesiones: venta.sesiones,
+                    cantidad_sesiones: venta.sesiones, // Usa sesiones finales calculadas
                     precio_lista: venta.precio,
                     total_pagado: venta.precio
                 });
@@ -286,7 +365,7 @@ class VentasModule {
                     tratamiento_id: tratamientoId,
                     pack_id: document.getElementById('pack').value || null,
                     precio_sugerido: venta.precio,
-                    sesiones_sugeridas: venta.sesiones,
+                    sesiones_sugeridas: venta.sesiones, // Usa sesiones finales calculadas
                     recomendaciones: `Venta de ${venta.tratamiento}`
                 });
 
@@ -363,7 +442,7 @@ class VentasModule {
                     evaluacion_id: evaluacion.id,
                     ficha_especifica_id: fichaEspecifica.id,
                     tratamiento_id: tratamientoId,
-                    cantidad_sesiones: venta.sesiones,
+                    cantidad_sesiones: venta.sesiones, // Usa sesiones finales calculadas
                     precio_lista: venta.precio,
                     total_pagado: venta.precio
                 });

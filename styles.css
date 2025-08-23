@@ -861,6 +861,24 @@ body {
         padding: 1rem;
         margin-top: 0.75rem;
     }
+    
+    /* Ajustar sugerencias de ofertas para móvil */
+    .ofertas-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .oferta-card {
+        padding: 12px;
+    }
+    
+    .oferta-card h5 {
+        font-size: 13px;
+    }
+    
+    .oferta-card .precio-oferta {
+        font-size: 14px;
+    }
 }
 
 /* Fichas Específicas */
@@ -1592,4 +1610,79 @@ body {
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     background-color: var(--calypso-pastel);
     color: var(--calypso-dark);
+}
+
+/* Estilos para sugerencias de ofertas */
+.sugerencias-ofertas {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.sugerencias-ofertas h4 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.ofertas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.oferta-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.oferta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.oferta-card h5 {
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.oferta-card .sesiones {
+    color: #6c757d;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.oferta-card .precio-regular {
+    color: #6c757d;
+    text-decoration: line-through;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.oferta-card .precio-oferta {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.oferta-card .descuento {
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.oferta-card .ahorro {
+    color: #28a745;
+    font-size: 12px;
+    font-weight: 600;
 }

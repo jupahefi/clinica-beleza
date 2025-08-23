@@ -14,7 +14,7 @@ export class PagosModule {
     }
     
     async init() {
-        await this.cargarVentasPendientes();
+        await this.cargarPacientesSelect();
         this.cargarMetodosPago();
         this.configurarEventosPagos();
         await this.renderHistorialPagos();
@@ -63,43 +63,14 @@ export class PagosModule {
         }
     }
     
-    async cargarVentasPendientes() {
-        const select = document.getElementById('ventaPago');
-        if (!select) return;
-        
-        try {
-            const ventasPendientes = await ventasAPI.search('estado:pendiente');
-            
-            select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
-            
-            for (const venta of ventasPendientes) {
-                const paciente = await fichasAPI.getById(venta.ficha_id);
-                const pendiente = venta.total_pagado - venta.precio_total;
-                
-                if (pendiente > 0) {
-                    const option = document.createElement('option');
-                    option.value = venta.id.toString();
-                    option.textContent = `${paciente?.nombres || 'Cliente'} - ${venta.tratamiento?.nombre || 'Tratamiento'} (${formatearPrecio(pendiente)} pendiente)`;
-                    select.appendChild(option);
-                }
-            }
-            
-            if (ventasPendientes.length === 0) {
-                const option = document.createElement('option');
-                option.textContent = 'No hay ventas pendientes de pago';
-                option.disabled = true;
-                select.appendChild(option);
-            }
-        } catch (error) {
-            console.error('Error cargando ventas pendientes:', error);
-            const errorMessage = error.message || 'Error desconocido cargando ventas pendientes';
-            mostrarNotificacion(`Error cargando ventas pendientes: ${errorMessage}`, 'error');
-        }
-    }
+
     
     cargarMetodosPago() {
         const select = document.getElementById('metodoPago');
-        if (!select || select.children.length > 0) return;
+        if (!select) return;
+        
+        // Limpiar opciones existentes excepto el placeholder
+        select.innerHTML = '<option value="">Seleccionar método...</option>';
         
         const METODOS_PAGO = [
             { value: 'efectivo', label: 'Efectivo' },
@@ -178,10 +149,19 @@ export class PagosModule {
             if (elemento) elemento.value = '';
         });
         
+        // Limpiar select de venta
+        const ventaSelect = document.getElementById('ventaPago');
+        if (ventaSelect) {
+            ventaSelect.innerHTML = '<option value="">-- Seleccionar venta --</option>';
+        }
+        
         const detallesContainer = document.getElementById('detallesVentaPago');
         if (detallesContainer) {
             detallesContainer.style.display = 'none';
         }
+        
+        // Resetear venta seleccionada
+        this.ventaSeleccionadaPago = null;
     }
     
     async registrarPago() {
@@ -233,7 +213,6 @@ export class PagosModule {
                 this.ventaSeleccionadaPago = null;
                 
                 // Recargar datos
-                await this.cargarVentasPendientes();
                 await this.renderHistorialPagos();
                 
                 return true;
@@ -336,6 +315,127 @@ export class PagosModule {
     async loadPacientes() {
         // Este método se mantiene para compatibilidad con main.js
         // Los pacientes se cargan dinámicamente cuando se necesitan
+    }
+    
+    async cargarPacientesSelect() {
+        try {
+            const select = document.getElementById('pacientePago');
+            if (!select) return;
+            
+            // Configurar Select2 exactamente igual que en ventas
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $(select).select2({
+                    ajax: {
+                        url: '/api.php/fichas',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                search: params.term,
+                                page: params.page || 1
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.data.map(paciente => ({
+                                    id: paciente.id,
+                                    text: `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut}`
+                                })),
+                                pagination: {
+                                    more: false // Por ahora sin paginación
+                                }
+                            };
+                        },
+                        cache: true
+                    },
+                    placeholder: '-- Selecciona cliente --',
+                    minimumInputLength: 2,
+                    language: {
+                        inputTooShort: function() {
+                            return "Por favor ingresa al menos 2 caracteres";
+                        },
+                        noResults: function() {
+                            return "No se encontraron pacientes";
+                        },
+                        searching: function() {
+                            return "Buscando...";
+                        }
+                    }
+                });
+                
+                // Configurar evento para cargar ventas cuando se selecciona un paciente
+                $(select).on('select2:select', (e) => {
+                    this.cargarVentasPorPaciente(e.params.data.id);
+                });
+                
+                $(select).on('select2:clear', () => {
+                    this.cargarVentasPorPaciente(null);
+                });
+            } else {
+                // Fallback sin Select2
+                const { fichasAPI } = await import('../api-client.js');
+                const pacientes = await fichasAPI.getAll();
+                
+                select.innerHTML = '<option value="">-- Selecciona cliente --</option>';
+                
+                pacientes.forEach(paciente => {
+                    const option = document.createElement('option');
+                    option.value = paciente.id.toString();
+                    option.textContent = `${paciente.nombres} ${paciente.apellidos} - ${paciente.rut}`;
+                    select.appendChild(option);
+                });
+                
+                // Configurar eventos para select nativo
+                select.addEventListener('change', (e) => {
+                    this.cargarVentasPorPaciente(e.target.value);
+                });
+            }
+            
+            console.log('✅ Select de pacientes cargado en pagos');
+        } catch (error) {
+            console.error('❌ Error cargando pacientes en pagos:', error);
+        }
+    }
+    
+    async cargarVentasPorPaciente(pacienteId) {
+        try {
+            const select = document.getElementById('ventaPago');
+            if (!select) return;
+            
+            if (!pacienteId) {
+                select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
+                this.limpiarFormularioPago();
+                return;
+            }
+            
+            const ventasPendientes = await ventasAPI.search('estado:pendiente');
+            
+            select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
+            
+            for (const venta of ventasPendientes) {
+                if (venta.ficha_id == pacienteId) {
+                    const pendiente = venta.precio_total - venta.total_pagado;
+                    
+                    if (pendiente > 0) {
+                        const option = document.createElement('option');
+                        option.value = venta.id.toString();
+                        option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} (${formatearPrecio(pendiente)} pendiente)`;
+                        select.appendChild(option);
+                    }
+                }
+            }
+            
+            if (select.children.length === 1) { // Solo el placeholder
+                const option = document.createElement('option');
+                option.textContent = 'No hay ventas pendientes de pago';
+                option.disabled = true;
+                select.appendChild(option);
+            }
+        } catch (error) {
+            console.error('Error cargando ventas por paciente:', error);
+            const errorMessage = error.message || 'Error desconocido cargando ventas por paciente';
+            mostrarNotificacion(`Error cargando ventas por paciente: ${errorMessage}`, 'error');
+        }
     }
 }
 
