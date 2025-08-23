@@ -83,17 +83,51 @@ export class SesionesModule {
         
         if (calendarContainer && typeof Calendar !== 'undefined') {
             console.log('✅ Inicializando calendario...');
-            this.calendar = new Calendar(calendarContainer, {
-                events: this.sesiones.map(sesion => ({
+            
+            // Generar eventos iniciales usando la misma lógica que updateCalendarEvents
+            const events = this.sesiones.map(sesion => {
+                // Extraer fecha y hora de fecha_planificada si es necesario
+                let fecha, hora;
+                
+                if (sesion.fecha_planificada) {
+                    if (typeof sesion.fecha_planificada === 'string' && sesion.fecha_planificada.includes(' ')) {
+                        // Si fecha_planificada contiene fecha y hora (formato: "2025-08-23 08:00:00")
+                        const [fechaPart, horaPart] = sesion.fecha_planificada.split(' ');
+                        fecha = fechaPart;
+                        hora = horaPart.substring(0, 5); // Tomar solo HH:MM
+                    } else if (sesion.hora_planificada) {
+                        // Si tenemos campos separados
+                        fecha = sesion.fecha_planificada;
+                        hora = sesion.hora_planificada;
+                    } else {
+                        // Solo fecha, usar hora por defecto
+                        fecha = sesion.fecha_planificada;
+                        hora = '09:00';
+                    }
+                }
+                
+                // Calcular duración (usar duración del pack o por defecto)
+                const duracion = sesion.duracion_sesion_min || sesion.duracion || 60;
+                
+                // Crear título descriptivo
+                const pacienteNombre = sesion.paciente_nombres && sesion.paciente_apellidos 
+                    ? `${sesion.paciente_nombres} ${sesion.paciente_apellidos}`
+                    : sesion.paciente_nombre || 'Paciente';
+                
+                const tratamientoNombre = sesion.tratamiento_nombre || sesion.tratamiento || 'Tratamiento';
+                
+                return {
                     id: sesion.id,
-                    title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
-                    start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
-                    end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
+                    title: `${pacienteNombre} - ${tratamientoNombre}`,
+                    start: `${fecha}T${hora}`,
+                    end: this.calculateEndTime(fecha, hora, duracion),
                     backgroundColor: this.getEventColor(sesion.estado),
                     extendedProps: sesion
-                }))
+                };
             });
-            console.log('✅ Calendario inicializado correctamente');
+            
+            this.calendar = new Calendar(calendarContainer, { events });
+            console.log('✅ Calendario inicializado correctamente con', events.length, 'eventos');
         } else {
             console.error('❌ No se pudo inicializar el calendario');
             console.error('Contenedor:', calendarContainer);
@@ -1855,14 +1889,48 @@ export class SesionesModule {
     // Actualizar eventos del calendario cuando cambian las sesiones
     updateCalendarEvents() {
         if (this.calendar) {
-            const events = this.sesiones.map(sesion => ({
-                id: sesion.id,
-                title: `${sesion.paciente_nombre} - ${sesion.tratamiento}`,
-                start: `${sesion.fecha_planificada}T${sesion.hora_planificada}`,
-                end: this.calculateEndTime(sesion.fecha_planificada, sesion.hora_planificada, sesion.duracion),
-                backgroundColor: this.getEventColor(sesion.estado),
-                extendedProps: sesion
-            }));
+            const events = this.sesiones.map(sesion => {
+                // Extraer fecha y hora de fecha_planificada si es necesario
+                let fecha, hora;
+                
+                if (sesion.fecha_planificada) {
+                    if (typeof sesion.fecha_planificada === 'string' && sesion.fecha_planificada.includes(' ')) {
+                        // Si fecha_planificada contiene fecha y hora (formato: "2025-08-23 08:00:00")
+                        const [fechaPart, horaPart] = sesion.fecha_planificada.split(' ');
+                        fecha = fechaPart;
+                        hora = horaPart.substring(0, 5); // Tomar solo HH:MM
+                    } else if (sesion.hora_planificada) {
+                        // Si tenemos campos separados
+                        fecha = sesion.fecha_planificada;
+                        hora = sesion.hora_planificada;
+                    } else {
+                        // Solo fecha, usar hora por defecto
+                        fecha = sesion.fecha_planificada;
+                        hora = '09:00';
+                    }
+                }
+                
+                // Calcular duración (usar duración del pack o por defecto)
+                const duracion = sesion.duracion_sesion_min || sesion.duracion || 60;
+                
+                // Crear título descriptivo
+                const pacienteNombre = sesion.paciente_nombres && sesion.paciente_apellidos 
+                    ? `${sesion.paciente_nombres} ${sesion.paciente_apellidos}`
+                    : sesion.paciente_nombre || 'Paciente';
+                
+                const tratamientoNombre = sesion.tratamiento_nombre || sesion.tratamiento || 'Tratamiento';
+                
+                return {
+                    id: sesion.id,
+                    title: `${pacienteNombre} - ${tratamientoNombre}`,
+                    start: `${fecha}T${hora}`,
+                    end: this.calculateEndTime(fecha, hora, duracion),
+                    backgroundColor: this.getEventColor(sesion.estado),
+                    extendedProps: sesion
+                };
+            });
+            
+            console.log('📅 Eventos del calendario generados:', events.length);
             this.calendar.updateEvents(events);
         }
     }
