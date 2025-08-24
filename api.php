@@ -1077,7 +1077,23 @@ function handleBoxes($db, $method, $id, $data) {
     try {
         switch ($method) {
             case 'GET':
-                $result = $db->select("CALL sp_boxes_list()");
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_boxes_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_boxes_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_boxes_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_boxes_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_boxes_delete(?)", [$id]);
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
             default:

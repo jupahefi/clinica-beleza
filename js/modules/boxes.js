@@ -82,7 +82,7 @@ export class BoxesModule {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Nombre">${box.nombre}</td>
-                <td data-label="Sucursal">${box.sucursal?.nombre || 'N/A'}</td>
+                <td data-label="Sucursal">${box.sucursal_nombre || 'N/A'}</td>
                 <td data-label="Descripción">${box.descripcion || 'Sin descripción'}</td>
                 <td data-label="Capacidad">${box.capacidad || 'N/A'}</td>
                 <td data-label="Estado"><span class="status-badge status-${box.estado}">${this.formatearEstado(box.estado)}</span></td>
@@ -110,7 +110,7 @@ export class BoxesModule {
             sucursal_id: parseInt(formData.get('sucursalBox')),
             descripcion: formData.get('descripcionBox') || '',
             capacidad: formData.get('capacidadBox') ? parseInt(formData.get('capacidadBox')) : null,
-            estado: formData.get('estadoBox') || 'activo'
+            activo: formData.get('estadoBox') === 'activo'
         };
         
         const boxId = formData.get('boxId');
@@ -152,7 +152,7 @@ export class BoxesModule {
         form.querySelector('[name="sucursalBox"]').value = box.sucursal_id || '';
         form.querySelector('[name="descripcionBox"]').value = box.descripcion || '';
         form.querySelector('[name="capacidadBox"]').value = box.capacidad || '';
-        form.querySelector('[name="estadoBox"]').value = box.estado;
+        form.querySelector('[name="estadoBox"]').value = box.activo ? 'activo' : 'inactivo';
         
         // Cambiar texto del botón
         const submitBtn = form.querySelector('button[type="submit"]');

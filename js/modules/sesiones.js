@@ -1840,7 +1840,7 @@ export class SesionesModule {
             boxes.forEach(box => {
                 const option = document.createElement('option');
                 option.value = box.id.toString();
-                option.textContent = `${box.nombre} - ${box.estado}`;
+                option.textContent = `${box.nombre} - ${box.activo ? 'Activo' : 'Inactivo'}`;
                 // Guardar sucursal_id como data attribute para uso posterior
                 option.setAttribute('data-sucursal-id', box.sucursal_id);
                 select.appendChild(option);

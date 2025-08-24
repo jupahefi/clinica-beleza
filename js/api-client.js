@@ -494,7 +494,13 @@ export const boxesAPI = {
     getAll: () => get('boxes'),
     
     // Crear box
-    create: (box) => post('boxes', box)
+    create: (box) => post('boxes', box),
+    
+    // Actualizar box
+    update: (id, box) => put(`boxes/${id}`, box),
+    
+    // Eliminar box
+    delete: (id) => del(`boxes/${id}`)
 };
 
 export const profesionalesAPI = {

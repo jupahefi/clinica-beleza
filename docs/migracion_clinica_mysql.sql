@@ -194,11 +194,13 @@ CREATE TABLE IF NOT EXISTS box (
   sucursal_id BIGINT NOT NULL,
   nombre VARCHAR(80) NOT NULL,
   descripcion TEXT NOT NULL,
+  capacidad INT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CALL AddIndexIfNotExists('ix_box_sucursal', 'box', 'sucursal_id', FALSE);
+CALL AddCheckConstraintIfNotExists('box', 'ck_box_sucursal_required', 'sucursal_id IS NOT NULL');
 
 CREATE TABLE IF NOT EXISTS usuario (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -2958,11 +2960,30 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- BOX-001: Obtener box por ID
+DELIMITER $$
+CREATE PROCEDURE sp_boxes_get(IN p_id BIGINT)
+BEGIN
+    SELECT b.*, s.nombre as sucursal_nombre,
+           CASE 
+               WHEN b.activo = TRUE THEN 'activo'
+               ELSE 'inactivo'
+           END as estado
+    FROM box b
+    JOIN sucursal s ON b.sucursal_id = s.id
+    WHERE b.id = p_id;
+END$$
+DELIMITER ;
+
 -- BOX-002: Listar boxes
 DELIMITER $$
 CREATE PROCEDURE sp_boxes_list()
 BEGIN
-    SELECT b.*, s.nombre as sucursal_nombre
+    SELECT b.*, s.nombre as sucursal_nombre,
+           CASE 
+               WHEN b.activo = TRUE THEN 'activo'
+               ELSE 'inactivo'
+           END as estado
     FROM box b
     JOIN sucursal s ON b.sucursal_id = s.id
     ORDER BY s.nombre, b.nombre;
@@ -4030,13 +4051,13 @@ CREATE PROCEDURE sp_boxes_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO box (
-        numero, sucursal_id, estado, observaciones, 
+        nombre, sucursal_id, descripcion, capacidad, 
         activo, fecha_creacion
     ) VALUES (
-        JSON_EXTRACT(p_data, '$.numero'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
         JSON_EXTRACT(p_data, '$.sucursal_id'),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        JSON_EXTRACT(p_data, '$.capacidad'),
         COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
         NOW()
     );
@@ -4047,19 +4068,18 @@ END$$
 CREATE PROCEDURE sp_boxes_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE box SET
-        numero = COALESCE(JSON_EXTRACT(p_data, '$.numero'), numero),
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
         sucursal_id = COALESCE(JSON_EXTRACT(p_data, '$.sucursal_id'), sucursal_id),
-        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
-        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
-        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
-        fecha_actualizacion = NOW()
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        capacidad = COALESCE(JSON_EXTRACT(p_data, '$.capacidad'), capacidad),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo)
     WHERE id = p_id;
     SELECT * FROM box WHERE id = p_id;
 END$$
 
 CREATE PROCEDURE sp_boxes_delete(IN p_id INT)
 BEGIN
-    UPDATE box SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    UPDATE box SET activo = FALSE WHERE id = p_id;
     SELECT 'Box eliminado' as mensaje;
 END$$
 
