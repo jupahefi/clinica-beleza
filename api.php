@@ -512,7 +512,7 @@ function handleVentas($db, $method, $id, $data) {
                     $tratamiento = $db->selectOne("CALL sp_tratamientos_get(?)", [$tratamientoId]);
                     if ($tratamiento && stripos($tratamiento['nombre'], 'EVALUACION') !== false) {
                         // Es una venta de evaluación
-                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?)", [
+                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
                             $data['ficha_id'],
                             $data['tratamiento_id'],
                             $data['pack_id'] ?? null,
@@ -522,9 +522,15 @@ function handleVentas($db, $method, $id, $data) {
                             $data['genero'],
                             $data['genero_indicado_por']
                         ]);
+                        
+                        // Obtener el ID de la venta creada
+                        $ventaId = $db->selectOne("SELECT @venta_id as id");
+                        if ($ventaId) {
+                            $result = $db->selectOne("SELECT * FROM venta WHERE id = ?", [$ventaId['id']]);
+                        }
                     } else {
                         // Es una venta normal
-                        $result = $db->selectOne("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+                        $result = $db->selectOne("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
                             $data['ficha_id'],
                             $data['evaluacion_id'] ?? null,
                             $data['ficha_especifica_id'] ?? null,
@@ -536,6 +542,12 @@ function handleVentas($db, $method, $id, $data) {
                             $data['genero'],
                             $data['genero_indicado_por']
                         ]);
+                        
+                        // Obtener el ID de la venta creada
+                        $ventaId = $db->selectOne("SELECT @venta_id as id");
+                        if ($ventaId) {
+                            $result = $db->selectOne("SELECT * FROM venta WHERE id = ?", [$ventaId['id']]);
+                        }
                     }
                 } else {
                     throw new Exception('ID de tratamiento es obligatorio');
