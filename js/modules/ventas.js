@@ -179,21 +179,14 @@ class VentasModule {
             packsDiv.style.display = "block";
             this.mostrarSugerenciasOfertas(tratamiento);
             
-            // Mostrar TODOS los packs con formato correcto
+            // Mostrar TODOS los packs con precio por sesión
             tratamiento.packs.forEach((pack, idx) => {
                 const option = document.createElement('option');
                 option.value = idx;
                 const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : '';
+                const precioPorSesion = pack.sesiones_incluidas ? (pack.precio_total / pack.sesiones_incluidas) : pack.precio_total;
                 
-                // Formatear precio con oferta si existe
-                let precioTexto = '';
-                if (pack.descuento_aplicable && pack.descuento_aplicable > 0) {
-                    precioTexto = ` - $${pack.precio_con_descuento.toLocaleString()} (${pack.descuento_aplicable}% OFF)`;
-                } else {
-                    precioTexto = ` - $${pack.precio_total.toLocaleString()}`;
-                }
-                
-                option.textContent = `${pack.nombre}${sesionesInfo}${precioTexto}`;
+                option.textContent = `${pack.nombre}${sesionesInfo} - $${precioPorSesion.toLocaleString()}/sesión`;
                 packSelect.appendChild(option);
             });
             console.log(`[VENTAS] Packs cargados para tratamiento: ${tratamiento.nombre} (${tratamiento.packs.length} packs)`);
@@ -224,15 +217,17 @@ class VentasModule {
         html += '<div class="ofertas-grid">';
         packsConOfertas.forEach((pack, index) => {
             const descuento = pack.descuento_aplicable;
-            const ahorro = pack.precio_total - pack.precio_con_descuento;
+            const precioPorSesion = pack.sesiones_incluidas ? (pack.precio_total / pack.sesiones_incluidas) : pack.precio_total;
+            const precioConOferta = pack.sesiones_incluidas ? (precioPorSesion * (1 - descuento / 100)) : (pack.precio_total * (1 - descuento / 100));
+            const ahorro = pack.sesiones_incluidas ? (precioPorSesion - precioConOferta) : (pack.precio_total - (pack.precio_total * (1 - descuento / 100)));
             html += `
                 <div class="oferta-card">
                     <h5>${pack.nombre}</h5>
                     <p class="sesiones">${pack.sesiones_incluidas || 'N/A'} sesiones requeridas</p>
-                    <p class="precio-regular">$${pack.precio_total.toLocaleString()}</p>
-                    <p class="precio-oferta">$${pack.precio_con_descuento.toLocaleString()}</p>
+                    <p class="precio-regular">$${precioPorSesion.toLocaleString()}/sesión</p>
+                    <p class="precio-oferta">$${precioConOferta.toLocaleString()}/sesión</p>
                     <p class="descuento">${descuento}% OFF</p>
-                    <p class="ahorro">Ahorras $${ahorro.toLocaleString()}</p>
+                    <p class="ahorro">Ahorras $${ahorro.toLocaleString()}/sesión</p>
                     <button class="btn btn-success btn-sm tomar-oferta" data-pack-index="${index}" data-sesiones="${pack.sesiones_incluidas || 1}">
                         <i class="fas fa-check"></i> Tomar Oferta
                     </button>
@@ -302,43 +297,48 @@ class VentasModule {
         if (packIndex !== "") {
             const pack = tratamiento.packs[packIndex];
             const precioTotal = pack.precio_total || 0;
-            const precioConDescuento = pack.precio_con_descuento || precioTotal;
+            const precioPorSesion = pack.sesiones_incluidas ? (precioTotal / pack.sesiones_incluidas) : precioTotal;
             const descuentoAplicable = pack.descuento_aplicable || 0;
             const sesionesRequeridas = pack.sesiones_incluidas || 1;
             
+            // Calcular precio base por sesión
+            precio = sesiones * precioPorSesion;
+            
             // Aplicar oferta solo si se alcanza el número de sesiones requerido
             if (sesiones >= sesionesRequeridas && descuentoAplicable > 0) {
-                precio = precioConDescuento;
-                const ahorro = precioTotal - precioConDescuento;
+                const descuento = (precio * descuentoAplicable) / 100;
+                precio = precio - descuento;
                 detalle = `Pack seleccionado: ${pack.nombre} (${sesionesRequeridas} sesiones requeridas)`;
-                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuentoAplicable}% OFF (Ahorras $${ahorro.toLocaleString()})`;
-                detalle += `<br>Precio regular: $${precioTotal.toLocaleString()} → <strong>Precio oferta: $${precioConDescuento.toLocaleString()}</strong>`;
+                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuentoAplicable}% OFF (Ahorras $${descuento.toLocaleString()})`;
+                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()} x ${sesiones} sesiones = $${(sesiones * precioPorSesion).toLocaleString()}`;
+                detalle += `<br><strong>Precio final con oferta: $${precio.toLocaleString()}</strong>`;
             } else {
-                precio = precioTotal;
                 detalle = `Pack seleccionado: ${pack.nombre}`;
                 if (sesiones < sesionesRequeridas && descuentoAplicable > 0) {
                     detalle += `<br>⚠️ <em>Oferta disponible con ${sesionesRequeridas} sesiones (actual: ${sesiones})</em>`;
                 }
-                detalle += `<br>Precio: $${precioTotal.toLocaleString()}`;
+                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()} x ${sesiones} sesiones = $${precio.toLocaleString()}`;
             }
         } else {
             // Tratamiento individual (sin pack)
             const precioPorSesion = tratamiento.precio_por_sesion || 0;
-            const precioConDescuento = tratamiento.precio_con_descuento || precioPorSesion;
             const descuentoAplicable = tratamiento.descuento_aplicable || 0;
+            
+            // Calcular precio base por sesión
+            precio = sesiones * precioPorSesion;
             
             // Para tratamientos individuales, aplicar oferta si existe
             if (descuentoAplicable > 0) {
-                precio = sesiones * precioConDescuento;
-                const ahorro = (precioPorSesion - precioConDescuento) * sesiones;
+                const descuento = (precio * descuentoAplicable) / 100;
+                precio = precio - descuento;
                 detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
                 detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuentoAplicable}% OFF`;
-                detalle += `<br>Precio por sesión: $${precioConDescuento.toLocaleString()} (regular: $${precioPorSesion.toLocaleString()})`;
-                detalle += `<br>Ahorras: $${ahorro.toLocaleString()}`;
+                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()} x ${sesiones} sesiones = $${(sesiones * precioPorSesion).toLocaleString()}`;
+                detalle += `<br><strong>Precio final con oferta: $${precio.toLocaleString()}</strong>`;
+                detalle += `<br>Ahorras: $${descuento.toLocaleString()}`;
             } else {
-                precio = sesiones * precioPorSesion;
                 detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
-                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()}`;
+                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()} x ${sesiones} sesiones = $${precio.toLocaleString()}`;
             }
             
             console.log(`[VENTAS] Precio calculado para tratamiento individual: ${tratamiento.nombre}, ${sesiones} sesiones, precio: $${precio}`);
