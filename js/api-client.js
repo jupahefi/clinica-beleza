@@ -448,7 +448,13 @@ export const zonasAPI = {
 
 export const packsAPI = {
     // Obtener packs de un tratamiento
-    getByTratamientoId: (tratamientoId) => get('packs', { tratamiento_id: tratamientoId }),
+    getByTratamientoId: (tratamientoId, genero = null) => {
+        const params = { tratamiento_id: tratamientoId };
+        if (genero) {
+            params.genero = genero;
+        }
+        return get('packs', params);
+    },
     
     // Obtener pack por ID
     getById: (id) => get(`packs/${id}`),

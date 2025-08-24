@@ -497,6 +497,10 @@ function handleVentas($db, $method, $id, $data) {
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
             case 'POST':
+                // Validar que se incluya género en la venta
+                if (!isset($data['genero']) || !isset($data['genero_indicado_por'])) {
+                    throw new Exception('Género y profesional que lo indicó son obligatorios para crear una venta');
+                }
                 $result = $db->selectOne("CALL sp_ventas_create(?)", [json_encode($data)]);
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
@@ -920,8 +924,9 @@ function handlePacks($db, $method, $id, $data) {
                 } else {
                     // Verificar si hay parámetros de consulta para filtrar por tratamiento
                     $tratamiento_id = $_GET['tratamiento_id'] ?? null;
+                    $genero = $_GET['genero'] ?? 'U';
                     if ($tratamiento_id) {
-                        $result = $db->select("CALL sp_packs_by_tratamiento(?)", [$tratamiento_id]);
+                        $result = $db->select("CALL sp_packs_by_tratamiento(?, ?)", [$tratamiento_id, $genero]);
                     } else {
                         $result = $db->select("CALL sp_packs_list()");
                     }

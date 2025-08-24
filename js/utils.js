@@ -98,7 +98,22 @@ export function fechaActual() {
  * Obtiene la fecha actual en formato para input date
  */
 export function fechaActualInput() {
-  return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Muestra una notificación al usuario
+ * @param {string} mensaje - Mensaje a mostrar
+ * @param {string} tipo - Tipo de notificación (info, success, warning, error)
+ */
+export function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Implementación de notificaciones
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
+    
+    // Si existe una función de notificación global, usarla
+    if (typeof window.mostrarNotificacion === 'function') {
+        window.mostrarNotificacion(mensaje, tipo);
+    }
 }
 
 /**

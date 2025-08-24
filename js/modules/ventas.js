@@ -13,6 +13,7 @@ class VentasModule {
         this.packs = [];
         this.ofertas = [];
         this.clienteSeleccionado = null;
+        this.generoSeleccionado = null;
         this.historial = [];
         this.init();
     }
@@ -26,20 +27,12 @@ class VentasModule {
 
     async cargarDatos() {
         try {
-            // Cargar tratamientos con precios por sesión
+            // Cargar tratamientos con precios por sesión (sin género inicialmente)
             this.tratamientos = await tratamientosAPI.getAll();
             console.log('[VENTAS] Tratamientos cargados:', this.tratamientos);
             
-            // Cargar packs para cada tratamiento
-            for (const tratamiento of this.tratamientos) {
-                try {
-                    tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id);
-                    console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre}:`, tratamiento.packs);
-                } catch (packError) {
-                    console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, packError);
-                    tratamiento.packs = [];
-                }
-            }
+            // Los packs se cargarán cuando se seleccione el género
+            console.log('[VENTAS] Packs se cargarán cuando se seleccione género');
             
             // Cargar ofertas aplicables
             try {
@@ -108,6 +101,30 @@ class VentasModule {
     }
 
     configurarEventos() {
+        // Eventos para género
+        const radioGeneroM = document.getElementById('generoM');
+        const radioGeneroF = document.getElementById('generoF');
+        
+        if (radioGeneroM) {
+            radioGeneroM.addEventListener('change', () => {
+                this.generoSeleccionado = 'M';
+                console.log('[VENTAS] Género seleccionado: Masculino');
+                this.cargarPacksPorGenero();
+                this.mostrarOpciones();
+                this.calcularPrecio();
+            });
+        }
+        
+        if (radioGeneroF) {
+            radioGeneroF.addEventListener('change', () => {
+                this.generoSeleccionado = 'F';
+                console.log('[VENTAS] Género seleccionado: Femenino');
+                this.cargarPacksPorGenero();
+                this.mostrarOpciones();
+                this.calcularPrecio();
+            });
+        }
+
         const selectTratamiento = document.getElementById('tratamiento');
         if (selectTratamiento) {
             selectTratamiento.addEventListener('change', () => {
@@ -147,6 +164,27 @@ class VentasModule {
         }
     }
 
+    async cargarPacksPorGenero() {
+        if (!this.generoSeleccionado) return;
+        
+        try {
+            // Cargar packs para cada tratamiento según el género
+            for (const tratamiento of this.tratamientos) {
+                try {
+                    tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
+                    console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre} (${this.generoSeleccionado}):`, tratamiento.packs);
+                } catch (packError) {
+                    console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, packError);
+                    tratamiento.packs = [];
+                }
+            }
+            console.log(`[VENTAS] Packs cargados para género ${this.generoSeleccionado}`);
+        } catch (error) {
+            console.error('[VENTAS] Error cargando packs por género:', error);
+            mostrarNotificacion('Error cargando packs por género', 'error');
+        }
+    }
+
     cargarTratamientosEnSelect() {
         const selectTratamiento = document.getElementById('tratamiento');
         if (!selectTratamiento) return;
@@ -169,6 +207,12 @@ class VentasModule {
         const packSelect = document.getElementById('pack');
 
         if (!selectTratamiento || !packsDiv || !sesionesDiv || !packSelect) return;
+
+        // Validar que se haya seleccionado género
+        if (!this.generoSeleccionado) {
+            mostrarNotificacion('Selecciona el género para el tratamiento primero', 'warning');
+            return;
+        }
 
         const tratamientoId = parseInt(selectTratamiento.value);
         const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
@@ -372,6 +416,11 @@ class VentasModule {
             return;
         }
 
+        if (!this.generoSeleccionado) {
+            mostrarNotificacion('[VENTAS] Selecciona el género para el tratamiento.', 'warning');
+            return;
+        }
+
         const venta = this.calcularPrecio();
         if (!venta) {
             mostrarNotificacion('[VENTAS] Selecciona un tratamiento válido.', 'warning');
@@ -391,7 +440,9 @@ class VentasModule {
                     pack_id: document.getElementById('pack').value || null,
                     cantidad_sesiones: venta.sesiones,
                     precio_lista: venta.precio,
-                    total_pagado: venta.precio
+                    total_pagado: venta.precio,
+                    genero: this.generoSeleccionado,
+                    genero_indicado_por: getCurrentProfesionalId()
                 });
 
                 this.historial.push({
@@ -487,7 +538,9 @@ class VentasModule {
                     tratamiento_id: tratamientoId,
                     cantidad_sesiones: venta.sesiones,
                     precio_lista: venta.precio,
-                    total_pagado: venta.precio
+                    total_pagado: venta.precio,
+                    genero: this.generoSeleccionado,
+                    genero_indicado_por: getCurrentProfesionalId()
                 });
 
                 this.historial.push({
@@ -579,6 +632,13 @@ class VentasModule {
         if (clienteSelect && typeof $ !== 'undefined' && $.fn.select2) {
             $(clienteSelect).val(null).trigger('change');
         }
+        
+        // Limpiar género
+        const radioGeneroM = document.getElementById('generoM');
+        const radioGeneroF = document.getElementById('generoF');
+        if (radioGeneroM) radioGeneroM.checked = false;
+        if (radioGeneroF) radioGeneroF.checked = false;
+        
         const selectTratamiento = document.getElementById('tratamiento');
         const packSelect = document.getElementById('pack');
         const inputSesiones = document.getElementById('cantidadSesiones');
@@ -595,6 +655,7 @@ class VentasModule {
         if (packsDiv) packsDiv.style.display = 'none';
 
         this.clienteSeleccionado = null;
+        this.generoSeleccionado = null;
         console.log('[VENTAS] Formulario de venta limpiado');
         mostrarNotificacion('Formulario de venta limpiado', 'info');
     }
