@@ -2669,8 +2669,8 @@ BEGIN
     SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
-    JOIN evaluacion e ON v.evaluacion_id = e.id
-    ORDER BY v.fecha_venta DESC;
+    LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    ORDER BY v.fecha_creacion DESC;
 END$$
 DELIMITER ;
 
@@ -2681,9 +2681,9 @@ BEGIN
     SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
-    JOIN evaluacion e ON v.evaluacion_id = e.id
+    LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
     WHERE v.estado = 'COMPLETADA'
-    ORDER BY v.fecha_venta DESC;
+    ORDER BY v.fecha_creacion DESC;
 END$$
 DELIMITER ;
 
@@ -2711,7 +2711,7 @@ BEGIN
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
-    ORDER BY s.fecha_sesion DESC;
+    ORDER BY s.fecha_planificada DESC;
 END$$
 DELIMITER ;
 
@@ -2727,8 +2727,8 @@ BEGIN
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
-    WHERE s.estado IN ('AGENDADA', 'CONFIRMADA')
-    ORDER BY s.fecha_sesion ASC;
+    WHERE s.estado IN ('planificada', 'confirmada')
+    ORDER BY s.fecha_planificada ASC;
 END$$
 DELIMITER ;
 
@@ -2738,8 +2738,9 @@ CREATE PROCEDURE sp_ofertas_list()
 BEGIN
     SELECT o.*, 
            CASE 
-               WHEN o.tipo = 'PACK' THEN (SELECT nombre FROM pack WHERE id = o.pack_id)
-               WHEN o.tipo = 'TRATAMIENTO' THEN (SELECT nombre FROM tratamiento WHERE id = o.tratamiento_id)
+               WHEN o.tipo = 'pack_temporal' THEN (SELECT GROUP_CONCAT(p.nombre SEPARATOR ', ') FROM oferta_pack op JOIN pack p ON op.pack_id = p.id WHERE op.oferta_id = o.id)
+               WHEN o.tipo = 'descuento_manual' THEN (SELECT GROUP_CONCAT(t.nombre SEPARATOR ', ') FROM oferta_tratamiento ot JOIN tratamiento t ON ot.tratamiento_id = t.id WHERE ot.oferta_id = o.id)
+               WHEN o.tipo = 'combo_packs' THEN (SELECT GROUP_CONCAT(p.nombre SEPARATOR ', ') FROM oferta_combo oc JOIN oferta_combo_pack ocp ON oc.id = ocp.oferta_combo_id JOIN pack p ON ocp.pack_id = p.id WHERE oc.oferta_id = o.id)
                ELSE NULL
            END as elemento_nombre
     FROM oferta o
