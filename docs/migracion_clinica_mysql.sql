@@ -3098,97 +3098,97 @@ CALL sp_crear_profesional_completo(
 
 -- ---------- PACKS DE TRATAMIENTOS FACIAL ----------
 -- Usando SP para crear packs faciales con validaciones
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, JSON_ARRAY(), JSON_OBJECT(), 39900, 24900, '2024-01-01', '2024-12-31', @pack_limpieza_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 250000, 199000, '2024-01-01', '2024-12-31', @pack_radiofrecuencia_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 399000, 299000, '2024-01-01', '2024-12-31', @pack_criolipolisis_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, JSON_ARRAY(), JSON_OBJECT(), 299000, 299000, '2024-01-01', '2024-12-31', @pack_hifu_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 199000, 149900, '2024-01-01', '2024-12-31', @pack_prp_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, JSON_ARRAY(), JSON_OBJECT(), 450000, 390000, '2024-01-01', '2024-12-31', @pack_radiofrecuencia_fraccionada_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 350000, 250000, '2024-01-01', '2024-12-31', @pack_tecnologia_plasmatica_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 189000, 139900, '2024-01-01', '2024-12-31', @pack_pink_glow_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, JSON_ARRAY(), JSON_OBJECT(), 39900, 24900, '2025-01-01', '2025-12-31', @pack_limpieza_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 250000, 199000, '2025-01-01', '2025-12-31', @pack_radiofrecuencia_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 399000, 299000, '2025-01-01', '2025-12-31', @pack_criolipolisis_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, JSON_ARRAY(), JSON_OBJECT(), 299000, 299000, '2025-01-01', '2025-12-31', @pack_hifu_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 199000, 149900, '2025-01-01', '2025-12-31', @pack_prp_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, JSON_ARRAY(), JSON_OBJECT(), 450000, 390000, '2025-01-01', '2025-12-31', @pack_radiofrecuencia_fraccionada_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 350000, 250000, '2025-01-01', '2025-12-31', @pack_tecnologia_plasmatica_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 189000, 139900, '2025-01-01', '2025-12-31', @pack_pink_glow_id);
 
 -- ---------- PACKS DE TRATAMIENTOS CAPILAR ----------
 -- Usando SP para crear packs capilares con validaciones
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_carboxiterapia_capilar_id);
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_prp_capilar_id);
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2024-01-01', '2024-12-31', @pack_fotobiomodulacion_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_carboxiterapia_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_prp_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_fotobiomodulacion_capilar_id);
 
 -- ---------- PACKS DE TRATAMIENTOS DEPILACION ----------
 -- Usando SP para crear packs de depilación con validaciones
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo', 'Depilacion laser cuerpo completo', 120, 6, 
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000),
- 499000, 499000, '2024-01-01', '2024-12-31', @pack_cuerpo_completo_id);
+ 499000, 499000, '2025-01-01', '2025-12-31', @pack_cuerpo_completo_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo Sin Rostro', 'Depilacion laser cuerpo completo sin rostro', 90, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000),
- 399000, 399000, '2024-01-01', '2024-12-31', @pack_cuerpo_sin_rostro_id);
+ 399000, 399000, '2025-01-01', '2025-12-31', @pack_cuerpo_sin_rostro_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Rostro Completo', 'Depilacion laser rostro completo', 45, 8,
  JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
  JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000),
- 149900, 149900, '2024-01-01', '2024-12-31', @pack_rostro_completo_id);
+ 149900, 149900, '2025-01-01', '2025-12-31', @pack_rostro_completo_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Full Body', 'Depilacion laser full body: piernas, brazos, axilas, rebaje, intergluteo', 75, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
- 259000, 199000, '2024-01-01', '2024-12-31', @pack_full_body_id);
+ 259000, 199000, '2025-01-01', '2025-12-31', @pack_full_body_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Semi Full', 'Depilacion laser semi full: piernas, axilas, rebaje, intergluteo', 60, 6,
  JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
- 199000, 159000, '2024-01-01', '2024-12-31', @pack_semi_full_id);
+ 199000, 159000, '2025-01-01', '2025-12-31', @pack_semi_full_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full', 'Depilacion laser bikini full: rebaje e intergluteo', 30, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000),
- 99000, 79900, '2024-01-01', '2024-12-31', @pack_bikini_full_id);
+ 99000, 79900, '2025-01-01', '2025-12-31', @pack_bikini_full_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full + Axilas', 'Depilacion laser bikini full con axilas', 35, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000),
- 120000, 99000, '2024-01-01', '2024-12-31', @pack_bikini_axilas_id);
+ 120000, 99000, '2025-01-01', '2025-12-31', @pack_bikini_axilas_id);
 
 -- ---------- PACKS DE EVALUACIÓN ----------
 -- Usando SP para crear packs de evaluación con validaciones
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Depilación', 'Evaluación médica para depilación láser', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_depilacion_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_depilacion_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Corporal/Facial', 'Evaluación médica para tratamientos corporales y faciales', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_corporal_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_corporal_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Completa', 'Evaluación médica para depilación y tratamientos corporales/faciales', 45, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2024-01-01', '2024-12-31', @pack_evaluacion_completa_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_completa_id);
 
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
 -- Usando SP para crear precios de tratamientos con validaciones
-CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, 0, '2024-01-01', '2024-12-31', @precio_evaluacion_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2024-01-01', '2024-12-31', @precio_facial_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2024-01-01', '2024-12-31', @precio_capilar_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2024-01-01', '2024-12-31', @precio_depilacion_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, 0, '2025-01-01', '2025-12-31', @precio_evaluacion_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2025-01-01', '2025-12-31', @precio_facial_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2025-01-01', '2025-12-31', @precio_capilar_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2025-01-01', '2025-12-31', @precio_depilacion_id);
 
 -- ---------- OFERTAS DE PACKS (PROMOCIONES) ----------
 -- Usando SP para crear ofertas con validaciones
 -- Ofertas FACIAL
-CALL sp_crear_oferta_pack_temporal('Promo Limpieza Facial', 37.5, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_limpieza_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Facial', 20.4, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_radiofrecuencia_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Criolipolisis Facial', 25.1, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_criolipolisis_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Plasma Rico en Plaquetas', 24.7, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_prp_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Fraccionada', 13.3, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_radiofrecuencia_fraccionada_id);
-CALL sp_crear_oferta_pack_temporal('Promo Tecnologia Plasmatica', 28.6, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_tecnologia_plasmatica_id);
-CALL sp_crear_oferta_pack_temporal('Promo Pink Glow', 26.0, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_pink_glow_id);
+CALL sp_crear_oferta_pack_temporal('Promo Limpieza Facial', 37.5, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_limpieza_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Facial', 20.4, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_radiofrecuencia_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Criolipolisis Facial', 25.1, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_criolipolisis_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Plasma Rico en Plaquetas', 24.7, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_prp_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Fraccionada', 13.3, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_radiofrecuencia_fraccionada_id);
+CALL sp_crear_oferta_pack_temporal('Promo Tecnologia Plasmatica', 28.6, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_tecnologia_plasmatica_id);
+CALL sp_crear_oferta_pack_temporal('Promo Pink Glow', 26.0, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_pink_glow_id);
 
 -- Ofertas CAPILAR
-CALL sp_crear_oferta_pack_temporal('Promo Carboxiterapia Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_carboxiterapia_capilar_id);
-CALL sp_crear_oferta_pack_temporal('Promo PRP Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_prp_capilar_id);
-CALL sp_crear_oferta_pack_temporal('Promo Fotobiomodulacion Capilar', 13.8, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_fotobiomodulacion_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo Carboxiterapia Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_carboxiterapia_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo PRP Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_prp_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo Fotobiomodulacion Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_fotobiomodulacion_capilar_id);
 
 -- Ofertas DEPILACION
-CALL sp_crear_oferta_pack_temporal('Promo Full Body', 23.2, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_full_body_id);
-CALL sp_crear_oferta_pack_temporal('Promo Semi Full', 20.1, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_semi_full_id);
-CALL sp_crear_oferta_pack_temporal('Promo Bikini Full', 19.3, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_bikini_full_id);
-CALL sp_crear_oferta_pack_temporal('Promo Bikini Full + Axilas', 17.5, '2024-01-01', '2024-12-31', TRUE, 1, @oferta_bikini_axilas_id);
+CALL sp_crear_oferta_pack_temporal('Promo Full Body', 23.2, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_full_body_id);
+CALL sp_crear_oferta_pack_temporal('Promo Semi Full', 20.1, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_semi_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full', 19.3, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_bikini_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full + Axilas', 17.5, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_bikini_axilas_id);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS FACIAL ----------
 -- Usando SP para asociar ofertas con packs
