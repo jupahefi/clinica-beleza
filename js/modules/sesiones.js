@@ -4,7 +4,7 @@
  */
 
 // Las zonas se obtienen desde la API, no desde constantes
-import { formatCurrency, formatDate, mostrarNotificacion } from '../utils.js';
+import { formatCurrency, formatDate, mostrarNotificacion, getCurrentProfesionalId } from '../utils.js';
 import { sesionesAPI, fichasAPI } from '../api-client.js';
 import '../calendar.js';
 
@@ -34,6 +34,8 @@ export class SesionesModule {
             console.log('✅ Select de ventas cargado');
             await this.cargarBoxesSelect();
             console.log('✅ Select de boxes cargado');
+            await this.cargarProfesionalesSelect();
+            console.log('✅ Select de profesionales cargado');
         } catch (error) {
             console.error('❌ Error inicializando módulo de sesiones:', error);
             const errorMessage = error.message || 'Error desconocido inicializando módulo de sesiones';
@@ -369,12 +371,13 @@ export class SesionesModule {
         const formData = this.getSesionFormData();
         console.log('📋 Datos del formulario:', formData);
         
-        if (!formData.venta_id || !formData.fecha_planificada) {
+        if (!formData.venta_id || !formData.fecha_planificada || !formData.profesional_id) {
             console.error('❌ Campos obligatorios faltantes:', {
                 venta_id: formData.venta_id,
-                fecha_planificada: formData.fecha_planificada
+                fecha_planificada: formData.fecha_planificada,
+                profesional_id: formData.profesional_id
             });
-            mostrarNotificacion('Por favor complete todos los campos obligatorios', 'error');
+            mostrarNotificacion('Por favor complete todos los campos obligatorios (paciente, venta, profesional, fecha y hora)', 'error');
             return;
         }
         
@@ -405,6 +408,7 @@ export class SesionesModule {
         const fechaPlanificada = document.getElementById('fechaSesion').value;
         const horaPlanificada = document.getElementById('horaSesion').value;
         const boxId = document.getElementById('boxSesion').value;
+        const profesionalId = document.getElementById('profesionalSesion').value;
         const observaciones = document.getElementById('observacionesSesion').value || '';
         
         console.log('📋 Valores obtenidos del formulario:', {
@@ -412,6 +416,7 @@ export class SesionesModule {
             fechaPlanificada,
             horaPlanificada,
             boxId,
+            profesionalId,
             observaciones
         });
         
@@ -428,7 +433,7 @@ export class SesionesModule {
             numero_sesion: 1, // Primera sesión por defecto
             sucursal_id: 1, // Sucursal principal por defecto
             box_id: boxId,
-            profesional_id: getCurrentProfesionalId(),
+            profesional_id: profesionalId,
             fecha_planificada: fechaPlanificadaCompleta,
             observaciones: observaciones || null // NULL si está vacío
         };
@@ -1672,6 +1677,7 @@ export class SesionesModule {
             const pacienteSelect = document.getElementById('pacienteSesion');
             const ventaSelect = document.getElementById('ventaSesion');
             const boxSelect = document.getElementById('boxSesion');
+            const profesionalSelect = document.getElementById('profesionalSesion');
             
             if (pacienteSelect) {
                 $(pacienteSelect).val(null).trigger('change');
@@ -1683,6 +1689,10 @@ export class SesionesModule {
             
             if (boxSelect) {
                 $(boxSelect).val(null).trigger('change');
+            }
+            
+            if (profesionalSelect) {
+                $(profesionalSelect).val(null).trigger('change');
             }
         }
         
@@ -1826,6 +1836,54 @@ export class SesionesModule {
             console.error('❌ Error cargando boxes:', error);
             const errorMessage = error.message || 'Error desconocido cargando boxes';
             mostrarNotificacion(`Error cargando boxes: ${errorMessage}`, 'error');
+        }
+    }
+    
+    async cargarProfesionalesSelect() {
+        try {
+            console.log('👨‍⚕️ Cargando select de profesionales...');
+            const select = document.getElementById('profesionalSesion');
+            if (!select) {
+                console.error('❌ No se encontró el select de profesionales');
+                return;
+            }
+            
+            // Importar profesionalesAPI dinámicamente
+            const { profesionalesAPI } = await import('../api-client.js');
+            const profesionales = await profesionalesAPI.getAll();
+            
+            console.log('👨‍⚕️ Profesionales obtenidos:', profesionales.length);
+            
+            select.innerHTML = '<option value="">Seleccionar profesional...</option>';
+            
+            profesionales.forEach(profesional => {
+                const option = document.createElement('option');
+                option.value = profesional.id.toString();
+                option.textContent = `${profesional.nombre} ${profesional.apellido}`;
+                select.appendChild(option);
+            });
+            
+            // Configurar Select2 para profesionales con búsqueda sin mínimo de caracteres
+            $(select).select2({
+                placeholder: 'Seleccionar profesional...',
+                allowClear: true,
+                minimumInputLength: 0, // No requiere escribir al menos 2 letras
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "No se encontraron profesionales";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+            
+            console.log('✅ Select de profesionales cargado exitosamente:', profesionales.length);
+        } catch (error) {
+            console.error('❌ Error cargando profesionales:', error);
+            const errorMessage = error.message || 'Error desconocido cargando profesionales';
+            mostrarNotificacion(`Error cargando profesionales: ${errorMessage}`, 'error');
         }
     }
     
@@ -2006,3 +2064,8 @@ export const sesionesModule = new SesionesModule();
 
 // Hacer disponible globalmente para los botones
 window.sesionesModule = sesionesModule;
+
+// Función global para limpiar formulario de sesión
+window.limpiarFormularioSesion = function() {
+    sesionesModule.limpiarFormularioSesion();
+};
