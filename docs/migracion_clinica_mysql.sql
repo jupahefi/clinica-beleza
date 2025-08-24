@@ -2765,7 +2765,20 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_ofertas_aplicables_list()
 BEGIN
-    SELECT * FROM v_ofertas_aplicables
+    SELECT 
+        id,
+        nombre,
+        tipo,
+        descripcion,
+        porc_descuento,
+        fecha_inicio,
+        fecha_fin,
+        combinable,
+        activo,
+        prioridad,
+        fecha_creacion,
+        aplicable_hoy
+    FROM v_ofertas_aplicables
     WHERE aplicable_hoy = TRUE
     ORDER BY porc_descuento DESC;
 END$$
