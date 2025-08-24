@@ -822,9 +822,9 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tratamiento debe tener duración válida mayor a 0';
   END IF;
   
-  -- Validar que la fecha_planificada es futura
-  IF NEW.fecha_planificada IS NULL OR NEW.fecha_planificada <= NOW() THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fecha_planificada debe ser futura';
+  -- Validar que la fecha_planificada no sea NULL
+  IF NEW.fecha_planificada IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fecha_planificada no puede ser NULL';
   END IF;
 END$$
 
