@@ -432,7 +432,7 @@ CREATE TABLE IF NOT EXISTS venta (
   descuento_manual_pct DECIMAL(5,2) DEFAULT 0,
   descuento_aplicado_total DECIMAL(12,2) DEFAULT 0,
   total_pagado DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  genero ENUM('M', 'F') NOT NULL,
+  genero ENUM('M', 'F', 'U') NOT NULL,
   genero_indicado_por BIGINT NOT NULL,
   fecha_indicacion_genero TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
@@ -1199,7 +1199,7 @@ CREATE PROCEDURE sp_crear_venta(
     IN p_cantidad_sesiones INT,
     IN p_precio_lista DECIMAL(12,2),
     IN p_descuento_manual_pct DECIMAL(5,2),
-    IN p_genero ENUM('M', 'F'),
+    IN p_genero ENUM('M', 'F', 'U'),
     IN p_genero_indicado_por BIGINT,
     OUT p_venta_id BIGINT
 )
@@ -1230,7 +1230,7 @@ CREATE PROCEDURE sp_crear_venta_evaluacion(
     IN p_cantidad_sesiones INT,
     IN p_precio_lista DECIMAL(12,2),
     IN p_descuento_manual_pct DECIMAL(5,2),
-    IN p_genero ENUM('M', 'F'),
+    IN p_genero ENUM('M', 'F', 'U'),
     IN p_genero_indicado_por BIGINT,
     OUT p_venta_id BIGINT
 )
@@ -2783,7 +2783,7 @@ DELIMITER ;
 
 -- TRA-002: Listar tratamientos
 DELIMITER $$
-CREATE PROCEDURE sp_tratamientos_list(IN p_genero ENUM('M', 'F'))
+CREATE PROCEDURE sp_tratamientos_list(IN p_genero ENUM('M', 'F', 'U'))
 BEGIN
     SELECT 
         t.*,
@@ -2883,7 +2883,7 @@ DELIMITER ;
 
 -- PAC-003: Listar packs por tratamiento
 DELIMITER $$
-CREATE PROCEDURE sp_packs_by_tratamiento(IN p_tratamiento_id INT, IN p_genero ENUM('M', 'F'))
+CREATE PROCEDURE sp_packs_by_tratamiento(IN p_tratamiento_id INT, IN p_genero ENUM('M', 'F', 'U'))
 BEGIN
     SELECT 
         p.*, 
