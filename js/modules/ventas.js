@@ -720,17 +720,27 @@ class VentasModule {
         if (!this.clienteSeleccionado) return;
         try {
             const ventasCliente = await ventasAPI.getByFichaId(this.clienteSeleccionado.id);
+            console.log('[VENTAS] Datos raw de la API:', ventasCliente);
+            
             this.historial = ventasCliente.map(venta => {
+                console.log('[VENTAS] Procesando venta:', venta);
                 // Crear nombre descriptivo del tratamiento
                 let tratamientoNombre = venta.tratamiento_nombre || 'Tratamiento no especificado';
                 if (venta.pack_nombre) {
                     tratamientoNombre = `${tratamientoNombre} - ${venta.pack_nombre}`;
                 }
                 
+                const precioCalculado = parseFloat(venta.total_pagado || venta.precio_lista || 0);
+                console.log('[VENTAS] Precio calculado:', {
+                    total_pagado: venta.total_pagado,
+                    precio_lista: venta.precio_lista,
+                    precio_calculado: precioCalculado
+                });
+                
                 return {
                     id: venta.id,
                     tratamiento: tratamientoNombre,
-                    precio: parseFloat(venta.total_pagado || venta.precio_lista || 0),
+                    precio: precioCalculado,
                     fecha: new Date(venta.fecha_creacion).toLocaleDateString(),
                     detalle: `Sesiones: ${venta.cantidad_sesiones || 1} - Cliente: ${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
                     cliente: `${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
