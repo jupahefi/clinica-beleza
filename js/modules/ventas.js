@@ -146,6 +146,7 @@ class VentasModule {
         if (selectPack) {
             selectPack.addEventListener('change', () => {
                 console.log('[VENTAS] Cambio de pack seleccionado');
+                this.ajustarSesionesSegunPack();
                 this.calcularPrecio();
             });
         }
@@ -228,6 +229,42 @@ class VentasModule {
             console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, error);
             tratamiento.packs = [];
         }
+    }
+
+    ajustarSesionesSegunPack() {
+        const selectPack = document.getElementById('pack');
+        const inputSesiones = document.getElementById('cantidadSesiones');
+        
+        if (!selectPack || !inputSesiones || !selectPack.value) {
+            console.log('[VENTAS] No hay pack seleccionado o elementos no encontrados');
+            return;
+        }
+
+        const selectTratamiento = document.getElementById('tratamiento');
+        if (!selectTratamiento || !selectTratamiento.value) return;
+
+        const tratamientoId = parseInt(selectTratamiento.value);
+        const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
+        
+        if (!tratamiento || !tratamiento.packs) {
+            console.log('[VENTAS] No se encontró el tratamiento o sus packs');
+            return;
+        }
+
+        const packIndex = parseInt(selectPack.value);
+        const pack = tratamiento.packs[packIndex];
+        
+        if (!pack) {
+            console.log('[VENTAS] No se encontró el pack seleccionado');
+            return;
+        }
+
+        // Ajustar automáticamente el número de sesiones al valor del pack
+        const sesionesPack = pack.sesiones_incluidas || 1;
+        inputSesiones.value = sesionesPack;
+        
+        console.log(`[VENTAS] Sesiones ajustadas automáticamente a ${sesionesPack} según el pack "${pack.nombre}"`);
+        mostrarNotificacion(`Sesiones ajustadas automáticamente a ${sesionesPack} según el pack seleccionado`, 'info');
     }
 
     cargarTratamientosEnSelect() {
