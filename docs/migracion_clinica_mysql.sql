@@ -2821,6 +2821,21 @@ BEGIN
     SELECT p.*, t.nombre as tratamiento_nombre
     FROM pack p
     JOIN tratamiento t ON p.tratamiento_id = t.id
+    WHERE p.activo = TRUE AND t.activo = TRUE
+    ORDER BY p.nombre;
+END$$
+DELIMITER ;
+
+-- PAC-003: Listar packs por tratamiento
+DELIMITER $$
+CREATE PROCEDURE sp_packs_by_tratamiento(IN p_tratamiento_id INT)
+BEGIN
+    SELECT p.*, t.nombre as tratamiento_nombre
+    FROM pack p
+    JOIN tratamiento t ON p.tratamiento_id = t.id
+    WHERE p.tratamiento_id = p_tratamiento_id 
+    AND p.activo = TRUE 
+    AND t.activo = TRUE
     ORDER BY p.nombre;
 END$$
 DELIMITER ;

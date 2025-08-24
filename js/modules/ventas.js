@@ -131,13 +131,19 @@ class VentasModule {
         const selectTratamiento = document.getElementById('tratamiento');
         if (!selectTratamiento) return;
         selectTratamiento.innerHTML = '<option value="">-- Selecciona tratamiento --</option>';
-        this.tratamientos.forEach(tratamiento => {
+        
+        // Filtrar solo tratamientos normales (no evaluaciones)
+        const tratamientosNormales = this.tratamientos.filter(t => 
+            !t.nombre.toUpperCase().includes('EVALUACION')
+        );
+        
+        tratamientosNormales.forEach(tratamiento => {
             const option = document.createElement('option');
             option.value = tratamiento.id;
             option.textContent = tratamiento.nombre;
             selectTratamiento.appendChild(option);
         });
-        console.log('[VENTAS] Tratamientos cargados en selector');
+        console.log(`[VENTAS] Tratamientos normales cargados en selector: ${tratamientosNormales.length}`);
     }
 
     mostrarOpciones() {
@@ -188,7 +194,7 @@ class VentasModule {
         let html = '<div class="sugerencias-ofertas">';
         html += '<h4>💡 Sugerencias de Ofertas Disponibles:</h4>';
         html += '<div class="ofertas-grid">';
-        packsConOfertas.forEach(pack => {
+        packsConOfertas.forEach((pack, index) => {
             const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
             const ahorro = pack.precio_regular - pack.precio_oferta;
             html += `
@@ -199,13 +205,47 @@ class VentasModule {
                     <p class="precio-oferta">$${pack.precio_oferta.toLocaleString()}</p>
                     <p class="descuento">${descuento}% OFF</p>
                     <p class="ahorro">Ahorras $${ahorro.toLocaleString()}</p>
+                    <button class="btn btn-success btn-sm tomar-oferta" data-pack-index="${index}" data-sesiones="${pack.sesiones_incluidas || 1}">
+                        <i class="fas fa-check"></i> Tomar Oferta
+                    </button>
                 </div>
             `;
         });
         html += '</div></div>';
         sugerenciasDiv.innerHTML = html;
         sugerenciasDiv.style.display = 'block';
+        
+        // Agregar event listeners a los botones "Tomar Oferta"
+        sugerenciasDiv.querySelectorAll('.tomar-oferta').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const packIndex = parseInt(e.target.closest('.tomar-oferta').dataset.packIndex);
+                const sesiones = parseInt(e.target.closest('.tomar-oferta').dataset.sesiones);
+                this.tomarOferta(packIndex, sesiones);
+            });
+        });
+        
         console.log(`[VENTAS] Sugerencias de ofertas mostradas para ${tratamiento.nombre}`);
+    }
+
+    tomarOferta(packIndex, sesiones) {
+        const packSelect = document.getElementById('pack');
+        const inputSesiones = document.getElementById('cantidadSesiones');
+        
+        if (packSelect && inputSesiones) {
+            // Seleccionar el pack correspondiente
+            packSelect.value = packIndex.toString();
+            
+            // Ajustar el número de sesiones
+            inputSesiones.value = sesiones.toString();
+            
+            // Recalcular precio
+            this.calcularPrecio();
+            
+            // Mostrar notificación
+            mostrarNotificacion(`Oferta aplicada: ${sesiones} sesiones seleccionadas`, 'success');
+            
+            console.log(`[VENTAS] Oferta tomada: pack ${packIndex}, ${sesiones} sesiones`);
+        }
     }
 
     calcularPrecio() {

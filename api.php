@@ -918,7 +918,13 @@ function handlePacks($db, $method, $id, $data) {
                 if ($id) {
                     $result = $db->selectOne("CALL sp_packs_get(?)", [$id]);
                 } else {
-                    $result = $db->select("CALL sp_packs_list()");
+                    // Verificar si hay parámetros de consulta para filtrar por tratamiento
+                    $tratamiento_id = $_GET['tratamiento_id'] ?? null;
+                    if ($tratamiento_id) {
+                        $result = $db->select("CALL sp_packs_by_tratamiento(?)", [$tratamiento_id]);
+                    } else {
+                        $result = $db->select("CALL sp_packs_list()");
+                    }
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
