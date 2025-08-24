@@ -98,9 +98,11 @@ class VentasModule {
         });
 
         $('#cliente').on('select2:select', (e) => {
+            console.log('[VENTAS] Evento select2:select disparado', e.params);
             this.clienteSeleccionado = e.params.data;
-            console.log(`[VENTAS] Cliente seleccionado: ${this.clienteSeleccionado.text}`);
-            mostrarNotificacion(`Cliente seleccionado: ${this.clienteSeleccionado.text}`, 'info');
+            console.log(`[VENTAS] Cliente seleccionado:`, this.clienteSeleccionado);
+            console.log(`[VENTAS] Cliente seleccionado: ${this.clienteSeleccionado?.text || 'NO TEXT'}`);
+            mostrarNotificacion(`Cliente seleccionado: ${this.clienteSeleccionado?.text || 'Cliente'}`, 'info');
             this.cargarHistorialCliente();
         });
     }
@@ -505,9 +507,11 @@ class VentasModule {
     }
 
     async confirmarVenta() {
-        const cliente = document.getElementById('cliente').value;
-        if (!cliente) {
-            mostrarNotificacion('[VENTAS] Selecciona un cliente primero.', 'warning');
+        console.log('[VENTAS] Iniciando confirmarVenta');
+        console.log('[VENTAS] this.clienteSeleccionado:', this.clienteSeleccionado);
+        
+        if (!this.clienteSeleccionado) {
+            mostrarNotificacion('[VENTAS] Debes seleccionar un cliente antes de confirmar la venta.', 'warning');
             return;
         }
 
@@ -528,7 +532,7 @@ class VentasModule {
 
             if (tratamiento && tratamiento.nombre.toUpperCase().includes('EVALUACION')) {
                 const ventaEvaluacion = await ventasAPI.create({
-                    ficha_id: cliente,
+                    ficha_id: this.clienteSeleccionado.id,
                     evaluacion_id: null,
                     ficha_especifica_id: null,
                     tratamiento_id: tratamientoId,
@@ -542,18 +546,18 @@ class VentasModule {
 
                 this.historial.push({
                     ...venta,
-                    cliente: this.clienteSeleccionado.text,
+                    cliente: this.clienteSeleccionado?.text || 'Cliente no seleccionado',
                     fecha: new Date().toLocaleDateString(),
                     tipo: 'evaluacion'
                 });
 
                 this.renderHistorial();
                 this.limpiarFormulario();
-                console.log(`[VENTAS] Venta de evaluación registrada para cliente ${this.clienteSeleccionado.text}`);
+                console.log(`[VENTAS] Venta de evaluación registrada para cliente ${this.clienteSeleccionado?.text || 'Cliente no seleccionado'}`);
                 mostrarNotificacion('Venta de evaluación registrada exitosamente. Agenda la sesión para completar el proceso.', 'success');
             } else {
                 const evaluacion = await evaluacionesAPI.create({
-                    ficha_id: cliente,
+                    ficha_id: this.clienteSeleccionado.id,
                     profesional_id: getCurrentProfesionalId(),
                     tratamiento_id: tratamientoId,
                     pack_id: document.getElementById('pack').value || null,
@@ -567,7 +571,7 @@ class VentasModule {
                     tipo_id: this.obtenerTipoFichaId(venta.tratamiento),
                     datos: {
                         antecedentes_personales: {
-                            nombre_completo: this.clienteSeleccionado.text || '',
+                            nombre_completo: this.clienteSeleccionado?.text || '',
                             fecha_nacimiento: '',
                             edad: 0,
                             ocupacion: '',
@@ -640,7 +644,7 @@ class VentasModule {
 
                 this.historial.push({
                     ...venta,
-                    cliente: this.clienteSeleccionado.text,
+                    cliente: this.clienteSeleccionado?.text || 'Cliente no seleccionado',
                     fecha: new Date().toLocaleDateString(),
                     tipo: 'normal'
                 });
