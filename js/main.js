@@ -102,13 +102,13 @@ class ClinicaBelezaApp {
 
     async setupNavigation() {
         console.log('🧭 Configurando navegación...');
-        const navLinks = document.querySelectorAll('.nav-link');
+        const navLinks = document.querySelectorAll('.nav-menu .nav-link');
         console.log('🔗 Enlaces encontrados:', navLinks.length);
         navLinks.forEach(link => {
             link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const view = link.dataset.view;
-                console.log('🖱️ Clic en enlace:', view);
+                console.log('🖱️ Clic en enlace de navegación:', view);
                 await this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
@@ -119,13 +119,40 @@ class ClinicaBelezaApp {
         
         // Configurar pestañas de Mantenedores para que no interfieran con la navegación
         const mantenedoresTabs = document.querySelectorAll('#mantenedoresTabs .nav-link');
+        console.log('🔧 Configurando pestañas de mantenedores:', mantenedoresTabs.length);
         mantenedoresTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
+                console.log('🖱️ Clic en pestaña de mantenedor:', tab.id);
                 // Prevenir que el clic se propague al sistema de navegación
+                e.preventDefault();
                 e.stopPropagation();
                 
-                // Permitir que Bootstrap maneje las pestañas normalmente
-                // Solo prevenir que se active nuestro sistema de navegación
+                // Remover clase active de todas las pestañas
+                mantenedoresTabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                
+                // Agregar clase active a la pestaña clickeada
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                
+                // Ocultar todos los paneles de contenido
+                const tabPanes = document.querySelectorAll('#mantenedoresTabsContent .tab-pane');
+                tabPanes.forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                
+                // Mostrar el panel correspondiente
+                const tabId = tab.id;
+                const targetId = tabId.replace('-tab', '-tab-pane');
+                const targetPane = document.querySelector('#' + targetId);
+                if (targetPane) {
+                    targetPane.classList.add('show', 'active');
+                }
+                
+                // Prevenir que se active el sistema de navegación
+                return false;
             });
         });
     
@@ -191,7 +218,7 @@ class ClinicaBelezaApp {
         }
         
         // Actualizar navegación
-        const navLinks = document.querySelectorAll('.nav-link');
+        const navLinks = document.querySelectorAll('.nav-menu .nav-link');
         navLinks.forEach(link => {
             link.classList.remove('active');
             if (link.dataset.view === viewName) {
@@ -256,7 +283,7 @@ class ClinicaBelezaApp {
             });
             
             // Cerrar menú al hacer clic en un enlace
-            const navLinks = document.querySelectorAll('.nav-link');
+            const navLinks = document.querySelectorAll('.nav-menu .nav-link');
             navLinks.forEach(link => {
                 link.addEventListener('click', () => {
                     hamburger.classList.remove('active');
