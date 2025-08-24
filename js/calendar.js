@@ -1,6 +1,8 @@
 // Calendario Component - Inspirado en EventCalendar
 // https://github.com/vkurko/calendar
 
+import { mostrarNotificacion } from './utils.js';
+
 class Calendar {
     constructor(container, options = {}) {
         this.container = typeof container === 'string' ? document.querySelector(container) : container;

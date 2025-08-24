@@ -2691,7 +2691,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_pagos_list()
 BEGIN
-    SELECT p.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos
+    SELECT p.*, f.codigo as ficha_codigo, f.nombres, f.apellidos
     FROM pago p
     JOIN venta v ON p.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
@@ -2703,7 +2703,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_sesiones_list()
 BEGIN
-    SELECT s.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos,
+    SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
            p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
@@ -2719,7 +2719,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_agenda_list()
 BEGIN
-    SELECT s.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos,
+    SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
            p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
@@ -2743,7 +2743,7 @@ BEGIN
                ELSE NULL
            END as elemento_nombre
     FROM oferta o
-    WHERE o.activa = TRUE AND o.fecha_fin >= CURDATE()
+    WHERE o.activo = TRUE AND o.fecha_fin >= CURDATE()
     ORDER BY o.fecha_inicio DESC;
 END$$
 DELIMITER ;
@@ -2752,10 +2752,10 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_ofertas_combo_list()
 BEGIN
-    SELECT oc.*, o.nombre as oferta_nombre, o.porcentaje_descuento as oferta_descuento
+    SELECT oc.*, o.nombre as oferta_nombre, o.porc_descuento as oferta_descuento
     FROM oferta_combo oc
     JOIN oferta o ON oc.oferta_id = o.id
-    WHERE o.activa = TRUE AND o.fecha_fin >= CURDATE()
+    WHERE o.activo = TRUE AND o.fecha_fin >= CURDATE()
     ORDER BY o.fecha_inicio DESC;
 END$$
 DELIMITER ;
@@ -2766,7 +2766,7 @@ CREATE PROCEDURE sp_ofertas_aplicables_list()
 BEGIN
     SELECT * FROM v_ofertas_aplicables
     WHERE fecha_fin >= CURDATE()
-    ORDER BY porcentaje_descuento DESC;
+    ORDER BY porc_descuento DESC;
 END$$
 DELIMITER ;
 

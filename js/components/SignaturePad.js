@@ -3,6 +3,8 @@
  * Permite al paciente firmar el consentimiento de depilación
  */
 
+import { mostrarNotificacion } from '../utils.js';
+
 export class SignaturePad {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
