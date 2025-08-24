@@ -21,13 +21,13 @@ export class SesionesModule {
         console.log('🚀 Inicializando módulo de sesiones...');
         try {
             await this.cargarZonas();
-            console.log('✅ Zonas cargadas');
+            console.log('✅ Zonas cargadas:', this.zonas.length);
             this.setupEventListeners();
             console.log('✅ Event listeners configurados');
             this.initCalendar();
             console.log('✅ Calendario inicializado');
             await this.loadSesiones();
-            console.log('✅ Sesiones cargadas');
+            console.log('✅ Sesiones cargadas:', this.sesiones.length);
             await this.cargarPacientesSelect();
             console.log('✅ Select de pacientes cargado');
             await this.cargarVentasSelect();
@@ -36,6 +36,8 @@ export class SesionesModule {
             console.log('✅ Select de boxes cargado');
         } catch (error) {
             console.error('❌ Error inicializando módulo de sesiones:', error);
+            const errorMessage = error.message || 'Error desconocido inicializando módulo de sesiones';
+            mostrarNotificacion(`Error inicializando módulo de sesiones: ${errorMessage}`, 'error');
         }
     }
     
@@ -47,6 +49,8 @@ export class SesionesModule {
             console.log('✅ Zonas cargadas:', this.zonas.length);
         } catch (error) {
             console.error('❌ Error cargando zonas:', error);
+            const errorMessage = error.message || 'Error desconocido cargando zonas';
+            mostrarNotificacion(`Error cargando zonas: ${errorMessage}`, 'error');
             this.zonas = [];
         }
     }
@@ -388,23 +392,8 @@ export class SesionesModule {
         } catch (error) {
             console.error('❌ Error en crearSesion:', error);
             
-            // Extraer el mensaje de error real de la respuesta
-            let errorMessage = 'Error desconocido creando sesión';
-            
-            if (error.message) {
-                try {
-                    // Intentar parsear el error como JSON
-                    const errorData = JSON.parse(error.message);
-                    if (errorData.error) {
-                        errorMessage = errorData.error;
-                    }
-                } catch (e) {
-                    // Si no es JSON, usar el mensaje directo
-                    errorMessage = error.message;
-                }
-            }
-            
-            // Mostrar el error real de la base de datos
+            // Mostrar directamente el error de la base de datos
+            const errorMessage = error.message || 'Error desconocido creando sesión';
             mostrarNotificacion(`❌ ${errorMessage}`, 'error');
         }
     }
@@ -450,18 +439,23 @@ export class SesionesModule {
     
     async abrirSesion(sesionId) {
         try {
+            console.log('🔓 Abriendo sesión ID:', sesionId);
+            
             // Obtener datos de la sesión
             const sesion = await sesionesAPI.getById(sesionId);
-                    if (!sesion) {
-            mostrarNotificacion('No se pudo obtener la información de la sesión', 'error');
-            return;
-        }
+            if (!sesion) {
+                console.error('❌ No se pudo obtener la información de la sesión');
+                mostrarNotificacion('No se pudo obtener la información de la sesión', 'error');
+                return;
+            }
+            
+            console.log('✅ Datos de sesión obtenidos:', sesion);
             
             // Mostrar modal de apertura de sesión
             this.showAbrirSesionModal(sesion);
             
         } catch (error) {
-            console.error('Error abriendo sesión:', error);
+            console.error('❌ Error abriendo sesión:', error);
             const errorMessage = error.message || 'Error desconocido abriendo sesión';
             mostrarNotificacion(`Error abriendo sesión: ${errorMessage}`, 'error');
         }
@@ -789,6 +783,8 @@ export class SesionesModule {
     }
     
     async confirmarAbrirSesion(sesionId) {
+        console.log('✅ Confirmando apertura de sesión ID:', sesionId);
+        
         const observaciones = document.getElementById('sesion-observaciones').value;
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
         
@@ -822,12 +818,16 @@ export class SesionesModule {
                 return;
             }
             
+            console.log('📡 Abriendo sesión en la base de datos...');
             // Primero abrir la sesión en la base de datos
             const response = await sesionesAPI.abrirSesion(sesionId);
             
             if (response.success) {
+                console.log('✅ Sesión abierta en la base de datos');
+                
                 // Guardar intensidades si existen (para depilaciones)
                 if (Object.keys(intensidades).length > 0) {
+                    console.log('💾 Guardando intensidades...');
                     await this.guardarIntensidades(sesionId, intensidades);
                 }
                 
@@ -838,6 +838,7 @@ export class SesionesModule {
                         tipo_ficha: tipoFicha,
                         fecha_evaluacion: new Date().toISOString()
                     }));
+                    console.log('📋 Datos de evaluación almacenados para sesión:', sesionId);
                     mostrarNotificacion('✅ Evaluación iniciada. Al cerrar la sesión se creará la ficha específica.', 'success');
                     
                 } else if (productosFaciales) {
@@ -846,6 +847,7 @@ export class SesionesModule {
                         productos_utilizados: productosFaciales,
                         fecha_tratamiento: new Date().toISOString()
                     }));
+                    console.log('✨ Datos de facial almacenados para sesión:', sesionId);
                     mostrarNotificacion('✅ Tratamiento facial iniciado', 'success');
                     
                 } else if (estadoCueroCabelludo || tratamientosCapilares) {
@@ -855,29 +857,35 @@ export class SesionesModule {
                         tratamientos_aplicados: tratamientosCapilares,
                         fecha_tratamiento: new Date().toISOString()
                     }));
+                    console.log('💆 Datos de capilar almacenados para sesión:', sesionId);
                     mostrarNotificacion('✅ Tratamiento capilar iniciado', 'success');
                     
                 } else if (consentimientoVerificado) {
                     // Para depilaciones
+                    console.log('⚡ Sesión de depilación iniciada');
                     mostrarNotificacion('✅ Sesión de depilación iniciada', 'success');
                 } else {
                     // Genérico
+                    console.log('🔓 Sesión genérica iniciada');
                     mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
                 }
                 
                 document.querySelector('.sesion-modal').remove();
                 await this.loadSesiones();
             } else {
+                console.error('❌ Error en respuesta de API:', response);
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error confirmando apertura de sesión:', error);
             const errorMessage = error.message || 'Error desconocido abriendo sesión';
             mostrarNotificacion(`❌ Error abriendo sesión: ${errorMessage}`, 'error');
         }
     }
     
     async cerrarSesion(sesionId) {
+        console.log('🔒 Cerrando sesión ID:', sesionId);
+        
         // Crear modal simple para observaciones
         const modalHtml = `
             <div class="modal fade" id="observacionesModal" tabindex="-1">
@@ -912,6 +920,8 @@ export class SesionesModule {
             const observaciones = document.getElementById('observacionesSesion').value;
             
             try {
+                console.log('📋 Procesando cierre de sesión con observaciones:', observaciones);
+                
                 // Verificar si hay datos específicos de tratamiento pendientes
                 const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
                 const facialData = sessionStorage.getItem(`facial_${sesionId}`);
@@ -925,6 +935,7 @@ export class SesionesModule {
                     console.log('🔍 Datos de evaluación encontrados:', datos);
                     
                     if (datos.tipo_ficha) {
+                        console.log('📋 Creando ficha específica de', datos.tipo_ficha);
                         mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
                         
                         try {
@@ -933,9 +944,11 @@ export class SesionesModule {
                             datosGuardados = true;
                             tipoTratamiento = 'evaluación';
                             sessionStorage.removeItem(`evaluacion_${sesionId}`);
+                            console.log('✅ Ficha específica creada exitosamente');
                         } catch (error) {
-                            console.error('Error creando ficha específica:', error);
-                            mostrarNotificacion(`❌ Error creando ficha específica: ${error.message}`, 'error');
+                            console.error('❌ Error creando ficha específica:', error);
+                            const errorMessage = error.message || 'Error desconocido creando ficha específica';
+                            mostrarNotificacion(`❌ Error creando ficha específica: ${errorMessage}`, 'error');
                             return; // No continuar si falla la creación de ficha
                         }
                     }
@@ -944,6 +957,7 @@ export class SesionesModule {
                     const datos = JSON.parse(facialData);
                     console.log('🔍 Datos de facial encontrados:', datos);
                     
+                    console.log('✨ Guardando datos del tratamiento facial...');
                     mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
                     
                     try {
@@ -958,9 +972,11 @@ export class SesionesModule {
                         datosGuardados = true;
                         tipoTratamiento = 'facial';
                         sessionStorage.removeItem(`facial_${sesionId}`);
+                        console.log('✅ Datos de facial guardados exitosamente');
                     } catch (error) {
-                        console.error('Error guardando datos de facial:', error);
-                        mostrarNotificacion(`❌ Error guardando datos del facial: ${error.message}`, 'error');
+                        console.error('❌ Error guardando datos de facial:', error);
+                        const errorMessage = error.message || 'Error desconocido guardando datos del facial';
+                        mostrarNotificacion(`❌ Error guardando datos del facial: ${errorMessage}`, 'error');
                         return; // No continuar si falla el guardado
                     }
                     
@@ -968,6 +984,7 @@ export class SesionesModule {
                     const datos = JSON.parse(capilarData);
                     console.log('🔍 Datos de capilar encontrados:', datos);
                     
+                    console.log('💆 Guardando datos del tratamiento capilar...');
                     mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
                     
                     try {
@@ -983,17 +1000,22 @@ export class SesionesModule {
                         datosGuardados = true;
                         tipoTratamiento = 'capilar';
                         sessionStorage.removeItem(`capilar_${sesionId}`);
+                        console.log('✅ Datos de capilar guardados exitosamente');
                     } catch (error) {
-                        console.error('Error guardando datos de capilar:', error);
-                        mostrarNotificacion(`❌ Error guardando datos del capilar: ${error.message}`, 'error');
+                        console.error('❌ Error guardando datos de capilar:', error);
+                        const errorMessage = error.message || 'Error desconocido guardando datos del capilar';
+                        mostrarNotificacion(`❌ Error guardando datos del capilar: ${errorMessage}`, 'error');
                         return; // No continuar si falla el guardado
                     }
                 }
                 
+                console.log('📡 Cerrando sesión en la base de datos...');
                 // Cerrar la sesión
                 const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
                 
                 if (response.success) {
+                    console.log('✅ Sesión cerrada exitosamente en la base de datos');
+                    
                     if (datosGuardados) {
                         switch (tipoTratamiento) {
                             case 'evaluación':
@@ -1014,10 +1036,11 @@ export class SesionesModule {
                     
                     await this.loadSesiones();
                 } else {
+                    console.error('❌ Error en respuesta de API al cerrar sesión:', response);
                     mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
                 }
             } catch (error) {
-                console.error('Error cerrando sesión:', error);
+                console.error('❌ Error cerrando sesión:', error);
                 const errorMessage = error.message || 'Error desconocido cerrando sesión';
                 mostrarNotificacion(`❌ Error cerrando sesión: ${errorMessage}`, 'error');
             } finally {
@@ -1030,6 +1053,8 @@ export class SesionesModule {
     
     async guardarDatosSesion(sesionId, datosTratamiento) {
         try {
+            console.log('💾 Guardando datos de sesión para ID:', sesionId, datosTratamiento);
+            
             // Actualizar el campo datos_sesion usando la API de sesiones
             const response = await sesionesAPI.updateDatosSesion(sesionId, datosTratamiento);
             
@@ -1037,17 +1062,21 @@ export class SesionesModule {
                 console.log('✅ Datos de sesión guardados exitosamente:', datosTratamiento);
                 return response.data;
             } else {
+                console.error('❌ Error en respuesta de API:', response);
                 throw new Error(response.error || 'Error guardando datos de sesión');
             }
             
         } catch (error) {
-            console.error('Error en guardarDatosSesion:', error);
+            console.error('❌ Error en guardarDatosSesion:', error);
             throw error;
         }
     }
     
     async crearFichaEspecificaDesdeEvaluacion(sesionId, datosEvaluacion) {
         try {
+            console.log('📋 Creando ficha específica desde evaluación para sesión:', sesionId);
+            console.log('📋 Datos de evaluación:', datosEvaluacion);
+            
             // Obtener información de la sesión para extraer datos necesarios
             const sesion = await sesionesAPI.getById(sesionId);
             if (!sesion.success) {
@@ -1056,6 +1085,7 @@ export class SesionesModule {
             
             const sesionData = sesion.data;
             const ventaId = sesionData.venta_id;
+            console.log('📋 Venta ID obtenida:', ventaId);
             
             // Obtener información de la venta para extraer evaluacion_id
             const venta = await ventasAPI.getById(ventaId);
@@ -1065,6 +1095,7 @@ export class SesionesModule {
             
             const ventaData = venta.data;
             const evaluacionId = ventaData.evaluacion_id;
+            console.log('📋 Evaluación ID obtenida:', evaluacionId);
             
             if (!evaluacionId) {
                 throw new Error('Esta venta no tiene una evaluación asociada');
@@ -1073,6 +1104,7 @@ export class SesionesModule {
             // Obtener tipo de ficha específica por nombre
             const tipoFicha = datosEvaluacion.tipo_ficha.toUpperCase();
             const tipoFichaId = tipoFicha === 'DEPILACION' ? 1 : 2; // Por ahora hardcodeado, debería venir de la DB
+            console.log('📋 Tipo de ficha:', tipoFicha, 'ID:', tipoFichaId);
             
             // Crear datos básicos de ficha específica
             const fichaData = {
@@ -1082,6 +1114,8 @@ export class SesionesModule {
                 observaciones: `Ficha creada automáticamente desde evaluación el ${new Date().toLocaleString()}`
             };
             
+            console.log('📋 Datos de ficha específica a crear:', fichaData);
+            
             // Crear la ficha específica
             const response = await fichasEspecificasAPI.create(fichaData);
             
@@ -1090,11 +1124,12 @@ export class SesionesModule {
                 mostrarNotificacion(`✅ Ficha específica de ${tipoFicha} creada exitosamente`, 'success');
                 return response.data;
             } else {
+                console.error('❌ Error en respuesta de API:', response);
                 throw new Error(response.error || 'Error creando ficha específica');
             }
             
         } catch (error) {
-            console.error('Error en crearFichaEspecificaDesdeEvaluacion:', error);
+            console.error('❌ Error en crearFichaEspecificaDesdeEvaluacion:', error);
             throw error;
         }
     }
@@ -1339,20 +1374,22 @@ export class SesionesModule {
             this.updateCalendarEvents(); // Actualizar calendario
             console.log('✅ Calendario actualizado');
         } catch (error) {
-            console.error('Error cargando sesiones:', error);
+            console.error('❌ Error cargando sesiones:', error);
             const errorMessage = error.message || 'Error desconocido cargando sesiones';
-            console.error(`Error cargando sesiones: ${errorMessage}`);
+            mostrarNotificacion(`Error cargando sesiones: ${errorMessage}`, 'error');
         }
     }
     
     async getSesion(sesionId) {
         try {
+            console.log('🔍 Obteniendo sesión ID:', sesionId);
             const sesion = await sesionesAPI.getById(sesionId);
+            console.log('✅ Sesión obtenida:', sesion);
             return sesion;
         } catch (error) {
-            console.error('Error obteniendo sesión:', error);
+            console.error('❌ Error obteniendo sesión:', error);
             const errorMessage = error.message || 'Error desconocido obteniendo sesión';
-            console.error(`Error obteniendo sesión: ${errorMessage}`);
+            mostrarNotificacion(`Error obteniendo sesión: ${errorMessage}`, 'error');
             return null;
         }
     }
@@ -1433,24 +1470,31 @@ export class SesionesModule {
     
     async confirmarPaciente(sesionId) {
         try {
+            console.log('✅ Confirmando paciente para sesión ID:', sesionId);
+            
             const response = await sesionesAPI.confirmarPaciente(sesionId);
             
-                        if (response.success) {
+            if (response.success) {
+                console.log('✅ Paciente confirmado exitosamente');
                 mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
                 await this.loadSesiones();
             } else {
+                console.error('❌ Error en respuesta de API:', response);
                 mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
             }
         } catch (error) {
-            console.error('Error confirmando paciente:', error);
+            console.error('❌ Error confirmando paciente:', error);
             const errorMessage = error.message || 'Error desconocido confirmando paciente';
             mostrarNotificacion(`❌ Error confirmando paciente: ${errorMessage}`, 'error');
         }
     }
     
     async reprogramarSesion(sesionId) {
+        console.log('🔄 Reprogramando sesión ID:', sesionId);
+        
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
+            console.error('❌ Bootstrap no está disponible');
             mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
             return;
         }
@@ -1504,16 +1548,19 @@ export class SesionesModule {
                     }
                     
                     try {
+                        console.log('📡 Reprogramando sesión a:', nuevaFecha + ' ' + nuevaHora);
                         const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
                         
                         if (response.success) {
+                            console.log('✅ Sesión reprogramada exitosamente');
                             mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
+                            console.error('❌ Error en respuesta de API:', response);
                             mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
                         }
                     } catch (error) {
-                        console.error('Error reprogramando sesión:', error);
+                        console.error('❌ Error reprogramando sesión:', error);
                         const errorMessage = error.message || 'Error desconocido reprogramando sesión';
                         mostrarNotificacion(`❌ Error reprogramando sesión: ${errorMessage}`, 'error');
                     } finally {
@@ -1527,8 +1574,11 @@ export class SesionesModule {
     }
     
     async cancelarSesion(sesionId) {
+        console.log('❌ Cancelando sesión ID:', sesionId);
+        
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
+            console.error('❌ Bootstrap no está disponible');
             mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
             return;
         }
@@ -1567,16 +1617,19 @@ export class SesionesModule {
                 // Configurar evento de confirmación
                 document.getElementById('confirmarCancelar').onclick = async () => {
                     try {
+                        console.log('📡 Cancelando sesión en la base de datos...');
                         const response = await sesionesAPI.delete(sesionId);
                         
                         if (response.success) {
+                            console.log('✅ Sesión cancelada exitosamente');
                             mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
+                            console.error('❌ Error en respuesta de API:', response);
                             mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
                         }
                     } catch (error) {
-                        console.error('Error cancelando sesión:', error);
+                        console.error('❌ Error cancelando sesión:', error);
                         const errorMessage = error.message || 'Error desconocido cancelando sesión';
                         mostrarNotificacion(`❌ Error cancelando sesión: ${errorMessage}`, 'error');
                     } finally {
@@ -1644,11 +1697,16 @@ export class SesionesModule {
     
     async cargarPacientesSelect() {
         try {
+            console.log('👥 Cargando select de pacientes...');
             const select = document.getElementById('pacienteSesion');
-            if (!select) return;
+            if (!select) {
+                console.error('❌ No se encontró el select de pacientes');
+                return;
+            }
             
             // Configurar Select2 exactamente igual que en ventas
             if (typeof $ !== 'undefined' && $.fn.select2) {
+                console.log('🔧 Configurando Select2 para pacientes...');
                 $(select).select2({
                     ajax: {
                         url: '/api.php/fichas',
@@ -1690,7 +1748,9 @@ export class SesionesModule {
                 
                 // Configurar eventos después de inicializar Select2
                 this.configurarEventosPaciente();
+                console.log('✅ Select2 configurado para pacientes');
             } else {
+                console.log('🔧 Usando select nativo para pacientes...');
                 // Fallback sin Select2
                 const { fichasAPI } = await import('../api-client.js');
                 const pacientes = await fichasAPI.getAll();
@@ -1706,36 +1766,51 @@ export class SesionesModule {
                 
                 // Configurar eventos para select nativo
                 this.configurarEventosPaciente();
+                console.log('✅ Select nativo configurado para pacientes');
             }
             
-            console.log('✅ Select de pacientes cargado');
+            console.log('✅ Select de pacientes cargado exitosamente');
         } catch (error) {
             console.error('❌ Error cargando pacientes:', error);
+            const errorMessage = error.message || 'Error desconocido cargando pacientes';
+            mostrarNotificacion(`Error cargando pacientes: ${errorMessage}`, 'error');
         }
     }
     
     async cargarVentasSelect() {
         try {
+            console.log('💰 Inicializando select de ventas...');
             const select = document.getElementById('ventaSesion');
-            if (!select) return;
+            if (!select) {
+                console.error('❌ No se encontró el select de ventas');
+                return;
+            }
             
             // Inicializar select vacío - se cargará cuando se seleccione un paciente
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
-            console.log('✅ Select de ventas inicializado');
+            console.log('✅ Select de ventas inicializado exitosamente');
         } catch (error) {
             console.error('❌ Error inicializando select de ventas:', error);
+            const errorMessage = error.message || 'Error desconocido inicializando select de ventas';
+            mostrarNotificacion(`Error inicializando select de ventas: ${errorMessage}`, 'error');
         }
     }
     
     async cargarBoxesSelect() {
         try {
+            console.log('📦 Cargando select de boxes...');
             const select = document.getElementById('boxSesion');
-            if (!select) return;
+            if (!select) {
+                console.error('❌ No se encontró el select de boxes');
+                return;
+            }
             
             // Importar boxesAPI dinámicamente
             const { boxesAPI } = await import('../api-client.js');
             const boxes = await boxesAPI.getAll();
+            
+            console.log('📦 Boxes obtenidos:', boxes.length);
             
             select.innerHTML = '<option value="">Seleccionar box...</option>';
             
@@ -1746,21 +1821,22 @@ export class SesionesModule {
                 select.appendChild(option);
             });
             
-            console.log('✅ Select de boxes cargado:', boxes.length);
+            console.log('✅ Select de boxes cargado exitosamente:', boxes.length);
         } catch (error) {
             console.error('❌ Error cargando boxes:', error);
+            const errorMessage = error.message || 'Error desconocido cargando boxes';
+            mostrarNotificacion(`Error cargando boxes: ${errorMessage}`, 'error');
         }
     }
     
     async cargarVentasPorPaciente(pacienteId) {
         try {
+            console.log('🔍 Cargando ventas para paciente ID:', pacienteId);
             const select = document.getElementById('ventaSesion');
             if (!select) {
                 console.error('❌ No se encontró el select de ventas');
                 return;
             }
-            
-            console.log('🔍 Cargando ventas para paciente ID:', pacienteId);
             
             if (!pacienteId) {
                 select.innerHTML = '<option value="">Seleccionar venta...</option>';
@@ -1782,42 +1858,43 @@ export class SesionesModule {
             
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
-                         for (const venta of ventasPaciente) {
-                 const option = document.createElement('option');
-                 option.value = venta.id.toString();
-                 
-                 // Crear texto descriptivo más útil
-                 let ventaText = `#${venta.id}`;
-                 
-                 // Agregar nombre del tratamiento
-                 if (venta.tratamiento?.nombre) {
-                     ventaText += ` ${venta.tratamiento.nombre}`;
-                 }
-                 
-                 // Agregar información de sesiones
-                 if (venta.cantidad_sesiones) {
-                     ventaText += ` (${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''})`;
-                 }
-                 
-                 // Agregar precio si existe
-                 if (venta.precio_total && venta.precio_total > 0) {
-                     ventaText += ` - $${venta.precio_total.toLocaleString()}`;
-                 }
-                 
-                 // Agregar fecha si existe
-                 if (venta.fecha_venta) {
-                     const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
-                     ventaText += ` - ${fecha}`;
-                 }
-                 
-                 option.textContent = ventaText;
-                 select.appendChild(option);
-             }
+            for (const venta of ventasPaciente) {
+                const option = document.createElement('option');
+                option.value = venta.id.toString();
+                
+                // Crear texto descriptivo más útil
+                let ventaText = `#${venta.id}`;
+                
+                // Agregar nombre del tratamiento
+                if (venta.tratamiento?.nombre) {
+                    ventaText += ` ${venta.tratamiento.nombre}`;
+                }
+                
+                // Agregar información de sesiones
+                if (venta.cantidad_sesiones) {
+                    ventaText += ` (${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''})`;
+                }
+                
+                // Agregar precio si existe
+                if (venta.precio_total && venta.precio_total > 0) {
+                    ventaText += ` - $${venta.precio_total.toLocaleString()}`;
+                }
+                
+                // Agregar fecha si existe
+                if (venta.fecha_venta) {
+                    const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
+                    ventaText += ` - ${fecha}`;
+                }
+                
+                option.textContent = ventaText;
+                select.appendChild(option);
+            }
             
-            console.log('✅ Ventas del paciente cargadas:', ventasPaciente.length);
+            console.log('✅ Ventas del paciente cargadas exitosamente:', ventasPaciente.length);
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
-            console.error('Error completo:', error);
+            const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
+            mostrarNotificacion(`Error cargando ventas del paciente: ${errorMessage}`, 'error');
         }
     }
     

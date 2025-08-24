@@ -24,41 +24,27 @@ require_once 'database/Database.php';
 // =============================================================================
 
 function detectSQLInjection($data) {
-    // Patrones sospechosos de SQL injection
     $suspiciousPatterns = [
-        // Comandos SQL básicos
         '/\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b/i',
-        // Comentarios SQL
         '/--|\/\*|\*\//',
-        // Operadores de comparación múltiple
         '/\b(and|or)\s+\d+\s*=\s*\d+/i',
-        // Inyección de comillas
         '/[\'"]\s*(union|select|insert|update|delete|drop|create|alter|exec|execute)\b/i',
-        // Comandos de sistema
         '/\b(xp_cmdshell|sp_executesql|waitfor|delay)\b/i',
-        // Patrones de bypass
         '/\b(admin|root|system)\b/i',
-        // Caracteres especiales sospechosos
         '/[<>{}[\]`~!@#$%^&*()+=|\\]/',
-        // Patrones de hex
         '/0x[0-9a-fA-F]+/',
-        // Patrones de char()
         '/char\s*\(\s*\d+\s*\)/i',
-        // Patrones de concat
         '/concat\s*\(/i'
     ];
-    
+
     // Función recursiva para revisar arrays
-    function checkValue($value) {
-        global $suspiciousPatterns;
-        
+    $checkValue = function($value) use (&$checkValue, $suspiciousPatterns) {
         if (is_array($value)) {
             foreach ($value as $v) {
-                if (checkValue($v)) return true;
+                if ($checkValue($v)) return true;
             }
             return false;
         }
-        
         if (is_string($value)) {
             foreach ($suspiciousPatterns as $pattern) {
                 if (preg_match($pattern, $value)) {
@@ -67,22 +53,20 @@ function detectSQLInjection($data) {
                 }
             }
         }
-        
         return false;
-    }
-    
-    return checkValue($data);
+    };
+
+    return $checkValue($data);
 }
 
 try {
     $db = Database::getInstance();
-    
+
     // Parsear la URL para obtener el endpoint y parámetros
     $request = $_SERVER['REQUEST_URI'];
     $path = parse_url($request, PHP_URL_PATH);
     $pathSegments = explode('/', trim($path, '/'));
-    
-    // Encontrar el índice de api.php en los segmentos
+
     $apiIndex = array_search('api.php', $pathSegments);
     if ($apiIndex !== false) {
         $endpoint = $pathSegments[$apiIndex + 1] ?? '';
@@ -91,15 +75,14 @@ try {
         $endpoint = $pathSegments[0] ?? '';
         $id = $pathSegments[1] ?? null;
     }
-    
+
     $method = $_SERVER['REQUEST_METHOD'];
     $data = json_decode(file_get_contents('php://input'), true);
-    
+
     // =============================================================================
     // DETECCIÓN DE SQL INJECTION EN TODOS LOS DATOS RECIBIDOS
     // =============================================================================
-    
-    // Revisar datos POST/PUT
+
     if ($data && detectSQLInjection($data)) {
         http_response_code(403);
         echo json_encode([
@@ -110,8 +93,7 @@ try {
         ]);
         exit();
     }
-    
-    // Revisar parámetros GET
+
     if ($_GET && detectSQLInjection($_GET)) {
         http_response_code(403);
         echo json_encode([
@@ -122,8 +104,7 @@ try {
         ]);
         exit();
     }
-    
-    // Revisar ID de la URL
+
     if ($id && detectSQLInjection([$id])) {
         http_response_code(403);
         echo json_encode([
@@ -134,149 +115,101 @@ try {
         ]);
         exit();
     }
-    
+
     // Router principal - SOLO PASSTHROUGH
     switch ($endpoint) {
         case '':
         case 'root':
             handleRoot($db);
             break;
-            
         case 'config':
             handleConfig($db);
             break;
-            
         case 'health':
             handleHealth($db);
             break;
-            
-        // ---------- FICHAS ----------
         case 'fichas':
             handleFichas($db, $method, $id, $data);
             break;
-            
         case 'tipos-ficha-especifica':
             handleTiposFichaEspecifica($db, $method, $id, $data);
             break;
-            
         case 'fichas-especificas':
             handleFichasEspecificas($db, $method, $id, $data);
             break;
-            
         case 'consentimiento-firma':
             handleConsentimientoFirma($db, $method, $id, $data);
             break;
-            
-        // ---------- EVALUACIONES ----------
         case 'evaluaciones':
             handleEvaluaciones($db, $method, $id, $data);
             break;
-            
-        // ---------- VENTAS ----------
         case 'ventas':
             handleVentas($db, $method, $id, $data);
             break;
-            
         case 'ventas/historial':
             handleHistorialVentas($db, $method, $id, $data);
             break;
-            
         case 'auth':
             handleAuth($db, $method, $id, $data);
             break;
-            
         case 'pagos':
             handlePagos($db, $method, $id, $data);
             break;
-            
-        // ---------- AGENDA ----------
         case 'sesiones':
             handleSesiones($db, $method, $id, $data);
             break;
-            
         case 'agenda':
             handleAgenda($db, $method, $id, $data);
             break;
-            
-        // ---------- OFERTAS ----------
         case 'ofertas':
             handleOfertas($db, $method, $id, $data);
             break;
-            
         case 'ofertas-combo':
             handleOfertasCombo($db, $method, $id, $data);
             break;
-            
         case 'ofertas-aplicables':
             handleOfertasAplicables($db, $method, $id, $data);
             break;
-            break;
-            
-        // ---------- CATÁLOGOS ----------
         case 'tratamientos':
             handleTratamientos($db, $method, $id, $data);
             break;
-            
         case 'zonas':
             handleZonas($db, $method, $id, $data);
             break;
-            
         case 'packs':
             handlePacks($db, $method, $id, $data);
             break;
-            
         case 'sucursales':
             handleSucursales($db, $method, $id, $data);
             break;
-            
         case 'boxes':
             handleBoxes($db, $method, $id, $data);
             break;
-            
         case 'profesionales':
             handleProfesionales($db, $method, $id, $data);
             break;
-            
-        // ---------- REPORTES ----------
         case 'reportes':
             handleReportes($db, $method, $id, $data);
             break;
-            
         default:
             http_response_code(404);
-            echo json_encode(['success' => false, 'error' => 'Endpoint no encontrado']);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Endpoint no encontrado',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'endpoint' => $endpoint ?? 'unknown',
+                'method' => $method ?? 'unknown'
+            ]);
             break;
     }
-    
+
 } catch (Exception $e) {
-    // Capturar errores de MySQL y otros errores de base de datos
-    $errorMessage = $e->getMessage();
-    $errorCode = $e->getCode();
-    
-    // Log del error para debugging
-    error_log("Error en API: " . $errorMessage . " (Code: " . $errorCode . ")");
-    
-    // Determinar el código HTTP apropiado
-    $httpCode = 500;
-    if (strpos($errorMessage, 'Duplicate entry') !== false) {
-        $httpCode = 409; // Conflict
-    } elseif (strpos($errorMessage, 'foreign key constraint') !== false) {
-        $httpCode = 400; // Bad Request
-    } elseif (strpos($errorMessage, 'doesn\'t exist') !== false) {
-        $httpCode = 404; // Not Found
-    } elseif (strpos($errorMessage, 'SQLSTATE[23000]') !== false) {
-        $httpCode = 400; // Bad Request (constraint violation)
-    } elseif (strpos($errorMessage, 'SQLSTATE[42000]') !== false) {
-        $httpCode = 400; // Bad Request (syntax error)
-    }
-    
-    http_response_code($httpCode);
-    
-    // Devolver error en formato consistente para el frontend
+    // Propagar el error tal cual lo entrega la DB, pero con formato consistente
+    http_response_code(500);
     echo json_encode([
-        'success' => false, 
-        'error' => $errorMessage,
-        'error_code' => $errorCode,
+        'success' => false,
+        'error' => $e->getMessage(),
+        'error_code' => $e->getCode(),
         'timestamp' => date('Y-m-d H:i:s'),
         'endpoint' => $endpoint ?? 'unknown',
         'method' => $method ?? 'unknown'
@@ -301,7 +234,6 @@ function handleRoot($db) {
 }
 
 function handleConfig($db) {
-    // Solo variables seguras para el frontend
     echo json_encode([
         'success' => true,
         'config' => [
@@ -318,339 +250,428 @@ function handleConfig($db) {
 
 function handleHealth($db) {
     try {
-        // Verificar conexión a la base de datos
         $db->selectOne("SELECT 1 as test");
-        
         $health = [
             'status' => 'healthy',
             'timestamp' => date('Y-m-d H:i:s'),
             'database' => 'connected',
             'api_version' => getenv('APP_VERSION') ?: '2.0.0'
         ];
-        
         echo json_encode(['success' => true, 'data' => $health]);
     } catch (Exception $e) {
         http_response_code(503);
         echo json_encode([
-            'success' => false, 
-            'data' => [
-                'status' => 'unhealthy',
-                'timestamp' => date('Y-m-d H:i:s'),
-                'database' => 'disconnected',
-                'error' => $e->getMessage()
-            ]
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'health',
+            'method' => 'GET'
         ]);
     }
 }
 
-// ---------- FICHAS ----------
-
 function handleFichas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                // Obtener ficha específica
-                $result = $db->selectOne("SELECT * FROM ficha WHERE id = ?", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
-            } else {
-                // Buscar fichas
-                $busqueda = $_GET['busqueda'] ?? '';
-                $result = $db->executeRaw("CALL sp_buscar_fichas(?)", [$busqueda]);
-                echo json_encode(['success' => true, 'data' => $result]);
-            }
-            break;
-            
-        case 'POST':
-            // Crear ficha - los errores se capturan en el try-catch global
-            $result = $db->executeRaw("CALL sp_crear_ficha(?, ?, ?, ?, ?, ?, ?, ?, ?, @ficha_id)", [
-                $data['codigo'], $data['nombres'], $data['apellidos'],
-                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null,
-                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? ''
-            ]);
-            $fichaId = $db->selectOne("SELECT @ficha_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $fichaId]]);
-            break;
-            
-        case 'PUT':
-            // Actualizar ficha usando stored procedure
-            $result = $db->executeRaw("CALL sp_actualizar_ficha(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @filas_actualizadas)", [
-                $id, $data['codigo'], $data['nombres'], $data['apellidos'],
-                $data['rut'] ?? null, $data['telefono'] ?? null, $data['email'] ?? null,
-                $data['fecha_nacimiento'] ?? null, $data['direccion'] ?? '', $data['observaciones'] ?? ''
-            ]);
-            $filasActualizadas = $db->selectOne("SELECT @filas_actualizadas as filas")['filas'];
-            echo json_encode(['success' => true, 'data' => ['updated' => $filasActualizadas]]);
-            break;
-            
-        case 'DELETE':
-            // Soft delete - cambiar estado usando stored procedure
-            $result = $db->executeRaw("CALL sp_eliminar_ficha(?, @filas_actualizadas)", [$id]);
-            $filasActualizadas = $db->selectOne("SELECT @filas_actualizadas as filas")['filas'];
-            echo json_encode(['success' => true, 'data' => ['deleted' => $filasActualizadas]]);
-            break;
-    }
-}
-
-function handleFichasEspecificas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT fe.*, tfe.nombre as tipo_nombre, e.ficha_id FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id JOIN evaluacion e ON fe.evaluacion_id = e.id WHERE fe.id = ?", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
-            } else {
-                $evaluacionId = $_GET['evaluacion_id'] ?? null;
-                if ($evaluacionId) {
-                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id WHERE fe.evaluacion_id = ?", [$evaluacionId]);
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_fichas_get(?)", [$id]);
                 } else {
-                    $result = $db->select("SELECT fe.*, tfe.nombre as tipo_nombre, e.ficha_id FROM ficha_especifica fe JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id JOIN evaluacion e ON fe.evaluacion_id = e.id");
+                    $result = $db->select("CALL sp_fichas_list()");
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
-            }
-            break;
-            
-        case 'POST':
-            // Agregar ficha específica desde evaluación
-            $result = $db->executeRaw("CALL sp_agregar_ficha_especifica(?, ?, ?, ?, @ficha_especifica_id)", [
-                $data['evaluacion_id'], $data['tipo_id'], json_encode($data['datos']), $data['observaciones'] ?? ''
-            ]);
-            $fichaEspecificaId = $db->selectOne("SELECT @ficha_especifica_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $fichaEspecificaId]]);
-            break;
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_fichas_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_fichas_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_fichas_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'fichas',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'fichas',
+            'method' => $method
+        ]);
     }
 }
 
 function handleTiposFichaEspecifica($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM tipo_ficha_especifica WHERE id = ?", [$id]);
-            } else {
-                $result = $db->select("SELECT * FROM tipo_ficha_especifica WHERE activo = TRUE ORDER BY nombre");
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            $result = $db->executeRaw("CALL sp_crear_tipo_ficha_especifica(?, ?, ?, ?, ?, @tipo_id)", [
-                $data['nombre'], $data['descripcion'] ?? '', $data['requiere_consentimiento'] ?? false,
-                $data['template_consentimiento'] ?? '', json_encode($data['campos_requeridos'] ?? [])
-            ]);
-            $tipoId = $db->selectOne("SELECT @tipo_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $tipoId]]);
-            break;
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_tipos_ficha_especifica_list()");
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'tipos-ficha-especifica',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'tipos-ficha-especifica',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleFichasEspecificas($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_fichas_especificas_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_fichas_especificas_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_fichas_especificas_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_fichas_especificas_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_fichas_especificas_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'fichas-especificas',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'fichas-especificas',
+            'method' => $method
+        ]);
     }
 }
 
 function handleConsentimientoFirma($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id WHERE cf.id = ?", [$id]);
-            } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                $tipoConsentimiento = $_GET['tipo_consentimiento'] ?? null;
-                if ($fichaId && $tipoConsentimiento) {
-                    $result = $db->selectOne("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id WHERE cf.ficha_id = ? AND cf.tipo_consentimiento = ?", [$fichaId, $tipoConsentimiento]);
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_consentimiento_firma_get(?)", [$id]);
                 } else {
-                    $result = $db->select("SELECT cf.*, p.nombre as profesional_nombre FROM consentimiento_firma cf JOIN profesional p ON cf.profesional_id = p.id");
-                }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Guardar firma digital
-            $result = $db->executeRaw("CALL sp_guardar_firma_digital(?, ?, ?, ?, ?, ?, ?)", [
-                $data['ficha_id'], $data['ficha_especifica_id'], $data['profesional_id'],
-                $data['tipo_consentimiento'], $data['firma_blob'], $data['tipo_archivo'],
-                $data['contenido_leido']
-            ]);
-            echo json_encode(['success' => true, 'data' => ['firma_guardada' => true]]);
-            break;
-    }
-}
-
-// ---------- EVALUACIONES ----------
-
-function handleEvaluaciones($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id WHERE e.id = ?", [$id]);
-            } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                if ($fichaId) {
-                    $result = $db->select("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id WHERE e.ficha_id = ?", [$fichaId]);
-                } else {
-                    $result = $db->select("SELECT e.*, t.nombre as tratamiento_nombre, p.nombre as pack_nombre, prof.nombre as profesional_nombre FROM evaluacion e JOIN tratamiento t ON e.tratamiento_id = t.id LEFT JOIN pack p ON e.pack_id = p.id JOIN profesional prof ON e.profesional_id = prof.id");
-                }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Crear evaluación
-            $result = $db->executeRaw("CALL sp_crear_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @evaluacion_id)", [
-                $data['ficha_id'], $data['profesional_id'], $data['tratamiento_id'], 
-                $data['pack_id'] ?? null, $data['precio_sugerido'], $data['sesiones_sugeridas'],
-                $data['observaciones'] ?? '', $data['recomendaciones'] ?? ''
-            ]);
-            $evaluacionId = $db->selectOne("SELECT @evaluacion_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $evaluacionId]]);
-            break;
-    }
-}
-
-// ---------- VENTAS ----------
-
-function handleVentas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                // Obtener venta completa
-                $result = $db->executeRaw("CALL sp_venta_completa(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result[0] ?? null]);
-            } else {
-                $fichaId = $_GET['ficha_id'] ?? null;
-                if ($fichaId) {
-                    $result = $db->select("SELECT * FROM v_ventas_completas WHERE ficha_id = ?", [$fichaId]);
-                } else {
-                    $result = $db->select("SELECT * FROM v_ventas_completas ORDER BY fecha_creacion DESC");
+                    $result = $db->select("CALL sp_consentimiento_firma_list()");
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
-            }
-            break;
-            
-        case 'POST':
-            // Verificar si es una venta de evaluación
-            $tratamiento = $db->selectOne("SELECT requiere_ficha_especifica FROM tratamiento WHERE id = ?", [$data['tratamiento_id']]);
-            
-            if ($tratamiento && $tratamiento['requiere_ficha_especifica'] == 0) {
-                // Es una venta de evaluación - usar sp_crear_venta_evaluacion
-                $result = $db->executeRaw("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, @venta_id)", [
-                    $data['ficha_id'], $data['tratamiento_id'], $data['pack_id'] ?? null,
-                    $data['cantidad_sesiones'], $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_consentimiento_firma_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_consentimiento_firma_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_consentimiento_firma_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'consentimiento-firma',
+                    'method' => $method
                 ]);
-            } else {
-                // Es una venta normal - usar sp_crear_venta
-                $result = $db->executeRaw("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
-                    $data['ficha_id'], $data['evaluacion_id'], $data['ficha_especifica_id'],
-                    $data['tratamiento_id'], $data['pack_id'] ?? null, $data['cantidad_sesiones'], 
-                    $data['precio_lista'], $data['descuento_manual_pct'] ?? 0
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'consentimiento-firma',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleEvaluaciones($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_evaluaciones_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_evaluaciones_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_evaluaciones_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_evaluaciones_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_evaluaciones_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'evaluaciones',
+                    'method' => $method
                 ]);
-            }
-            
-            $ventaId = $db->selectOne("SELECT @venta_id as id")['id'];
-            
-            // Aplicar ofertas automáticamente
-            $db->executeRaw("CALL sp_aplicar_ofertas(?)", [$ventaId]);
-            
-            echo json_encode(['success' => true, 'data' => ['id' => $ventaId]]);
-            break;
-            
-        case 'PUT':
-            if (isset($data['descuento_manual_pct'])) {
-                // Aplicar descuento manual
-                $db->executeRaw("CALL sp_aplicar_descuento_manual(?, ?)", [$id, $data['descuento_manual_pct']]);
-            }
-            echo json_encode(['success' => true, 'data' => ['updated' => true]]);
-            break;
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'evaluaciones',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleVentas($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_ventas_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_ventas_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_ventas_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_ventas_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_ventas_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'ventas',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'ventas',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleHistorialVentas($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_ventas_historial_list()");
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'ventas/historial',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'ventas/historial',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleAuth($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'POST':
+                $result = $db->selectOne("CALL sp_auth_login(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'auth',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'auth',
+            'method' => $method
+        ]);
     }
 }
 
 function handlePagos($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM pago WHERE id = ?", [$id]);
-            } else {
-                $ventaId = $_GET['venta_id'] ?? null;
-                if ($ventaId) {
-                    $result = $db->select("SELECT * FROM pago WHERE venta_id = ? ORDER BY fecha_pago DESC", [$ventaId]);
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_pagos_get(?)", [$id]);
                 } else {
-                    $result = $db->select("SELECT * FROM pago ORDER BY fecha_pago DESC");
+                    $result = $db->select("CALL sp_pagos_list()");
                 }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Registrar pago usando stored procedure
-            $result = $db->executeRaw("CALL sp_crear_pago(?, ?, ?, ?, @pago_id)", [
-                $data['venta_id'], $data['monto'], $data['metodo_pago'], $data['observaciones'] ?? null
-            ]);
-            $pagoId = $db->selectOne("SELECT @pago_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $pagoId]]);
-            break;
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_pagos_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_pagos_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_pagos_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'pagos',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'pagos',
+            'method' => $method
+        ]);
     }
 }
-
-// ---------- AGENDA ----------
 
 function handleSesiones($db, $method, $id, $data) {
     try {
         switch ($method) {
             case 'GET':
                 if ($id) {
-                    $result = $db->selectOne("SELECT * FROM v_sesiones_completas WHERE id = ?", [$id]);
+                    $result = $db->selectOne("CALL sp_sesiones_get(?)", [$id]);
                 } else {
-                    $ventaId = $_GET['venta_id'] ?? null;
-                    if ($ventaId) {
-                        $result = $db->executeRaw("CALL sp_sesiones_venta(?)", [$ventaId]);
-                    } else {
-                        $result = $db->select("SELECT * FROM v_sesiones_completas ORDER BY fecha_planificada DESC");
-                    }
+                    $result = $db->select("CALL sp_sesiones_list()");
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
-                
             case 'POST':
-                // Agendar sesión
-                $result = $db->executeRaw("CALL sp_agendar_sesion(?, ?, ?, ?, ?, ?, ?, @sesion_id)", [
-                    $data['venta_id'], $data['numero_sesion'], $data['sucursal_id'],
-                    $data['box_id'], $data['profesional_id'], $data['fecha_planificada'],
-                    $data['observaciones'] ?? null
-                ]);
-                $sesionId = $db->selectOne("SELECT @sesion_id as id")['id'];
-                echo json_encode(['success' => true, 'data' => ['id' => $sesionId]]);
+                $result = $db->selectOne("CALL sp_sesiones_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
                 break;
-                
             case 'PUT':
-                if (isset($data['accion'])) {
-                    switch ($data['accion']) {
-                        case 'confirmar':
-                            $db->executeRaw("CALL sp_confirmar_paciente(?)", [$id]);
-                            break;
-                        case 'abrir':
-                            $db->executeRaw("CALL sp_abrir_sesion(?)", [$id]);
-                            break;
-                        case 'cerrar':
-                            $db->executeRaw("CALL sp_cerrar_sesion(?, ?)", [$id, $data['observaciones'] ?? null]);
-                            break;
-                        case 'reprogramar':
-                            $db->executeRaw("CALL sp_reprogramar_sesion(?, ?)", [$id, $data['nueva_fecha']]);
-                            break;
-                        case 'actualizar_datos':
-                            // Actualizar datos_sesion como JSON
-                            $datosJson = json_encode($data['datos_sesion']);
-                            $db->executeRaw("UPDATE sesion SET datos_sesion = ? WHERE id = ?", [$datosJson, $id]);
-                            break;
-                    }
-                }
-                echo json_encode(['success' => true, 'data' => ['updated' => true]]);
+                $result = $db->selectOne("CALL sp_sesiones_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
                 break;
-                
             case 'DELETE':
-                // Cancelar sesión (soft delete)
-                $db->executeRaw("CALL sp_cancelar_sesion(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => ['deleted' => true]]);
+                $result = $db->selectOne("CALL sp_sesiones_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
                 break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'sesiones',
+                    'method' => $method
+                ]);
         }
     } catch (Exception $e) {
-        // Log del error para debugging
-        error_log("🚨 Error en handleSesiones: " . $e->getMessage());
-        
-        // Devolver error en formato JSON consistente
+        http_response_code(500);
         echo json_encode([
             'success' => false,
             'error' => $e->getMessage(),
@@ -663,379 +684,429 @@ function handleSesiones($db, $method, $id, $data) {
 }
 
 function handleAgenda($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            // Obtener disponibilidad
-            $fechaInicio = $_GET['fecha_inicio'] ?? date('Y-m-d');
-            $fechaFin = $_GET['fecha_fin'] ?? date('Y-m-d', strtotime('+7 days'));
-            $profesionalId = $_GET['profesional_id'] ?? null;
-            $sucursalId = $_GET['sucursal_id'] ?? null;
-            $boxId = $_GET['box_id'] ?? null;
-            
-            $result = $db->executeRaw("CALL sp_obtener_disponibilidad(?, ?, ?, ?, ?)", [
-                $fechaInicio, $fechaFin, $profesionalId, $sucursalId, $boxId
-            ]);
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            if (isset($data['accion']) && $data['accion'] === 'generar_plan') {
-                // Generar plan completo de sesiones
-                $db->executeRaw("CALL sp_generar_plan_sesiones(?, ?, ?, ?, ?, ?)", [
-                    $data['venta_id'], $data['sucursal_id'], $data['box_id'],
-                    $data['profesional_id'], $data['fecha_inicio'], $data['duracion_minutos']
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_agenda_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_agenda_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_agenda_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_agenda_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_agenda_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'agenda',
+                    'method' => $method
                 ]);
-                echo json_encode(['success' => true, 'data' => ['plan_generado' => true]]);
-            }
-            break;
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'agenda',
+            'method' => $method
+        ]);
     }
 }
 
-// ---------- OFERTAS ----------
-
 function handleOfertas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM oferta WHERE id = ?", [$id]);
-            } else {
-                $result = $db->select("SELECT * FROM v_ofertas_aplicables ORDER BY prioridad");
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            if ($data['tipo'] === 'pack_temporal') {
-                // Crear oferta pack temporal
-                $result = $db->executeRaw("CALL sp_crear_oferta_pack(?, ?, ?, ?, ?, ?, @oferta_id)", [
-                    $data['nombre'], $data['porc_descuento'], $data['fecha_inicio'],
-                    $data['fecha_fin'], $data['combinable'], $data['prioridad']
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_ofertas_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_ofertas_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_ofertas_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_ofertas_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_ofertas_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'ofertas',
+                    'method' => $method
                 ]);
-            } else {
-                // Crear oferta combo
-                $result = $db->executeRaw("CALL sp_crear_oferta_combo(?, ?, ?, ?, ?, @oferta_id)", [
-                    $data['nombre'], $data['porc_descuento'], $data['min_packs'],
-                    $data['combinable'], $data['prioridad']
-                ]);
-            }
-            $ofertaId = $db->selectOne("SELECT @oferta_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $ofertaId]]);
-            break;
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'ofertas',
+            'method' => $method
+        ]);
     }
 }
 
 function handleOfertasCombo($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            $result = $db->select("SELECT * FROM v_ofertas_combo ORDER BY prioridad");
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Agregar pack a oferta combo
-            $result = $db->executeRaw("CALL sp_agregar_pack_oferta_combo(?, ?, @relacion_id)", [
-                $data['oferta_combo_id'], $data['pack_id']
-            ]);
-            $relacionId = $db->selectOne("SELECT @relacion_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $relacionId]]);
-            break;
-    }
-}
-
-// ---------- CATÁLOGOS ----------
-
-function handleTratamientos($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM tratamiento WHERE id = ?", [$id]);
-            } else {
-                $result = $db->select("SELECT * FROM tratamiento ORDER BY nombre");
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            $result = $db->executeRaw("CALL sp_crear_tratamiento(?, ?, ?, @tratamiento_id)", [
-                $data['nombre'], $data['descripcion'] ?? null, $data['requiere_ficha_especifica'] ?? false
-            ]);
-            $tratamientoId = $db->selectOne("SELECT @tratamiento_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $tratamientoId]]);
-            break;
-    }
-}
-
-function handlePacks($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM pack WHERE id = ?", [$id]);
-            } else {
-                $tratamientoId = $_GET['tratamiento_id'] ?? null;
-                if ($tratamientoId) {
-                    $result = $db->select("SELECT * FROM pack WHERE tratamiento_id = ? AND activo = TRUE ORDER BY nombre", [$tratamientoId]);
-                } else {
-                    $result = $db->select("SELECT * FROM pack WHERE activo = TRUE ORDER BY nombre");
-                }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            $result = $db->executeRaw("CALL sp_crear_pack(?, ?, ?, ?, @pack_id)", [
-                $data['tratamiento_id'], $data['nombre'], $data['descripcion'] ?? null, $data['duracion_sesion_min'] ?? 0
-            ]);
-            $packId = $db->selectOne("SELECT @pack_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $packId]]);
-            break;
-    }
-}
-
-function handleSucursales($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM sucursal WHERE id = ?", [$id]);
-            } else {
-                $result = $db->select("SELECT * FROM sucursal WHERE activo = TRUE ORDER BY nombre");
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            $result = $db->executeRaw("CALL sp_crear_sucursal(?, ?, ?, @sucursal_id)", [
-                $data['nombre'], $data['direccion'] ?? null, $data['telefono'] ?? null
-            ]);
-            $sucursalId = $db->selectOne("SELECT @sucursal_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $sucursalId]]);
-            break;
-    }
-}
-
-function handleBoxes($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM box WHERE id = ?", [$id]);
-            } else {
-                $sucursalId = $_GET['sucursal_id'] ?? null;
-                if ($sucursalId) {
-                    $result = $db->select("SELECT * FROM box WHERE sucursal_id = ? AND activo = TRUE ORDER BY nombre", [$sucursalId]);
-                } else {
-                    $result = $db->select("SELECT * FROM box WHERE activo = TRUE ORDER BY nombre");
-                }
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            $result = $db->executeRaw("CALL sp_crear_box(?, ?, @box_id)", [
-                $data['sucursal_id'], $data['nombre']
-            ]);
-            $boxId = $db->selectOne("SELECT @box_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $boxId]]);
-            break;
-    }
-}
-
-function handleProfesionales($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                $result = $db->selectOne("SELECT * FROM profesional WHERE id = ?", [$id]);
-            } else {
-                $result = $db->select("SELECT * FROM profesional WHERE activo = TRUE ORDER BY nombre");
-            }
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-            
-        case 'POST':
-            // Crear profesional
-            $result = $db->executeRaw("CALL sp_crear_profesional(?, ?, ?, ?, @profesional_id)", [
-                $data['nombre'], $data['tipo_profesional'], $data['bio'] ?? null, $data['foto_url'] ?? null
-            ]);
-            $profesionalId = $db->selectOne("SELECT @profesional_id as id")['id'];
-            echo json_encode(['success' => true, 'data' => ['id' => $profesionalId]]);
-            break;
-    }
-}
-
-// ---------- REPORTES ----------
-
-function handleReportes($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            $tipo = $_GET['tipo'] ?? '';
-            $fechaInicio = $_GET['fecha_inicio'] ?? date('Y-m-d', strtotime('-30 days'));
-            $fechaFin = $_GET['fecha_fin'] ?? date('Y-m-d');
-            
-            switch ($tipo) {
-                case 'progreso_ventas':
-                    $result = $db->executeRaw("CALL sp_reporte_progreso_ventas(?, ?)", [$fechaInicio, $fechaFin]);
-                    break;
-                    
-                case 'plan_vs_ejecucion':
-                    $result = $db->executeRaw("CALL sp_reporte_plan_vs_ejecucion(?, ?)", [$fechaInicio, $fechaFin]);
-                    break;
-                    
-                case 'ofertas_aplicadas':
-                    $result = $db->select("SELECT * FROM v_reporte_ofertas WHERE DATE(fecha_creacion) BETWEEN ? AND ?", [$fechaInicio, $fechaFin]);
-                    break;
-                    
-                case 'disponibilidad':
-                    $result = $db->select("SELECT * FROM v_disponibilidad_profesionales");
-                    break;
-                    
-                default:
-                    $result = [];
-                    break;
-            }
-            
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_ofertas_combo_list()");
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'ofertas-combo',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'ofertas-combo',
+            'method' => $method
+        ]);
     }
 }
 
 function handleOfertasAplicables($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            // Obtener todas las ofertas aplicables (activas y en fecha)
-            $result = $db->select("SELECT * FROM v_ofertas_aplicables WHERE aplicable_hoy = TRUE ORDER BY prioridad");
-            echo json_encode(['success' => true, 'data' => $result]);
-            break;
-    }
-}
-
-// ---------- HISTORIAL DE VENTAS ----------
-
-function handleHistorialVentas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                // Obtener historial de ventas de un cliente específico
-                $result = $db->executeRaw("CALL sp_obtener_historial_tratamientos(?)", [$id]);
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_ofertas_aplicables_list()");
                 echo json_encode(['success' => true, 'data' => $result]);
-            }
-            break;
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'ofertas-aplicables',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'ofertas-aplicables',
+            'method' => $method
+        ]);
     }
 }
 
-// ---------- AUTENTICACIÓN ----------
-
-function handleAuth($db, $method, $id, $data) {
-    switch ($method) {
-        case 'POST':
-            $username = $data['username'] ?? '';
-            $password = $data['password'] ?? '';
-            
-            if (empty($username) || empty($password)) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Username y password son requeridos']);
-                return;
-            }
-            
-            // Buscar usuario por username
-            $usuario = $db->selectOne("SELECT * FROM usuario WHERE username = ? AND activo = TRUE", [$username]);
-            
-            if (!$usuario) {
-                http_response_code(401);
-                echo json_encode(['success' => false, 'error' => 'Credenciales inválidas']);
-                return;
-            }
-            
-            // Verificar password
-            if (!password_verify($password, $usuario['password_hash'])) {
-                http_response_code(401);
-                echo json_encode(['success' => false, 'error' => 'Credenciales inválidas']);
-                return;
-            }
-            
-            // Actualizar último login usando stored procedure
-            $db->executeRaw("CALL sp_actualizar_ultimo_login(?)", [$usuario['id']]);
-            
-            // Obtener datos del profesional si existe
-            $profesional = null;
-            if ($usuario['rol'] === 'profesional') {
-                $profesional = $db->selectOne("SELECT * FROM profesional WHERE usuario_id = ?", [$usuario['id']]);
-            }
-            
-            // Generar token de sesión (simple por ahora)
-            $token = bin2hex(random_bytes(32));
-            
-            echo json_encode([
-                'success' => true,
-                'data' => [
-                    'token' => $token,
-                    'usuario' => [
-                        'id' => $usuario['id'],
-                        'username' => $usuario['username'],
-                        'email' => $usuario['email'],
-                        'rol' => $usuario['rol'],
-                        'ultimo_login' => $usuario['ultimo_login']
-                    ],
-                    'profesional' => $profesional
-                ]
-            ]);
-            break;
-            
-        case 'GET':
-            // Verificar token (implementación simple)
-            $token = $_GET['token'] ?? '';
-            if (empty($token)) {
-                http_response_code(401);
-                echo json_encode(['success' => false, 'error' => 'Token requerido']);
-                return;
-            }
-            
-            // Por ahora, solo validamos que el token existe
-            // En una implementación real, deberías verificar el token en una tabla de sesiones
-            echo json_encode(['success' => true, 'data' => ['valid' => true]]);
-            break;
+function handleTratamientos($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_tratamientos_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_tratamientos_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_tratamientos_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_tratamientos_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_tratamientos_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'tratamientos',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'tratamientos',
+            'method' => $method
+        ]);
     }
 }
-
-// ---------- ZONAS DEL CUERPO ----------
 
 function handleZonas($db, $method, $id, $data) {
-    switch ($method) {
-        case 'GET':
-            if ($id) {
-                // Obtener zona específica por código
-                $result = $db->selectOne("SELECT * FROM zona_cuerpo WHERE codigo = ? AND activo = TRUE", [$id]);
-                if ($result) {
-                    echo json_encode(['success' => true, 'data' => $result]);
-                } else {
-                    http_response_code(404);
-                    echo json_encode(['success' => false, 'error' => 'Zona no encontrada']);
-                }
-            } else {
-                // Obtener todas las zonas activas
-                $result = $db->select("SELECT * FROM zona_cuerpo WHERE activo = TRUE ORDER BY nombre");
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_zonas_list()");
                 echo json_encode(['success' => true, 'data' => $result]);
-            }
-            break;
-            
-        case 'POST':
-            // Crear nueva zona usando stored procedure
-            $codigo = $data['codigo'] ?? '';
-            $nombre = $data['nombre'] ?? '';
-            $categoria = $data['categoria'] ?? '';
-            $precio_base = $data['precio_base'] ?? 0;
-            
-            if (empty($codigo) || empty($nombre) || empty($categoria)) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Código, nombre y categoría son requeridos']);
-                return;
-            }
-            
-            $result = $db->executeRaw("CALL sp_crear_zona_cuerpo(?, ?, ?, ?, @zona_id)", [
-                $codigo, $nombre, $categoria, $precio_base
-            ]);
-            
-            echo json_encode(['success' => true, 'data' => ['codigo' => $codigo]]);
-            break;
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'zonas',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'zonas',
+            'method' => $method
+        ]);
+    }
+}
+
+function handlePacks($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_packs_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_packs_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_packs_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_packs_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_packs_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'packs',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'packs',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleSucursales($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_sucursales_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_sucursales_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_sucursales_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_sucursales_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_sucursales_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'sucursales',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'sucursales',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleBoxes($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_boxes_list()");
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'boxes',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'boxes',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleProfesionales($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                if ($id) {
+                    $result = $db->selectOne("CALL sp_profesionales_get(?)", [$id]);
+                } else {
+                    $result = $db->select("CALL sp_profesionales_list()");
+                }
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'POST':
+                $result = $db->selectOne("CALL sp_profesionales_create(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'PUT':
+                $result = $db->selectOne("CALL sp_profesionales_update(?, ?)", [$id, json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            case 'DELETE':
+                $result = $db->selectOne("CALL sp_profesionales_delete(?)", [$id]);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'profesionales',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'profesionales',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleReportes($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                $result = $db->select("CALL sp_reportes_list()");
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'reportes',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'reportes',
+            'method' => $method
+        ]);
     }
 }
 
 ?>
-

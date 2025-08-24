@@ -382,39 +382,47 @@ class Calendar {
     
     async loadEvents() {
         try {
-            // Usar la nueva API
+            console.log('🔄 Cargando eventos del calendario...');
             const response = await fetch('/api.php/sesiones');
             const data = await response.json();
             
             if (data.success) {
                 this.events = data.data || [];
+                console.log(`✅ Eventos cargados correctamente (${this.events.length} eventos)`);
+                mostrarNotificacion('Eventos cargados correctamente', 'success');
                 this.renderCalendar();
             } else {
                 this.events = [];
-                console.warn('No se pudieron cargar los eventos:', data.error);
+                console.warn('❌ Error al cargar eventos:', data.error);
+                mostrarNotificacion(data.error || 'Error al cargar eventos', 'error');
             }
         } catch (error) {
-            console.error('Error cargando eventos:', error);
+            console.error('❌ Error al cargar eventos:', error);
             this.events = [];
+            mostrarNotificacion(error?.message || 'Error al cargar eventos', 'error');
         }
     }
     
     async loadBoxes() {
         try {
-            // Usar la nueva API
+            console.log('🔄 Cargando boxes...');
             const response = await fetch('/api.php/boxes');
             const data = await response.json();
             
             if (data.success) {
                 this.boxes = data.data || [];
+                console.log(`✅ Boxes cargados correctamente (${this.boxes.length} boxes)`);
+                mostrarNotificacion('Boxes cargados correctamente', 'success');
                 this.updateBoxFilter();
             } else {
                 this.boxes = [];
-                console.warn('No se pudieron cargar los boxes:', data.error);
+                console.warn('❌ Error al cargar boxes:', data.error);
+                mostrarNotificacion(data.error || 'Error al cargar boxes', 'error');
             }
         } catch (error) {
-            console.error('Error cargando boxes:', error);
+            console.error('❌ Error al cargar boxes:', error);
             this.boxes = [];
+            mostrarNotificacion(error?.message || 'Error al cargar boxes', 'error');
         }
     }
     
@@ -570,8 +578,9 @@ class Calendar {
         document.body.appendChild(modal);
     }
     
+    // Versión para disparar evento custom (no la asíncrona)
     openSession(sessionId) {
-        console.log('🔄 Abriendo sesión:', sessionId);
+        console.log('🔄 Abriendo sesión (evento custom):', sessionId);
         
         // Disparar un evento personalizado para que el módulo de sesiones lo maneje
         const event = new CustomEvent('openSession', { 
@@ -586,8 +595,9 @@ class Calendar {
         }
     }
     
+    // Versión para disparar evento custom (no la asíncrona)
     closeSession(sessionId) {
-        console.log('🔄 Cerrando sesión:', sessionId);
+        console.log('🔄 Cerrando sesión (evento custom):', sessionId);
         
         // Disparar un evento personalizado para que el módulo de sesiones lo maneje
         const event = new CustomEvent('closeSession', { 
@@ -620,48 +630,74 @@ class Calendar {
         }
     }
     
-
-    
-    async openSession(sessionId) {
+    // Versión asíncrona para abrir sesión con feedback descriptivo
+    async openSessionAsync(sessionId) {
         try {
+            console.log(`🔄 Solicitando apertura de sesión ID ${sessionId}...`);
             const response = await fetch(`./api.php/sesiones/${sessionId}/abrir`, {
                 method: 'POST'
             });
+            const data = await response.json().catch(() => ({}));
             
             if (!response.ok) {
-                throw new Error('Error abriendo sesión');
+                // Si la API devuelve error, mostrar el mensaje de la db si existe
+                const msg = data?.error || 'Error abriendo sesión';
+                console.error('❌ Error abriendo sesión:', msg);
+                mostrarNotificacion(msg, 'error');
+                return;
             }
             
             // Recargar calendario
-            this.loadEvents();
+            await this.loadEvents();
             this.renderCalendar();
             
+            console.log('✅ Sesión abierta exitosamente');
             mostrarNotificacion('Sesión abierta exitosamente', 'success');
         } catch (error) {
-            console.error('Error abriendo sesión:', error);
-            mostrarNotificacion('Error abriendo sesión: ' + error.message, 'error');
+            // Si el error viene de la db, mostrar el mensaje de la db
+            const msg = error?.message || 'Error abriendo sesión';
+            console.error('❌ Error abriendo sesión:', msg);
+            mostrarNotificacion(msg, 'error');
         }
     }
     
-    async closeSession(sessionId) {
+    // Versión asíncrona para cerrar sesión con feedback descriptivo
+    async closeSessionAsync(sessionId) {
         try {
+            console.log(`🔄 Solicitando cierre de sesión ID ${sessionId}...`);
             const response = await fetch(`./api.php/sesiones/${sessionId}/cerrar`, {
                 method: 'POST'
             });
+            const data = await response.json().catch(() => ({}));
             
             if (!response.ok) {
-                throw new Error('Error cerrando sesión');
+                // Si la API devuelve error, mostrar el mensaje de la db si existe
+                const msg = data?.error || 'Error cerrando sesión';
+                console.error('❌ Error cerrando sesión:', msg);
+                mostrarNotificacion(msg, 'error');
+                return;
             }
             
             // Recargar calendario
-            this.loadEvents();
+            await this.loadEvents();
             this.renderCalendar();
             
+            console.log('✅ Sesión cerrada exitosamente');
             mostrarNotificacion('Sesión cerrada exitosamente', 'success');
         } catch (error) {
-            console.error('Error cerrando sesión:', error);
-            mostrarNotificacion('Error cerrando sesión: ' + error.message, 'error');
+            // Si el error viene de la db, mostrar el mensaje de la db
+            const msg = error?.message || 'Error cerrando sesión';
+            console.error('❌ Error cerrando sesión:', msg);
+            mostrarNotificacion(msg, 'error');
         }
+    }
+    
+    // Para compatibilidad con código anterior, redirigir a la versión asíncrona
+    async openSession(sessionId) {
+        await this.openSessionAsync(sessionId);
+    }
+    async closeSession(sessionId) {
+        await this.closeSessionAsync(sessionId);
     }
     
     getStatusLabel(status) {

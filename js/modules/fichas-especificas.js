@@ -3,7 +3,7 @@
  * Maneja fichas de depilación y corporal/facial
  */
 
-import { formatCurrency, formatDate, getCurrentProfesionalId } from '../utils.js';
+import { formatCurrency, formatDate, getCurrentProfesionalId, mostrarNotificacion } from '../utils.js';
 import { ConsentimientoModal } from '../components/SignaturePad.js';
 import { fichasEspecificasAPI, zonasAPI } from '../api-client.js';
 
@@ -28,6 +28,7 @@ export class FichasEspecificasModule {
             console.log('✅ Zonas cargadas:', this.zonas.length);
         } catch (error) {
             console.error('❌ Error cargando zonas:', error);
+            mostrarNotificacion('Error cargando zonas: ' + (error?.message || 'Error desconocido'), 'error');
             this.zonas = [];
         }
     }
@@ -198,7 +199,7 @@ export class FichasEspecificasModule {
         } catch (error) {
             console.warn('No se pudo cargar el consentimiento:', error);
             const errorMessage = error.message || 'Error desconocido cargando consentimiento';
-            console.warn(`Error cargando consentimiento: ${errorMessage}`);
+            mostrarNotificacion('No se pudo cargar el consentimiento: ' + errorMessage, 'warning');
             this.consentimientoText = this.getDefaultConsentimientoText();
         }
     }
@@ -232,10 +233,12 @@ Fecha: ${new Date().toLocaleDateString()}
             this.consentimientoText,
             async (signatureBlob) => {
                 console.log('Consentimiento aceptado con firma BLOB:', signatureBlob);
+                mostrarNotificacion('Consentimiento aceptado y firmado correctamente.', 'success');
                 if (onAccept) await onAccept(signatureBlob);
             },
             () => {
                 console.log('Consentimiento rechazado');
+                mostrarNotificacion('Consentimiento rechazado por el paciente.', 'warning');
                 if (onReject) onReject();
             }
         );
@@ -254,14 +257,22 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.saveConsentimientoFirma(formData);
             
             if (response.success) {
+                console.log('✅ Firma digital guardada correctamente para ficha:', fichaId);
+                mostrarNotificacion('Firma digital guardada correctamente.', 'success');
                 return response.data;
             } else {
-                throw new Error('Error guardando firma digital');
+                // Mostrar el error de la db si viene
+                const dbError = response?.error || 'Error guardando firma digital';
+                console.error('❌ Error guardando firma digital:', dbError);
+                mostrarNotificacion('Error guardando firma digital: ' + dbError, 'error');
+                throw new Error(dbError);
             }
         } catch (error) {
-            console.error('Error guardando firma digital:', error);
-            const errorMessage = error.message || 'Error desconocido guardando firma digital';
-            throw new Error(`Error guardando firma digital: ${errorMessage}`);
+            // Si el error viene de la db, mostrarlo tal cual
+            const errorMessage = error?.message || 'Error desconocido guardando firma digital';
+            console.error('❌ Error guardando firma digital:', errorMessage);
+            mostrarNotificacion('Error guardando firma digital: ' + errorMessage, 'error');
+            throw new Error(errorMessage);
         }
     }
     
@@ -270,14 +281,18 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.getConsentimientoFirma(fichaId, tipoConsentimiento);
             
             if (response.success) {
+                console.log('✅ Consentimiento firmado verificado para ficha:', fichaId);
                 return response.data;
             } else {
+                const dbError = response?.error || 'No se encontró consentimiento firmado';
+                console.warn('⚠️ No se encontró consentimiento firmado:', dbError);
+                mostrarNotificacion('No se encontró consentimiento firmado: ' + dbError, 'warning');
                 return null;
             }
         } catch (error) {
-            console.error('Error verificando consentimiento:', error);
-            const errorMessage = error.message || 'Error desconocido verificando consentimiento';
-            console.error(`Error verificando consentimiento: ${errorMessage}`);
+            const errorMessage = error?.message || 'Error desconocido verificando consentimiento';
+            console.error('❌ Error verificando consentimiento:', errorMessage);
+            mostrarNotificacion('Error verificando consentimiento: ' + errorMessage, 'error');
             return null;
         }
     }
@@ -327,14 +342,21 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
+                console.log('✅ Ficha de depilación guardada correctamente. ID:', response.data?.id || '(sin id)');
+                mostrarNotificacion('Ficha de depilación guardada correctamente.', 'success');
                 return response.data;
             } else {
-                throw new Error('Error guardando ficha de depilación');
+                // Mostrar el error de la db si viene
+                const dbError = response?.error || 'Error guardando ficha de depilación';
+                console.error('❌ Error guardando ficha de depilación:', dbError);
+                mostrarNotificacion('Error guardando ficha de depilación: ' + dbError, 'error');
+                throw new Error(dbError);
             }
         } catch (error) {
-            console.error('Error:', error);
-            const errorMessage = error.message || 'Error desconocido guardando ficha de depilación';
-            throw new Error(`Error guardando ficha de depilación: ${errorMessage}`);
+            const errorMessage = error?.message || 'Error desconocido guardando ficha de depilación';
+            console.error('❌ Error guardando ficha de depilación:', errorMessage);
+            mostrarNotificacion('Error guardando ficha de depilación: ' + errorMessage, 'error');
+            throw new Error(errorMessage);
         }
     }
     
@@ -418,13 +440,21 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
+                console.log('✅ Ficha corporal/facial guardada correctamente. ID:', response.data?.id || '(sin id)');
+                mostrarNotificacion('Ficha corporal/facial guardada correctamente.', 'success');
                 return response.data;
             } else {
-                throw new Error('Error guardando ficha corporal/facial');
+                // Mostrar el error de la db si viene
+                const dbError = response?.error || 'Error guardando ficha corporal/facial';
+                console.error('❌ Error guardando ficha corporal/facial:', dbError);
+                mostrarNotificacion('Error guardando ficha corporal/facial: ' + dbError, 'error');
+                throw new Error(dbError);
             }
         } catch (error) {
-            console.error('Error:', error);
-            throw error;
+            const errorMessage = error?.message || 'Error desconocido guardando ficha corporal/facial';
+            console.error('❌ Error guardando ficha corporal/facial:', errorMessage);
+            mostrarNotificacion('Error guardando ficha corporal/facial: ' + errorMessage, 'error');
+            throw new Error(errorMessage);
         }
     }
     
@@ -433,25 +463,34 @@ Fecha: ${new Date().toLocaleDateString()}
         // TODO: Obtener desde la base de datos usando packsAPI
         // Por ahora retornamos array vacío - se implementará cuando se conecte con packs
         console.log('⚠️ getZonasFromPack: Implementar con packsAPI');
+        mostrarNotificacion('Funcionalidad de obtener zonas de un pack aún no implementada.', 'info');
         return [];
     }
     
     // Método para calcular precio adicional por zonas extra
     calculatePrecioZonasExtra(zonasPack, zonasSeleccionadas) {
         const zonasExtra = zonasSeleccionadas.filter(zona => !zonasPack.includes(zona));
-        return zonasExtra.reduce((total, zona) => {
+        const total = zonasExtra.reduce((total, zona) => {
             const zonaData = this.zonas.find(z => z.codigo === zona);
             return total + (zonaData ? zonaData.precio_base : 0);
         }, 0);
+        if (zonasExtra.length > 0) {
+            console.log(`💸 Precio adicional por zonas extra (${zonasExtra.join(', ')}): ${formatCurrency(total)}`);
+        }
+        return total;
     }
     
     // Método para calcular descuento por zonas removidas
     calculateDescuentoZonasRemovidas(zonasPack, zonasSeleccionadas) {
         const zonasRemovidas = zonasPack.filter(zona => !zonasSeleccionadas.includes(zona));
-        return zonasRemovidas.reduce((total, zona) => {
+        const total = zonasRemovidas.reduce((total, zona) => {
             const zonaData = this.zonas.find(z => z.codigo === zona);
             return total + (zonaData ? zonaData.precio_base : 0);
         }, 0);
+        if (zonasRemovidas.length > 0) {
+            console.log(`💸 Descuento por zonas removidas (${zonasRemovidas.join(', ')}): ${formatCurrency(total)}`);
+        }
+        return total;
     }
 }
 

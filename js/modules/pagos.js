@@ -14,10 +14,16 @@ export class PagosModule {
     }
     
     async init() {
-        await this.cargarPacientesSelect();
-        this.cargarMetodosPago();
-        this.configurarEventosPagos();
-        await this.renderHistorialPagos();
+        try {
+            await this.cargarPacientesSelect();
+            this.cargarMetodosPago();
+            this.configurarEventosPagos();
+            await this.renderHistorialPagos();
+            console.log('✅ PagosModule inicializado correctamente');
+        } catch (error) {
+            console.error('❌ Error inicializando PagosModule:', error);
+            mostrarNotificacion(`Error inicializando módulo de pagos: ${error.message || error}`, 'error');
+        }
     }
     
     configurarEventosPagos() {
@@ -51,9 +57,8 @@ export class PagosModule {
                     await this.registrarPago();
                     
                 } catch (error) {
-                    console.error('Error en formulario pago:', error);
-                    const errorMessage = error.message || 'Error desconocido en formulario pago';
-                    mostrarNotificacion(`Error inesperado: ${errorMessage}`, 'error');
+                    console.error('❌ Error en formulario de pago:', error);
+                    mostrarNotificacion(error.message || 'Error inesperado en el formulario de pago', 'error');
                 } finally {
                     // Restaurar botón
                     submitBtn.innerHTML = originalText;
@@ -62,8 +67,6 @@ export class PagosModule {
             });
         }
     }
-    
-
     
     cargarMetodosPago() {
         const select = document.getElementById('metodoPago');
@@ -87,6 +90,7 @@ export class PagosModule {
             option.textContent = metodo.label;
             select.appendChild(option);
         });
+        console.log('✅ Métodos de pago cargados en el select');
     }
     
     async seleccionarVentaPago() {
@@ -96,6 +100,7 @@ export class PagosModule {
         if (!ventaId) {
             this.ventaSeleccionadaPago = null;
             this.limpiarFormularioPago();
+            console.log('ℹ️ Selección de venta limpiada');
             return;
         }
         
@@ -115,10 +120,10 @@ export class PagosModule {
                 montoInput.max = pendiente;
                 montoInput.placeholder = `Máximo: ${formatearPrecio(pendiente)}`;
             }
+            console.log(`✅ Venta seleccionada para pago: ID ${ventaId}`);
         } catch (error) {
-            console.error('Error cargando venta:', error);
-            const errorMessage = error.message || 'Error desconocido cargando venta';
-            mostrarNotificacion(`Error cargando venta: ${errorMessage}`, 'error');
+            console.error('❌ Error cargando venta:', error);
+            mostrarNotificacion(error.message || 'Error cargando venta', 'error');
         }
     }
     
@@ -140,6 +145,7 @@ export class PagosModule {
         `;
         
         detallesContainer.style.display = 'block';
+        console.log('✅ Detalles de venta mostrados en el formulario de pago');
     }
     
     limpiarFormularioPago() {
@@ -162,11 +168,13 @@ export class PagosModule {
         
         // Resetear venta seleccionada
         this.ventaSeleccionadaPago = null;
+        console.log('ℹ️ Formulario de pago limpiado');
     }
     
     async registrarPago() {
         if (!this.ventaSeleccionadaPago) {
             mostrarNotificacion('Debe seleccionar una venta', 'error');
+            console.warn('⚠️ Intento de registrar pago sin venta seleccionada');
             return false;
         }
         
@@ -177,17 +185,20 @@ export class PagosModule {
         
         if (!monto || monto <= 0) {
             mostrarNotificacion('El monto debe ser mayor a 0', 'error');
+            console.warn('⚠️ Monto de pago inválido:', monto);
             return false;
         }
         
         if (!metodo) {
             mostrarNotificacion('Debe seleccionar un método de pago', 'error');
+            console.warn('⚠️ Método de pago no seleccionado');
             return false;
         }
         
         const pendiente = this.ventaSeleccionadaPago.precio_total - this.ventaSeleccionadaPago.total_pagado;
         if (monto > pendiente) {
             mostrarNotificacion(`El monto no puede ser mayor a ${formatearPrecio(pendiente)}`, 'error');
+            console.warn(`⚠️ Monto de pago (${monto}) mayor al pendiente (${pendiente})`);
             return false;
         }
         
@@ -204,6 +215,7 @@ export class PagosModule {
             
             if (pagoGuardado) {
                 mostrarNotificacion('Pago registrado correctamente', 'success');
+                console.log(`✅ Pago registrado para venta ID ${pago.venta_id} por ${formatearPrecio(monto)} (${metodo})`);
                 
                 // Actualizar venta
                 await this.actualizarVentaDespuesPago(monto);
@@ -218,12 +230,13 @@ export class PagosModule {
                 return true;
             } else {
                 mostrarNotificacion('Error al registrar pago', 'error');
+                console.error('❌ Error desconocido al registrar pago (respuesta vacía)');
                 return false;
             }
         } catch (error) {
-            console.error('Error registrando pago:', error);
-            const errorMessage = error.message || 'Error desconocido registrando pago';
-            mostrarNotificacion(`Error al registrar pago: ${errorMessage}`, 'error');
+            console.error('❌ Error registrando pago:', error);
+            // Mostrar el error de la DB si existe, si no, mensaje genérico
+            mostrarNotificacion(error.message || 'Error registrando pago', 'error');
             return false;
         }
     }
@@ -234,8 +247,13 @@ export class PagosModule {
             total_pagado: this.ventaSeleccionadaPago.total_pagado + montoPago,
             estado: (this.ventaSeleccionadaPago.total_pagado + montoPago) >= this.ventaSeleccionadaPago.precio_total ? 'pagado' : 'pendiente'
         };
-        
-        await ventasAPI.update(this.ventaSeleccionadaPago.id, nuevaVenta);
+        try {
+            await ventasAPI.update(this.ventaSeleccionadaPago.id, nuevaVenta);
+            console.log(`✅ Venta actualizada después del pago. Venta ID: ${this.ventaSeleccionadaPago.id}`);
+        } catch (error) {
+            console.error('❌ Error actualizando venta después del pago:', error);
+            mostrarNotificacion(error.message || 'Error actualizando venta después del pago', 'error');
+        }
     }
     
     async renderHistorialPagos() {
@@ -247,6 +265,7 @@ export class PagosModule {
             
             if (pagos.length === 0) {
                 container.innerHTML = '<p class="text-center">No hay pagos registrados</p>';
+                console.log('ℹ️ No hay pagos registrados para mostrar');
                 return;
             }
             
@@ -289,9 +308,11 @@ export class PagosModule {
             `;
             
             container.innerHTML = html;
+            console.log(`✅ Historial de pagos renderizado (${pagos.length} pagos)`);
         } catch (error) {
-            console.error('Error cargando historial de pagos:', error);
+            console.error('❌ Error cargando historial de pagos:', error);
             container.innerHTML = '<p class="text-center text-danger">Error cargando historial de pagos</p>';
+            mostrarNotificacion(error.message || 'Error cargando historial de pagos', 'error');
         }
     }
     
@@ -394,6 +415,7 @@ export class PagosModule {
             console.log('✅ Select de pacientes cargado en pagos');
         } catch (error) {
             console.error('❌ Error cargando pacientes en pagos:', error);
+            mostrarNotificacion(error.message || 'Error cargando pacientes en pagos', 'error');
         }
     }
     
@@ -405,12 +427,14 @@ export class PagosModule {
             if (!pacienteId) {
                 select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
                 this.limpiarFormularioPago();
+                console.log('ℹ️ Paciente no seleccionado, ventas limpiadas');
                 return;
             }
             
             const ventasPendientes = await ventasAPI.search('estado:pendiente');
             
             select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
+            let ventasAgregadas = 0;
             
             for (const venta of ventasPendientes) {
                 if (venta.ficha_id == pacienteId) {
@@ -421,6 +445,7 @@ export class PagosModule {
                         option.value = venta.id.toString();
                         option.textContent = `${venta.tratamiento?.nombre || 'Tratamiento'} (${formatearPrecio(pendiente)} pendiente)`;
                         select.appendChild(option);
+                        ventasAgregadas++;
                     }
                 }
             }
@@ -430,11 +455,13 @@ export class PagosModule {
                 option.textContent = 'No hay ventas pendientes de pago';
                 option.disabled = true;
                 select.appendChild(option);
+                console.log('ℹ️ No hay ventas pendientes de pago para el paciente seleccionado');
+            } else {
+                console.log(`✅ Ventas pendientes cargadas para paciente ID ${pacienteId}: ${ventasAgregadas}`);
             }
         } catch (error) {
-            console.error('Error cargando ventas por paciente:', error);
-            const errorMessage = error.message || 'Error desconocido cargando ventas por paciente';
-            mostrarNotificacion(`Error cargando ventas por paciente: ${errorMessage}`, 'error');
+            console.error('❌ Error cargando ventas por paciente:', error);
+            mostrarNotificacion(error.message || 'Error cargando ventas por paciente', 'error');
         }
     }
 }

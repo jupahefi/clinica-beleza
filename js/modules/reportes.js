@@ -12,94 +12,113 @@ export class ReportesModule {
         this.reportes = [];
         this.init();
     }
-    
+
     async init() {
         this.configurarEventosReportes();
         await this.cargarReportesDisponibles();
     }
-    
+
     configurarEventosReportes() {
         // Configurar botones de generación de reportes
         const btnProgresoVentas = document.getElementById('btnProgresoVentas');
         if (btnProgresoVentas) {
             btnProgresoVentas.addEventListener('click', () => this.generarReporteProgresoVentas());
         }
-        
+
         const btnPlanVsEjecucion = document.getElementById('btnPlanVsEjecucion');
         if (btnPlanVsEjecucion) {
             btnPlanVsEjecucion.addEventListener('click', () => this.generarReportePlanVsEjecucion());
         }
-        
+
         const btnDisponibilidadProfesionales = document.getElementById('btnDisponibilidadProfesionales');
         if (btnDisponibilidadProfesionales) {
             btnDisponibilidadProfesionales.addEventListener('click', () => this.generarReporteDisponibilidadProfesionales());
         }
-        
+
         const btnOfertasAplicadas = document.getElementById('btnOfertasAplicadas');
         if (btnOfertasAplicadas) {
             btnOfertasAplicadas.addEventListener('click', () => this.generarReporteOfertasAplicadas());
         }
     }
-    
+
     async cargarReportesDisponibles() {
         try {
             // Aquí se podrían cargar reportes predefinidos o configuraciones
-            console.log('Reportes disponibles cargados');
+            console.log('[Reportes] Reportes disponibles cargados correctamente');
+            mostrarNotificacion('Reportes disponibles cargados correctamente', 'success');
         } catch (error) {
-            console.error('Error cargando reportes disponibles:', error);
-            const errorMessage = error.message || 'Error desconocido cargando reportes disponibles';
-            mostrarNotificacion(`Error cargando reportes disponibles: ${errorMessage}`, 'error');
+            console.error('[Reportes] Error cargando reportes disponibles:', error);
+            // Mostrar el error de la DB directamente si existe
+            const errorMessage = error?.message || error?.error || 'Error desconocido cargando reportes disponibles';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     async generarReporteProgresoVentas() {
         try {
+            console.log('[Reportes] Solicitando reporte de progreso de ventas...');
+            mostrarNotificacion('Generando reporte de progreso de ventas...', 'info');
             const reporte = await reportesAPI.progresoVentas();
+            console.log('[Reportes] Reporte de progreso de ventas recibido:', reporte);
+            mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
             this.mostrarReporteProgresoVentas(reporte);
         } catch (error) {
-            console.error('Error generando reporte de progreso de ventas:', error);
-            const errorMessage = error.message || 'Error desconocido generando reporte de progreso de ventas';
-            this.mostrarError(`Error generando reporte de progreso de ventas: ${errorMessage}`);
+            console.error('[Reportes] Error generando reporte de progreso de ventas:', error);
+            // Mostrar el error de la DB directamente si existe
+            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de progreso de ventas';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     async generarReportePlanVsEjecucion() {
         try {
+            console.log('[Reportes] Solicitando reporte Plan vs Ejecución...');
+            mostrarNotificacion('Generando reporte Plan vs Ejecución...', 'info');
             const reporte = await reportesAPI.planVsEjecucion();
+            console.log('[Reportes] Reporte Plan vs Ejecución recibido:', reporte);
+            mostrarNotificacion('Reporte Plan vs Ejecución generado correctamente', 'success');
             this.mostrarReportePlanVsEjecucion(reporte);
         } catch (error) {
-            console.error('Error generando reporte plan vs ejecución:', error);
-            const errorMessage = error.message || 'Error desconocido generando reporte plan vs ejecución';
-            this.mostrarError(`Error generando reporte plan vs ejecución: ${errorMessage}`);
+            console.error('[Reportes] Error generando reporte Plan vs Ejecución:', error);
+            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte Plan vs Ejecución';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     async generarReporteDisponibilidadProfesionales() {
         try {
+            console.log('[Reportes] Solicitando reporte de disponibilidad de profesionales...');
+            mostrarNotificacion('Generando reporte de disponibilidad de profesionales...', 'info');
             const reporte = await reportesAPI.disponibilidad();
+            console.log('[Reportes] Reporte de disponibilidad de profesionales recibido:', reporte);
+            mostrarNotificacion('Reporte de disponibilidad de profesionales generado correctamente', 'success');
             this.mostrarReporteDisponibilidadProfesionales(reporte);
         } catch (error) {
-            console.error('Error generando reporte de disponibilidad:', error);
-            const errorMessage = error.message || 'Error desconocido generando reporte de disponibilidad';
-            this.mostrarError(`Error generando reporte de disponibilidad: ${errorMessage}`);
+            console.error('[Reportes] Error generando reporte de disponibilidad de profesionales:', error);
+            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de disponibilidad de profesionales';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     async generarReporteOfertasAplicadas() {
         try {
+            console.log('[Reportes] Solicitando reporte de ofertas aplicadas...');
+            mostrarNotificacion('Generando reporte de ofertas aplicadas...', 'info');
             const reporte = await reportesAPI.ofertasAplicadas();
+            console.log('[Reportes] Reporte de ofertas aplicadas recibido:', reporte);
+            mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
             this.mostrarReporteOfertasAplicadas(reporte);
         } catch (error) {
-            console.error('Error generando reporte de ofertas aplicadas:', error);
-            const errorMessage = error.message || 'Error desconocido generando reporte de ofertas aplicadas';
-            this.mostrarError(`Error generando reporte de ofertas aplicadas: ${errorMessage}`);
+            console.error('[Reportes] Error generando reporte de ofertas aplicadas:', error);
+            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de ofertas aplicadas';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     mostrarReporteProgresoVentas(reporte) {
         const container = document.getElementById('reporteProgresoVentas');
         if (!container) return;
-        
+
         let html = `
             <div class="reporte-container">
                 <h3>📊 Reporte de Progreso de Ventas</h3>
@@ -122,18 +141,18 @@ export class ReportesModule {
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = html;
         container.style.display = 'block';
-        
+
         // Aquí se podría agregar la lógica para crear gráficos con Chart.js
         this.crearGraficoProgresoVentas(reporte);
     }
-    
+
     mostrarReportePlanVsEjecucion(reporte) {
         const container = document.getElementById('reportePlanVsEjecucion');
         if (!container) return;
-        
+
         let html = `
             <div class="reporte-container">
                 <h3>📈 Reporte Plan vs Ejecución</h3>
@@ -150,12 +169,12 @@ export class ReportesModule {
                         </thead>
                         <tbody>
         `;
-        
+
         if (reporte.metricas) {
             reporte.metricas.forEach(metrica => {
                 const diferencia = metrica.ejecutado - metrica.planificado;
                 const porcentaje = metrica.planificado > 0 ? ((metrica.ejecutado / metrica.planificado) * 100).toFixed(1) : 0;
-                
+
                 html += `
                     <tr>
                         <td>${metrica.nombre}</td>
@@ -167,33 +186,33 @@ export class ReportesModule {
                 `;
             });
         }
-        
+
         html += `
                         </tbody>
                     </table>
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = html;
         container.style.display = 'block';
     }
-    
+
     mostrarReporteDisponibilidadProfesionales(reporte) {
         const container = document.getElementById('reporteDisponibilidadProfesionales');
         if (!container) return;
-        
+
         let html = `
             <div class="reporte-container">
                 <h3>👥 Reporte de Disponibilidad de Profesionales</h3>
                 <div class="profesionales-grid">
         `;
-        
+
         if (reporte.profesionales) {
             reporte.profesionales.forEach(profesional => {
                 const disponibilidad = profesional.disponibilidad || 0;
                 const colorClase = disponibilidad >= 80 ? 'success' : disponibilidad >= 60 ? 'warning' : 'danger';
-                
+
                 html += `
                     <div class="profesional-card">
                         <h4>${profesional.nombre}</h4>
@@ -205,20 +224,20 @@ export class ReportesModule {
                 `;
             });
         }
-        
+
         html += `
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = html;
         container.style.display = 'block';
     }
-    
+
     mostrarReporteOfertasAplicadas(reporte) {
         const container = document.getElementById('reporteOfertasAplicadas');
         if (!container) return;
-        
+
         let html = `
             <div class="reporte-container">
                 <h3>🎯 Reporte de Ofertas Aplicadas</h3>
@@ -249,7 +268,7 @@ export class ReportesModule {
                         </thead>
                         <tbody>
         `;
-        
+
         if (reporte.detalleOfertas) {
             reporte.detalleOfertas.forEach(oferta => {
                 html += `
@@ -262,18 +281,18 @@ export class ReportesModule {
                 `;
             });
         }
-        
+
         html += `
                         </tbody>
                     </table>
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = html;
         container.style.display = 'block';
     }
-    
+
     crearGraficoProgresoVentas(reporte) {
         // Aquí se implementaría la lógica para crear gráficos con Chart.js
         // Por ahora solo un placeholder
@@ -288,11 +307,11 @@ export class ReportesModule {
             ctx.fillText('Gráfico de Progreso de Ventas', canvas.width / 2, canvas.height / 2);
         }
     }
-    
+
     formatearNumero(numero) {
         return new Intl.NumberFormat('es-CL').format(numero);
     }
-    
+
     mostrarLoading(mensaje) {
         // Implementar loading spinner
         const loadingDiv = document.getElementById('loadingReportes');
@@ -308,30 +327,34 @@ export class ReportesModule {
             loadingDiv.style.display = 'block';
         }
     }
-    
+
     ocultarLoading() {
         const loadingDiv = document.getElementById('loadingReportes');
         if (loadingDiv) {
             loadingDiv.style.display = 'none';
         }
     }
-    
+
     mostrarError(mensaje) {
-        console.error(mensaje);
-        // Aquí se puede integrar con el sistema de notificaciones del frontend
-                    mostrarNotificacion(mensaje, 'info');
+        // Este método queda para compatibilidad, pero ahora los errores se muestran directamente en los catch
+        console.error('[Reportes] Error:', mensaje);
+        mostrarNotificacion(mensaje, 'error');
     }
-    
+
     async exportarReporte(tipoReporte, formato = 'csv') {
         try {
+            console.log(`[Reportes] Exportando reporte tipo "${tipoReporte}" en formato "${formato}"...`);
+            mostrarNotificacion(`Exportando reporte (${tipoReporte}) en formato ${formato}...`, 'info');
             const reporte = await reportesAPI.progresoVentas(); // Usar el método correcto según el tipo
             this.exportarDatos(reporte, tipoReporte, formato);
+            mostrarNotificacion('Reporte exportado correctamente', 'success');
         } catch (error) {
-            console.error('Error exportando reporte:', error);
-            this.mostrarError('Error exportando reporte');
+            console.error('[Reportes] Error exportando reporte:', error);
+            const errorMessage = error?.message || error?.error || 'Error exportando reporte';
+            mostrarNotificacion(errorMessage, 'error');
         }
     }
-    
+
     exportarDatos(datos, tipoReporte, formato) {
         if (formato === 'csv') {
             this.exportarCSV(datos, `reporte_${tipoReporte}.csv`);
@@ -339,15 +362,16 @@ export class ReportesModule {
             this.exportarJSON(datos, `reporte_${tipoReporte}.json`);
         }
     }
-    
+
     exportarCSV(datos, nombreArchivo) {
         // Implementar exportación a CSV
-        console.log('Exportando CSV:', datos);
+        console.log('[Reportes] Exportando a CSV:', datos);
         mostrarNotificacion('Funcionalidad de exportación CSV en desarrollo', 'info');
     }
-    
+
     exportarJSON(datos, nombreArchivo) {
         // Implementar exportación a JSON
+        console.log('[Reportes] Exportando a JSON:', datos);
         const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -356,24 +380,23 @@ export class ReportesModule {
         a.click();
         URL.revokeObjectURL(url);
     }
-    
+
     descargarArchivo(contenido, nombreArchivo) {
         const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         link.setAttribute('href', url);
         link.setAttribute('download', nombreArchivo);
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
-    
+
     filtrarHistorial(tipo) {
-        console.log('Filtrando historial por:', tipo);
-        // Por ahora solo un placeholder - se implementará cuando se desarrolle el módulo de historial
+        console.log('[Reportes] Filtrando historial por:', tipo);
         mostrarNotificacion(`Filtro de historial: ${tipo} - Funcionalidad en desarrollo`, 'info');
     }
 }

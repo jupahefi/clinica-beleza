@@ -41,22 +41,25 @@ export class OfertasModule {
     async cargarOfertas() {
         try {
             this.ofertas = await ofertasAPI.getAll();
+            console.log('Ofertas cargadas correctamente:', this.ofertas);
+            mostrarNotificacion('Ofertas cargadas correctamente', 'info');
             this.actualizarTablaOfertas();
         } catch (error) {
             console.error('Error cargando ofertas:', error);
-            const errorMessage = error.message || 'Error desconocido cargando ofertas';
-            mostrarNotificacion(`Error cargando ofertas: ${errorMessage}`, 'error');
+            // Mostrar el mensaje de error de la DB si existe, si no, mensaje genérico
+            mostrarNotificacion(error.message || 'Error cargando ofertas', 'error');
         }
     }
     
     async cargarOfertasCombo() {
         try {
             this.ofertasCombo = await ofertasComboAPI.getAll();
+            console.log('Ofertas combo cargadas correctamente:', this.ofertasCombo);
+            mostrarNotificacion('Ofertas combo cargadas correctamente', 'info');
             this.actualizarTablaOfertasCombo();
         } catch (error) {
             console.error('Error cargando ofertas combo:', error);
-            const errorMessage = error.message || 'Error desconocido cargando ofertas combo';
-            mostrarNotificacion(`Error cargando ofertas combo: ${errorMessage}`, 'error');
+            mostrarNotificacion(error.message || 'Error cargando ofertas combo', 'error');
         }
     }
     
@@ -146,9 +149,11 @@ export class OfertasModule {
             if (ofertaId) {
                 // Actualizar oferta existente
                 resultado = await ofertasAPI.update(parseInt(ofertaId), ofertaData);
+                console.log(`Oferta actualizada (ID: ${ofertaId}):`, ofertaData);
             } else {
                 // Crear nueva oferta
                 resultado = await ofertasAPI.create(ofertaData);
+                console.log('Oferta creada:', ofertaData);
             }
             
             if (resultado) {
@@ -161,8 +166,7 @@ export class OfertasModule {
             }
         } catch (error) {
             console.error('Error guardando oferta:', error);
-            const errorMessage = error.message || 'Error desconocido guardando oferta';
-            mostrarNotificacion(`Error al guardar oferta: ${errorMessage}`, 'error');
+            mostrarNotificacion(error.message || 'Error guardando oferta', 'error');
         }
     }
     
@@ -184,9 +188,11 @@ export class OfertasModule {
             if (ofertaComboId) {
                 // Actualizar oferta combo existente
                 resultado = await ofertasComboAPI.update(parseInt(ofertaComboId), ofertaComboData);
+                console.log(`Oferta combo actualizada (ID: ${ofertaComboId}):`, ofertaComboData);
             } else {
                 // Crear nueva oferta combo
                 resultado = await ofertasComboAPI.create(ofertaComboData);
+                console.log('Oferta combo creada:', ofertaComboData);
             }
             
             if (resultado) {
@@ -199,14 +205,17 @@ export class OfertasModule {
             }
         } catch (error) {
             console.error('Error guardando oferta combo:', error);
-            const errorMessage = error.message || 'Error desconocido guardando oferta combo';
-            mostrarNotificacion(`Error al guardar oferta combo: ${errorMessage}`, 'error');
+            mostrarNotificacion(error.message || 'Error guardando oferta combo', 'error');
         }
     }
     
     async editarOferta(ofertaId) {
         const oferta = this.ofertas.find(o => o.id === ofertaId);
-        if (!oferta) return;
+        if (!oferta) {
+            console.error(`No se encontró la oferta con ID ${ofertaId} para editar`);
+            mostrarNotificacion('No se encontró la oferta para editar', 'error');
+            return;
+        }
         
         const form = document.getElementById('ofertaForm');
         form.querySelector('[name="ofertaId"]').value = oferta.id;
@@ -221,11 +230,17 @@ export class OfertasModule {
         if (submitBtn) {
             submitBtn.textContent = 'Actualizar Oferta';
         }
+        console.log(`Oferta cargada para edición (ID: ${ofertaId})`, oferta);
+        mostrarNotificacion('Oferta cargada para edición', 'info');
     }
     
     async editarOfertaCombo(ofertaComboId) {
         const ofertaCombo = this.ofertasCombo.find(o => o.id === ofertaComboId);
-        if (!ofertaCombo) return;
+        if (!ofertaCombo) {
+            console.error(`No se encontró la oferta combo con ID ${ofertaComboId} para editar`);
+            mostrarNotificacion('No se encontró la oferta combo para editar', 'error');
+            return;
+        }
         
         const form = document.getElementById('ofertaComboForm');
         form.querySelector('[name="ofertaComboId"]').value = ofertaCombo.id;
@@ -239,17 +254,24 @@ export class OfertasModule {
         if (submitBtn) {
             submitBtn.textContent = 'Actualizar Oferta Combo';
         }
+        console.log(`Oferta combo cargada para edición (ID: ${ofertaComboId})`, ofertaCombo);
+        mostrarNotificacion('Oferta combo cargada para edición', 'info');
     }
     
     async eliminarOferta(ofertaId) {
         const oferta = this.ofertas.find(o => o.id === ofertaId);
-        if (!oferta) return;
+        if (!oferta) {
+            console.error(`No se encontró la oferta con ID ${ofertaId} para eliminar`);
+            mostrarNotificacion('No se encontró la oferta para eliminar', 'error');
+            return;
+        }
         
         if (confirm(`¿Estás seguro de que deseas eliminar la oferta "${oferta.nombre}"?`)) {
             try {
                 const resultado = await ofertasAPI.delete(ofertaId);
                 
                 if (resultado) {
+                    console.log(`Oferta eliminada correctamente (ID: ${ofertaId})`);
                     mostrarNotificacion('Oferta eliminada correctamente', 'success');
                     await this.cargarOfertas();
                 } else {
@@ -257,21 +279,25 @@ export class OfertasModule {
                 }
             } catch (error) {
                 console.error('Error eliminando oferta:', error);
-                const errorMessage = error.message || 'Error desconocido eliminando oferta';
-                mostrarNotificacion(`Error al eliminar oferta: ${errorMessage}`, 'error');
+                mostrarNotificacion(error.message || 'Error eliminando oferta', 'error');
             }
         }
     }
     
     async eliminarOfertaCombo(ofertaComboId) {
         const ofertaCombo = this.ofertasCombo.find(o => o.id === ofertaComboId);
-        if (!ofertaCombo) return;
+        if (!ofertaCombo) {
+            console.error(`No se encontró la oferta combo con ID ${ofertaComboId} para eliminar`);
+            mostrarNotificacion('No se encontró la oferta combo para eliminar', 'error');
+            return;
+        }
         
         if (confirm(`¿Estás seguro de que deseas eliminar la oferta combo "${ofertaCombo.nombre}"?`)) {
             try {
                 const resultado = await ofertasComboAPI.delete(ofertaComboId);
                 
                 if (resultado) {
+                    console.log(`Oferta combo eliminada correctamente (ID: ${ofertaComboId})`);
                     mostrarNotificacion('Oferta combo eliminada correctamente', 'success');
                     await this.cargarOfertasCombo();
                 } else {
@@ -279,8 +305,7 @@ export class OfertasModule {
                 }
             } catch (error) {
                 console.error('Error eliminando oferta combo:', error);
-                const errorMessage = error.message || 'Error desconocido eliminando oferta combo';
-                mostrarNotificacion(`Error al eliminar oferta combo: ${errorMessage}`, 'error');
+                mostrarNotificacion(error.message || 'Error eliminando oferta combo', 'error');
             }
         }
     }
@@ -297,5 +322,4 @@ export class OfertasModule {
 
 // Exportar instancia global
 export const ofertasModule = new OfertasModule();
-
 

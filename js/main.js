@@ -92,19 +92,19 @@ class ClinicaBelezaApp {
             
             console.log('✅ Autenticación exitosa');
             return true;
-  } catch (error) {
+        } catch (error) {
             console.error('❌ Error verificando autenticación:', error);
             return false;
+        }
     }
-}
 
     setupNavigation() {
         console.log('🧭 Configurando navegación...');
-    const navLinks = document.querySelectorAll('.nav-link');
+        const navLinks = document.querySelectorAll('.nav-link');
         console.log('🔗 Enlaces encontrados:', navLinks.length);
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const view = link.dataset.view;
                 console.log('🖱️ Clic en enlace:', view);
                 this.switchView(view);
@@ -112,8 +112,8 @@ class ClinicaBelezaApp {
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
                 console.log('📍 URL actualizada:', window.location.hash);
+            });
         });
-    });
     
         // Manejar el botón atrás/adelante del navegador
         window.addEventListener('popstate', (e) => {
@@ -121,7 +121,7 @@ class ClinicaBelezaApp {
                 this.switchView(e.state.view);
             } else {
                 // Si no hay estado, usar el hash de la URL
-        const hash = window.location.hash.slice(1);
+                const hash = window.location.hash.slice(1);
                 if (hash) {
                     this.switchView(hash);
                 } else {
@@ -144,7 +144,7 @@ class ClinicaBelezaApp {
         });
         
         // Activar vista inicial basada en la URL
-    const hash = window.location.hash.slice(1);
+        const hash = window.location.hash.slice(1);
         const initialView = hash || 'fichas';
         this.switchView(initialView);
         
@@ -181,11 +181,11 @@ class ClinicaBelezaApp {
         navLinks.forEach(link => {
             link.classList.remove('active');
             if (link.dataset.view === viewName) {
-        link.classList.add('active');
-    }
+                link.classList.add('active');
+            }
         });
     
-    // Cargar datos específicos de la vista
+        // Cargar datos específicos de la vista
         this.loadViewData(viewName);
     }
     
@@ -203,8 +203,8 @@ class ClinicaBelezaApp {
                 break;
             case 'pagos':
                 console.log('💳 Cargando datos de pagos...');
-                this.modules.pagos.loadPagos();
-                this.modules.pagos.loadPacientes();
+                this.modules.pagos.loadPagosConFeedback && this.modules.pagos.loadPagosConFeedback();
+                this.modules.pagos.loadPacientes && this.modules.pagos.loadPacientes();
                 break;
             case 'sesiones':
                 console.log('📅 Cargando datos de sesiones...');
@@ -227,25 +227,25 @@ class ClinicaBelezaApp {
     }
     
     setupMobileMenu() {
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
+        const hamburger = document.querySelector('.hamburger');
+        const navMenu = document.querySelector('.nav-menu');
         
-        // Cerrar menú al hacer clic en un enlace
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', () => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+            });
+            
+            // Cerrar menú al hacer clic en un enlace
             const navLinks = document.querySelectorAll('.nav-link');
             navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
+                link.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                });
             });
-        });
+        }
     }
-}
 
     setupSearchFunctionality() {
         // Búsqueda de pacientes
@@ -268,7 +268,11 @@ class ClinicaBelezaApp {
         const buscarPago = document.getElementById('buscarPago');
         if (buscarPago) {
             buscarPago.addEventListener('input', (e) => {
-                this.modules.pagos.buscarPagos(e.target.value);
+                if (this.modules.pagos.buscarPagosConFeedback) {
+                    this.modules.pagos.buscarPagosConFeedback(e.target.value);
+                } else {
+                    this.modules.pagos.buscarPagos(e.target.value);
+                }
             });
         }
         
@@ -311,19 +315,27 @@ class ClinicaBelezaApp {
         // Capturar errores no manejados de la API
         window.addEventListener('unhandledrejection', (event) => {
             const error = event.reason;
-            
+
             // Si es un error de la API, mostrar información detallada
             if (error.apiError) {
-                console.error('🚨 Error de API:', error.apiError);
-                
-                // Mostrar toast con información del error
-                showMessage(
-                    `Error: ${error.apiError.message}\n` +
-                    `Endpoint: ${error.apiError.endpoint}\n` +
-                    `Método: ${error.apiError.method}\n` +
-                    `Código: ${error.apiError.code || 'N/A'}`,
-                    'error'
-                );
+                // Si viene desde la DB, mostrar el mensaje de la DB directamente
+                if (error.apiError.dbError) {
+                    console.error('🚨 Error de la base de datos:', error.apiError.dbError);
+                    showMessage(error.apiError.dbError, 'error');
+                } else {
+                    console.error('🚨 Error de API:', error.apiError);
+                    showMessage(
+                        `Error: ${error.apiError.message}\n` +
+                        `Endpoint: ${error.apiError.endpoint}\n` +
+                        `Método: ${error.apiError.method}\n` +
+                        `Código: ${error.apiError.code || 'N/A'}`,
+                        'error'
+                    );
+                }
+            } else if (error && error.dbError) {
+                // Si el error viene directamente de la DB
+                console.error('🚨 Error de la base de datos:', error.dbError);
+                showMessage(error.dbError, 'error');
             } else {
                 // Error genérico
                 console.error('🚨 Error no manejado:', error);
@@ -347,12 +359,46 @@ class ClinicaBelezaApp {
             
             // Cargar datos básicos de forma individual para manejar errores
             const loadPromises = [
-                this.modules.pacientes.cargarPacientes().catch(e => console.warn('⚠️ Error cargando pacientes:', e.message)),
-                this.modules.ventas.loadVentas().catch(e => console.warn('⚠️ Error cargando ventas:', e.message)),
-                this.modules.pagos.loadPagos().catch(e => console.warn('⚠️ Error cargando pagos:', e.message)),
-                this.modules.sesiones.loadSesiones().catch(e => console.warn('⚠️ Error cargando sesiones:', e.message)),
-                this.modules.boxes.cargarBoxes().catch(e => console.warn('⚠️ Error cargando boxes:', e.message)),
-                this.modules.ofertas.cargarOfertas().catch(e => console.warn('⚠️ Error cargando ofertas:', e.message))
+                this.modules.pacientes.cargarPacientes().catch(e => {
+                    console.warn('⚠️ Error cargando pacientes:', e.message);
+                    showMessage(`Error cargando pacientes: ${e.dbError || e.message}`, 'error');
+                }),
+                this.modules.ventas.loadVentas().catch(e => {
+                    console.warn('⚠️ Error cargando ventas:', e.message);
+                    showMessage(`Error cargando ventas: ${e.dbError || e.message}`, 'error');
+                }),
+                // PAGOS: Inspirado en pacientes.js, logs y notificaciones descriptivas
+                (async () => {
+                    try {
+                        if (this.modules.pagos.loadPagosConFeedback) {
+                            await this.modules.pagos.loadPagosConFeedback();
+                        } else {
+                            await this.modules.pagos.loadPagos();
+                        }
+                        console.log('✅ Pagos cargados correctamente');
+                        showMessage('Pagos cargados correctamente', 'success');
+                    } catch (e) {
+                        if (e && e.dbError) {
+                            console.error('⚠️ Error cargando pagos (DB):', e.dbError);
+                            showMessage(e.dbError, 'error');
+                        } else {
+                            console.error('⚠️ Error cargando pagos:', e.message);
+                            showMessage(`Error cargando pagos: ${e.message}`, 'error');
+                        }
+                    }
+                })(),
+                this.modules.sesiones.loadSesiones().catch(e => {
+                    console.warn('⚠️ Error cargando sesiones:', e.message);
+                    showMessage(`Error cargando sesiones: ${e.dbError || e.message}`, 'error');
+                }),
+                this.modules.boxes.cargarBoxes().catch(e => {
+                    console.warn('⚠️ Error cargando boxes:', e.message);
+                    showMessage(`Error cargando boxes: ${e.dbError || e.message}`, 'error');
+                }),
+                this.modules.ofertas.cargarOfertas().catch(e => {
+                    console.warn('⚠️ Error cargando ofertas:', e.message);
+                    showMessage(`Error cargando ofertas: ${e.dbError || e.message}`, 'error');
+                })
             ];
             
             await Promise.allSettled(loadPromises);
@@ -500,7 +546,7 @@ class ClinicaBelezaApp {
             
         } catch (error) {
             console.error('Error importando datos:', error);
-            showMessage('Error importando datos: ' + error.message, 'error');
+            showMessage('Error importando datos: ' + (error.dbError || error.message), 'error');
         }
     }
     
@@ -536,7 +582,11 @@ window.limpiarFormularioVenta = () => {
 };
 
 window.limpiarFormularioPago = () => {
-    window.clinicaApp.getModule('pagos').limpiarFormularioPago();
+    if (window.clinicaApp.getModule('pagos').limpiarFormularioPagoConFeedback) {
+        window.clinicaApp.getModule('pagos').limpiarFormularioPagoConFeedback();
+    } else {
+        window.clinicaApp.getModule('pagos').limpiarFormularioPago();
+    }
 };
 
 window.limpiarFormularioSesion = () => {

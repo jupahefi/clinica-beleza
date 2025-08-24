@@ -32,17 +32,20 @@ export class BoxesModule {
     async cargarBoxes() {
         try {
             this.boxes = await boxesAPI.getAll();
+            console.log('📦 Boxes cargados:', this.boxes);
             this.actualizarTablaBoxes();
+            mostrarNotificacion('Boxes cargados correctamente', 'success');
         } catch (error) {
             console.error('Error cargando boxes:', error);
-            const errorMessage = error.message || 'Error desconocido cargando boxes';
-            mostrarNotificacion(`Error cargando boxes: ${errorMessage}`, 'error');
+            // Mostrar el error de la DB si existe, si no, mensaje genérico
+            mostrarNotificacion(error.message || 'Error cargando boxes', 'error');
         }
     }
     
     async cargarSucursales() {
         try {
             const sucursales = await sucursalesAPI.getAll();
+            console.log('🏢 Sucursales cargadas:', sucursales);
             const select = document.getElementById('sucursalBox');
             
             if (select) {
@@ -57,10 +60,10 @@ export class BoxesModule {
                     }
                 });
             }
+            mostrarNotificacion('Sucursales cargadas correctamente', 'success');
         } catch (error) {
             console.error('Error cargando sucursales:', error);
-            const errorMessage = error.message || 'Error desconocido cargando sucursales';
-            mostrarNotificacion(`Error cargando sucursales: ${errorMessage}`, 'error');
+            mostrarNotificacion(error.message || 'Error cargando sucursales', 'error');
         }
     }
     
@@ -112,6 +115,9 @@ export class BoxesModule {
         
         const boxId = formData.get('boxId');
         
+        // Log para debugging
+        console.log('📤 Datos del box a enviar:', boxData, boxId ? `(Edición ID: ${boxId})` : '(Nuevo)');
+        
         try {
             let resultado;
             if (boxId) {
@@ -132,8 +138,7 @@ export class BoxesModule {
             }
         } catch (error) {
             console.error('Error guardando box:', error);
-            const errorMessage = error.message || 'Error desconocido guardando box';
-            mostrarNotificacion(`Error al guardar box: ${errorMessage}`, 'error');
+            mostrarNotificacion(error.message || 'Error al guardar box', 'error');
         }
     }
     
@@ -154,6 +159,8 @@ export class BoxesModule {
         if (submitBtn) {
             submitBtn.textContent = 'Actualizar Box';
         }
+        console.log(`✏️ Editando box:`, box);
+        mostrarNotificacion(`Box "${box.nombre}" cargado para edición`, 'info');
     }
     
     async eliminarBox(boxId) {
@@ -165,6 +172,7 @@ export class BoxesModule {
                 const resultado = await boxesAPI.delete(boxId);
                 
                 if (resultado) {
+                    console.log(`🗑️ Box eliminado:`, box);
                     mostrarNotificacion('Box eliminado correctamente', 'success');
                     await this.cargarBoxes();
                 } else {
@@ -172,8 +180,7 @@ export class BoxesModule {
                 }
             } catch (error) {
                 console.error('Error eliminando box:', error);
-                const errorMessage = error.message || 'Error desconocido eliminando box';
-                mostrarNotificacion(`Error al eliminar box: ${errorMessage}`, 'error');
+                mostrarNotificacion(error.message || 'Error al eliminar box', 'error');
             }
         }
     }
