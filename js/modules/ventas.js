@@ -257,8 +257,8 @@ class VentasModule {
             return;
         }
 
-        const packIndex = parseInt(selectPack.value);
-        const pack = tratamiento.packs[packIndex];
+        const packId = parseInt(selectPack.value);
+        const pack = tratamiento.packs.find(p => p.id === packId);
         
         if (!pack) {
             console.log('[VENTAS] No se encontró el pack seleccionado');
@@ -329,7 +329,7 @@ class VentasModule {
             // Mostrar TODOS los packs con precio por sesión
             tratamiento.packs.forEach((pack, idx) => {
                 const option = document.createElement('option');
-                option.value = idx;
+                option.value = pack.id; // Usar el ID real del pack, no el índice
                 const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : ' - Sesiones no definidas';
                 const precioPorSesion = pack.sesiones_incluidas ? (pack.precio_total / pack.sesiones_incluidas) : 0;
                 
@@ -445,7 +445,7 @@ class VentasModule {
         
         const ofertaInput = inputOferta.value;
         const ofertaVenta = ofertaInput ? parseInt(ofertaInput) : 0;
-        const packIndex = packSelect.value;
+        const packId = packSelect.value;
 
         if (!tratamientoId) {
             resultado.textContent = "Selecciona un tratamiento.";
@@ -456,8 +456,8 @@ class VentasModule {
         let precio = 0;
         let detalle = "";
 
-        if (packIndex !== "") {
-            const pack = tratamiento.packs[packIndex];
+        if (packId !== "") {
+            const pack = tratamiento.packs.find(p => p.id === parseInt(packId));
             if (!pack.precio_total) {
                 console.error('[VENTAS] El pack no tiene precio_total definido');
                 mostrarNotificacion('Error: El pack seleccionado no tiene precio definido', 'error');
