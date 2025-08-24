@@ -1932,23 +1932,29 @@ export class SesionesModule {
             console.log('🔍 Ventas filtradas para paciente', pacienteId, ':', ventasPaciente.length);
             console.log('📋 Ventas del paciente:', ventasPaciente);
             
+            // Log detallado de la primera venta para ver la estructura de datos
+            if (ventasPaciente.length > 0) {
+                console.log('🔍 Estructura de datos de la primera venta:', Object.keys(ventasPaciente[0]));
+                console.log('📋 Datos completos de la primera venta:', ventasPaciente[0]);
+            }
+            
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
             for (const venta of ventasPaciente) {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
                 
-                // Crear texto descriptivo más útil y detallado
+                // Crear texto descriptivo más útil y detallado usando los campos disponibles
                 let ventaText = `#${venta.id}`;
                 
                 // Agregar nombre del tratamiento
-                if (venta.tratamiento?.nombre) {
-                    ventaText += ` - ${venta.tratamiento.nombre}`;
+                if (venta.tratamiento_nombre) {
+                    ventaText += ` - ${venta.tratamiento_nombre}`;
                 }
                 
                 // Agregar nombre del pack si existe
-                if (venta.pack?.nombre) {
-                    ventaText += ` (${venta.pack.nombre})`;
+                if (venta.pack_nombre) {
+                    ventaText += ` (${venta.pack_nombre})`;
                 }
                 
                 // Agregar información de sesiones
@@ -1956,9 +1962,10 @@ export class SesionesModule {
                     ventaText += ` - ${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''}`;
                 }
                 
-                // Agregar precio si existe
-                if (venta.precio_total && venta.precio_total > 0) {
-                    ventaText += ` - $${venta.precio_total.toLocaleString()}`;
+                // Agregar precio si existe (usar precio_lista o total_pagado)
+                const precio = venta.precio_lista || venta.total_pagado;
+                if (precio && precio > 0) {
+                    ventaText += ` - $${parseFloat(precio).toLocaleString()}`;
                 }
                 
                 // Agregar estado si existe
@@ -1966,9 +1973,9 @@ export class SesionesModule {
                     ventaText += ` [${venta.estado}]`;
                 }
                 
-                // Agregar fecha si existe
-                if (venta.fecha_venta) {
-                    const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-CL');
+                // Agregar fecha si existe (usar fecha_creacion)
+                if (venta.fecha_creacion) {
+                    const fecha = new Date(venta.fecha_creacion).toLocaleDateString('es-CL');
                     ventaText += ` - ${fecha}`;
                 }
                 
