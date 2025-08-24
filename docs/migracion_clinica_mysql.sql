@@ -3748,14 +3748,15 @@ CREATE PROCEDURE sp_sesiones_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO sesion (
-        venta_id, profesional_id, box_id, fecha_planificada,
-        duracion_minutos, estado, observaciones, fecha_creacion
+        venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada,
+        estado, observaciones, fecha_creacion
     ) VALUES (
         JSON_EXTRACT(p_data, '$.venta_id'),
-        JSON_EXTRACT(p_data, '$.profesional_id'),
+        COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), 1),
+        JSON_EXTRACT(p_data, '$.sucursal_id'),
         JSON_EXTRACT(p_data, '$.box_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
-        JSON_EXTRACT(p_data, '$.duracion_minutos'),
         'planificada',
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
         NOW()
@@ -3768,7 +3769,7 @@ CREATE PROCEDURE sp_sesiones_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE sesion SET
         fecha_planificada = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')), fecha_planificada),
-        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
+        numero_sesion = COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), numero_sesion),
         estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
         observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         fecha_actualizacion = NOW()
@@ -3792,14 +3793,15 @@ CREATE PROCEDURE sp_agenda_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO sesion (
-        venta_id, profesional_id, box_id, fecha_planificada,
-        duracion_minutos, estado, observaciones, fecha_creacion
+        venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada,
+        estado, observaciones, fecha_creacion
     ) VALUES (
         JSON_EXTRACT(p_data, '$.venta_id'),
-        JSON_EXTRACT(p_data, '$.profesional_id'),
+        COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), 1),
+        JSON_EXTRACT(p_data, '$.sucursal_id'),
         JSON_EXTRACT(p_data, '$.box_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
-        JSON_EXTRACT(p_data, '$.duracion_minutos'),
         'planificada',
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
         NOW()
@@ -3812,7 +3814,7 @@ CREATE PROCEDURE sp_agenda_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE sesion SET
         fecha_planificada = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')), fecha_planificada),
-        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
+        numero_sesion = COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), numero_sesion),
         estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
         observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         fecha_actualizacion = NOW()
