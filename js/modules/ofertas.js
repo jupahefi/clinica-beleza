@@ -4,7 +4,7 @@
  * Server-based architecture - Sin modo offline
  */
 
-import { ofertasAPI } from '../api-client.js';
+import { ofertasAPI, tratamientosAPI, packsAPI } from '../api-client.js';
 import { mostrarNotificacion } from '../utils.js';
 
 export class OfertasModule {
@@ -12,14 +12,20 @@ export class OfertasModule {
         this.ofertas = [];
         this.tratamientos = [];
         this.packs = [];
-        this.init();
+        // No inicializar automáticamente, se hará cuando se cargue la vista
     }
     
     async init() {
-        await this.cargarOfertas();
-        await this.cargarTratamientos();
-        await this.cargarPacks();
-        this.configurarEventosOfertas();
+        console.log('[OFERTAS] Inicializando módulo de ofertas...');
+        try {
+            await this.cargarOfertas();
+            await this.cargarTratamientos();
+            await this.cargarPacks();
+            this.configurarEventosOfertas();
+            console.log('[OFERTAS] Módulo inicializado correctamente');
+        } catch (error) {
+            console.error('[OFERTAS] Error en inicialización:', error);
+        }
     }
     
     configurarEventosOfertas() {
@@ -53,36 +59,26 @@ export class OfertasModule {
     
     async cargarTratamientos() {
         try {
-            // Cargar tratamientos para el selector
-            const response = await fetch('api.php?action=tratamientos');
-            const data = await response.json();
-            if (data.success && data.data) {
-                this.tratamientos = data.data;
-                this.actualizarSelectorTratamientos();
-            } else {
-                console.warn('No se pudieron cargar tratamientos:', data);
-                this.tratamientos = [];
-            }
+            console.log('[OFERTAS] Cargando tratamientos...');
+            // Cargar tratamientos para el selector usando la API correcta
+            this.tratamientos = await tratamientosAPI.getAll();
+            console.log('[OFERTAS] Tratamientos cargados:', this.tratamientos);
+            this.actualizarSelectorTratamientos();
         } catch (error) {
-            console.error('Error cargando tratamientos:', error);
+            console.error('[OFERTAS] Error cargando tratamientos:', error);
             this.tratamientos = [];
         }
     }
     
     async cargarPacks() {
         try {
-            // Cargar packs para el selector
-            const response = await fetch('api.php?action=packs');
-            const data = await response.json();
-            if (data.success && data.data) {
-                this.packs = data.data;
-                this.actualizarSelectorPacks();
-            } else {
-                console.warn('No se pudieron cargar packs:', data);
-                this.packs = [];
-            }
+            console.log('[OFERTAS] Cargando packs...');
+            // Cargar packs para el selector usando la API correcta
+            this.packs = await packsAPI.getAll();
+            console.log('[OFERTAS] Packs cargados:', this.packs);
+            this.actualizarSelectorPacks();
         } catch (error) {
-            console.error('Error cargando packs:', error);
+            console.error('[OFERTAS] Error cargando packs:', error);
             this.packs = [];
         }
     }

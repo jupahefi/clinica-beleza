@@ -217,7 +217,7 @@ class ClinicaBelezaApp {
                 break;
             case 'ofertas':
                 console.log('🎯 Cargando datos de ofertas...');
-                this.modules.ofertas.cargarOfertas();
+                this.modules.ofertas.init();
                 break;
             case 'reportes':
                 console.log('📊 Cargando datos de reportes...');

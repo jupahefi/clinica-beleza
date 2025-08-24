@@ -76,6 +76,9 @@ try {
         $id = $pathSegments[1] ?? null;
     }
 
+    // Debug: Log de la URL parsing
+    error_log("DEBUG URL PARSING: request=$request, path=$path, segments=" . json_encode($pathSegments) . ", apiIndex=$apiIndex, endpoint='$endpoint', id='$id'");
+
     $method = $_SERVER['REQUEST_METHOD'];
     $data = json_decode(file_get_contents('php://input'), true);
 
