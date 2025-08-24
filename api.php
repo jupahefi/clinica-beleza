@@ -518,16 +518,16 @@ function handleVentas($db, $method, $id, $data) {
                     $tratamiento = $db->selectOne("CALL sp_tratamientos_get(?)", [$tratamientoId]);
                     if ($tratamiento && stripos($tratamiento['nombre'], 'EVALUACION') !== false) {
                         // Es una venta de evaluación
-                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
-                            $data['ficha_id'],
-                            $data['tratamiento_id'],
-                            $data['pack_id'] ?? null,
-                            $data['cantidad_sesiones'],
-                            $data['precio_lista'],
-                            $data['descuento_manual_pct'] ?? 0,
-                            $data['genero'],
-                            $data['genero_indicado_por']
-                        ]);
+                                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                    $data['ficha_id'],
+                    $data['tratamiento_id'],
+                    $data['pack_id'] ?? null,
+                    $data['cantidad_sesiones'],
+                    $data['precio_lista'],
+                    $data['descuento_manual_pct'] ?? null,
+                    $data['genero'],
+                    $data['genero_indicado_por']
+                ]);
                         
                         // Obtener el ID de la venta creada
                         $ventaId = $db->selectOne("SELECT @venta_id as id");
@@ -544,7 +544,7 @@ function handleVentas($db, $method, $id, $data) {
                             $data['pack_id'] ?? null,
                             $data['cantidad_sesiones'],
                             $data['precio_lista'],
-                            $data['descuento_manual_pct'] ?? 0,
+                            $data['descuento_manual_pct'] ?? null,
                             $data['genero'],
                             $data['genero_indicado_por']
                         ]);
@@ -903,8 +903,8 @@ function handleTratamientos($db, $method, $id, $data) {
                 if ($id) {
                     $result = $db->selectOne("CALL sp_tratamientos_get(?)", [$id]);
                 } else {
-                    // Obtener género de los parámetros de consulta, por defecto 'U' (universal)
-                    $genero = $_GET['genero'] ?? 'U';
+                    // Obtener género de los parámetros de consulta
+                    $genero = $_GET['genero'] ?? null;
                     $result = $db->select("CALL sp_tratamientos_list(?)", [$genero]);
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
@@ -983,7 +983,7 @@ function handlePacks($db, $method, $id, $data) {
                 } else {
                     // Verificar si hay parámetros de consulta para filtrar por tratamiento
                     $tratamiento_id = $_GET['tratamiento_id'] ?? null;
-                    $genero = $_GET['genero'] ?? 'U';
+                    $genero = $_GET['genero'] ?? null;
                     if ($tratamiento_id) {
                         $result = $db->select("CALL sp_packs_by_tratamiento(?, ?)", [$tratamiento_id, $genero]);
                     } else {
