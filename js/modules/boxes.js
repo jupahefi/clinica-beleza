@@ -52,7 +52,7 @@ export class BoxesModule {
                 select.innerHTML = '<option value="">-- Seleccionar sucursal --</option>';
                 
                 sucursales.forEach(sucursal => {
-                    if (sucursal.estado === 'activa') {
+                    if (sucursal.activo === true) {
                         const option = document.createElement('option');
                         option.value = sucursal.id;
                         option.textContent = sucursal.nombre;
@@ -188,12 +188,30 @@ export class BoxesModule {
     formatearEstado(estado) {
         const estados = {
             'activo': 'Activo',
-            'inactivo': 'Inactivo',
-            'mantenimiento': 'Mantenimiento'
+            'inactivo': 'Inactivo'
         };
         return estados[estado] || estado;
+    }
+    
+    limpiarFormularioBox() {
+        const form = document.getElementById('boxForm');
+        if (form) {
+            form.reset();
+            document.getElementById('boxId').value = '';
+            
+            // Cambiar texto del botón de vuelta a "Crear Box"
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Crear Box';
+            }
+        }
+        console.log('📦 Formulario de box limpiado');
+        mostrarNotificacion('Formulario de box limpiado', 'info');
     }
 }
 
 // Exportar instancia global
 export const boxesModule = new BoxesModule();
+
+// Conectar función global
+window.limpiarFormularioBox = () => boxesModule.limpiarFormularioBox();

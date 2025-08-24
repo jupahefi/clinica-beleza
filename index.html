@@ -501,24 +501,36 @@
                     <div class="form-container">
                         <h3>Nuevo Box</h3>
                         <form id="boxForm" class="form">
+                            <input type="hidden" name="boxId" id="boxId">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="numeroBox">Número de Box</label>
-                                    <input type="number" id="numeroBox" min="1" required>
+                                    <label for="nombreBox">Nombre del Box</label>
+                                    <input type="text" name="nombreBox" id="nombreBox" placeholder="Ej: Box 1, Box Principal, etc." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sucursalBox">Sucursal</label>
+                                    <select name="sucursalBox" id="sucursalBox" required>
+                                        <option value="">-- Seleccionar sucursal --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="capacidadBox">Capacidad (opcional)</label>
+                                    <input type="number" name="capacidadBox" id="capacidadBox" min="1" placeholder="Número de personas">
                                 </div>
                                 <div class="form-group">
                                     <label for="estadoBox">Estado</label>
-                                    <select id="estadoBox" required>
+                                    <select name="estadoBox" id="estadoBox" required>
                                         <option value="">Seleccionar estado...</option>
-                                        <option value="disponible">Disponible</option>
-                                        <option value="ocupado">Ocupado</option>
-                                        <option value="mantenimiento">Mantenimiento</option>
+                                        <option value="activo">Activo</option>
+                                        <option value="inactivo">Inactivo</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="observacionesBox">Observaciones</label>
-                                <textarea id="observacionesBox" rows="3"></textarea>
+                                <label for="descripcionBox">Descripción</label>
+                                <textarea name="descripcionBox" id="descripcionBox" rows="3" placeholder="Descripción del box, equipamiento, etc."></textarea>
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
@@ -539,9 +551,11 @@
                             <table id="tablaBoxes" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Número</th>
+                                        <th>Nombre</th>
+                                        <th>Sucursal</th>
+                                        <th>Descripción</th>
+                                        <th>Capacidad</th>
                                         <th>Estado</th>
-                                        <th>Observaciones</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -747,6 +761,13 @@
                     // Esta función será llamada desde el HTML
                     // El módulo de ofertas se encarga de la lógica
                     console.log('Función limpiarFormularioOferta llamada');
+                };
+                
+                // Función global para limpiar formulario de boxes
+                window.limpiarFormularioBox = function() {
+                    // Esta función será llamada desde el HTML
+                    // El módulo de boxes se encarga de la lógica
+                    console.log('Función limpiarFormularioBox llamada');
                 };
             </script>
 </body>
