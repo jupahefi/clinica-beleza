@@ -161,28 +161,7 @@ BEGIN
     END IF;
 END$$
 
-CREATE PROCEDURE AddPartialUniqueIndexIfNotExists(
-    IN indexName VARCHAR(64),
-    IN tableName VARCHAR(64),
-    IN columnList VARCHAR(200),
-    IN whereCondition VARCHAR(500)
-)
-BEGIN
-    DECLARE indexExists INT DEFAULT 0;
-    
-    SELECT COUNT(*) INTO indexExists
-    FROM information_schema.statistics 
-    WHERE table_schema = DATABASE()
-    AND table_name = tableName
-    AND index_name = indexName;
-    
-    IF indexExists = 0 THEN
-        SET @sql = CONCAT('CREATE UNIQUE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ') WHERE ', whereCondition);
-        PREPARE stmt FROM @sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    END IF;
-END$$
+
 
 DELIMITER ;
 
@@ -282,10 +261,52 @@ CREATE TABLE IF NOT EXISTS ficha (
 );
 
 CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
--- Restricción única solo para registros activos
-CALL AddPartialUniqueIndexIfNotExists('ux_ficha_email_activo', 'ficha', 'email', 'activo = TRUE');
+-- No agregamos restricción única al email para permitir soft delete
 
 -- Primera definicion eliminada (duplicada)
+
+-- Trigger para validar unicidad de email solo en registros activos
+DELIMITER $$
+
+CREATE TRIGGER IF NOT EXISTS trg_ficha_email_unique_before_insert
+BEFORE INSERT ON ficha
+FOR EACH ROW
+BEGIN
+    DECLARE email_count INT DEFAULT 0;
+    
+    -- Solo validar si el nuevo registro será activo
+    IF NEW.activo = TRUE THEN
+        SELECT COUNT(*) INTO email_count
+        FROM ficha 
+        WHERE email = NEW.email AND activo = TRUE;
+        
+        IF email_count > 0 THEN
+            SIGNAL SQLSTATE '23000' 
+            SET MESSAGE_TEXT = 'Ya existe un paciente activo con este email';
+        END IF;
+    END IF;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS trg_ficha_email_unique_before_update
+BEFORE UPDATE ON ficha
+FOR EACH ROW
+BEGIN
+    DECLARE email_count INT DEFAULT 0;
+    
+    -- Solo validar si el registro se está activando o ya está activo
+    IF NEW.activo = TRUE AND (OLD.activo = FALSE OR OLD.email != NEW.email) THEN
+        SELECT COUNT(*) INTO email_count
+        FROM ficha 
+        WHERE email = NEW.email AND activo = TRUE AND id != NEW.id;
+        
+        IF email_count > 0 THEN
+            SIGNAL SQLSTATE '23000' 
+            SET MESSAGE_TEXT = 'Ya existe un paciente activo con este email';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS evaluacion (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
