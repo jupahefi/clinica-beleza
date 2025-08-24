@@ -377,8 +377,8 @@ CREATE TABLE IF NOT EXISTS oferta (
   tipo VARCHAR(40) NOT NULL, -- 'pack_temporal'|'descuento_manual'|'combo_packs'
   descripcion TEXT NOT NULL,
   porc_descuento DECIMAL(5,2) NOT NULL,
-  fecha_inicio DATE NOT NULL,
-  fecha_fin DATE NOT NULL,
+  fecha_inicio DATE NULL,
+  fecha_fin DATE NULL,
   combinable BOOLEAN NOT NULL DEFAULT TRUE,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   prioridad INT NOT NULL DEFAULT 0,
@@ -860,9 +860,9 @@ SELECT
   o.*,
   CASE 
     WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NULL THEN TRUE
-    WHEN o.fecha_inicio IS NULL AND o.fecha_fin >= CURDATE() THEN TRUE
-    WHEN o.fecha_fin IS NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
-    WHEN CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NOT NULL AND o.fecha_fin >= CURDATE() THEN TRUE
+    WHEN o.fecha_fin IS NULL AND o.fecha_inicio IS NOT NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
+    WHEN o.fecha_inicio IS NOT NULL AND o.fecha_fin IS NOT NULL AND CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
     ELSE FALSE
   END AS aplicable_hoy
 FROM oferta o
@@ -886,9 +886,9 @@ SELECT
   o.fecha_fin,
   CASE 
     WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NULL THEN TRUE
-    WHEN o.fecha_inicio IS NULL AND o.fecha_fin >= CURDATE() THEN TRUE
-    WHEN o.fecha_fin IS NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
-    WHEN CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NOT NULL AND o.fecha_fin >= CURDATE() THEN TRUE
+    WHEN o.fecha_fin IS NULL AND o.fecha_inicio IS NOT NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
+    WHEN o.fecha_inicio IS NOT NULL AND o.fecha_fin IS NOT NULL AND CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
     ELSE FALSE
   END AS aplicable_hoy
 FROM oferta o
@@ -913,9 +913,9 @@ SELECT
   o.fecha_fin,
   CASE 
     WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NULL THEN TRUE
-    WHEN o.fecha_inicio IS NULL AND o.fecha_fin >= CURDATE() THEN TRUE
-    WHEN o.fecha_fin IS NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
-    WHEN CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NOT NULL AND o.fecha_fin >= CURDATE() THEN TRUE
+    WHEN o.fecha_fin IS NULL AND o.fecha_inicio IS NOT NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
+    WHEN o.fecha_inicio IS NOT NULL AND o.fecha_fin IS NOT NULL AND CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
     ELSE FALSE
   END AS aplicable_hoy
 FROM oferta o
@@ -942,9 +942,9 @@ SELECT
   o.fecha_fin,
   CASE 
     WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NULL THEN TRUE
-    WHEN o.fecha_inicio IS NULL AND o.fecha_fin >= CURDATE() THEN TRUE
-    WHEN o.fecha_fin IS NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
-    WHEN CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
+    WHEN o.fecha_inicio IS NULL AND o.fecha_fin IS NOT NULL AND o.fecha_fin >= CURDATE() THEN TRUE
+    WHEN o.fecha_fin IS NULL AND o.fecha_inicio IS NOT NULL AND o.fecha_inicio <= CURDATE() THEN TRUE
+    WHEN o.fecha_inicio IS NOT NULL AND o.fecha_fin IS NOT NULL AND CURDATE() BETWEEN o.fecha_inicio AND o.fecha_fin THEN TRUE
     ELSE FALSE
   END AS aplicable_hoy
 FROM oferta o
@@ -2765,6 +2765,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_ofertas_aplicables_list()
 BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        RESIGNAL;
+    END;
+    
     SELECT 
         id,
         nombre,
@@ -3174,6 +3179,612 @@ CALL sp_asociar_oferta_pack(@oferta_full_body_id, @pack_full_body_id, 23.2, @aso
 CALL sp_asociar_oferta_pack(@oferta_semi_full_id, @pack_semi_full_id, 20.1, @asociacion_semi_full);
 CALL sp_asociar_oferta_pack(@oferta_bikini_full_id, @pack_bikini_full_id, 19.3, @asociacion_bikini_full);
 CALL sp_asociar_oferta_pack(@oferta_bikini_axilas_id, @pack_bikini_axilas_id, 17.5, @asociacion_bikini_axilas);
+
+-- =============================================================================
+-- STORED PROCEDURES FALTANTES PARA API - CRUD OPERATIONS
+-- =============================================================================
+
+-- ---------- FICHAS CRUD ----------
+DELIMITER $$
+CREATE PROCEDURE sp_fichas_get(IN p_id INT)
+BEGIN
+    SELECT * FROM ficha WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO ficha (
+        nombre_completo, fecha_nacimiento, edad, ocupacion, 
+        telefono_fijo, celular, email, medio_conocimiento, 
+        fecha_creacion, activo
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre_completo')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')),
+        JSON_EXTRACT(p_data, '$.edad'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.ocupacion')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono_fijo')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.celular')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.medio_conocimiento')),
+        NOW(),
+        TRUE
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM ficha WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE ficha SET
+        nombre_completo = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre_completo')), nombre_completo),
+        fecha_nacimiento = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')), fecha_nacimiento),
+        edad = COALESCE(JSON_EXTRACT(p_data, '$.edad'), edad),
+        ocupacion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.ocupacion')), ocupacion),
+        telefono_fijo = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono_fijo')), telefono_fijo),
+        celular = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.celular')), celular),
+        email = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')), email),
+        medio_conocimiento = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.medio_conocimiento')), medio_conocimiento),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM ficha WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_delete(IN p_id INT)
+BEGIN
+    UPDATE ficha SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Ficha eliminada' as mensaje;
+END$$
+
+-- ---------- FICHAS ESPECIFICAS CRUD ----------
+CREATE PROCEDURE sp_fichas_especificas_get(IN p_id INT)
+BEGIN
+    SELECT * FROM ficha_especifica WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_especificas_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO ficha_especifica (
+        ficha_id, tipo_ficha_especifica_id, datos_json, 
+        fecha_creacion, activo
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.ficha_id'),
+        JSON_EXTRACT(p_data, '$.tipo_ficha_especifica_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos_json')),
+        NOW(),
+        TRUE
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM ficha_especifica WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_especificas_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE ficha_especifica SET
+        datos_json = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos_json')), datos_json),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM ficha_especifica WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_fichas_especificas_delete(IN p_id INT)
+BEGIN
+    UPDATE ficha_especifica SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Ficha específica eliminada' as mensaje;
+END$$
+
+-- ---------- CONSENTIMIENTO FIRMA CRUD ----------
+CREATE PROCEDURE sp_consentimiento_firma_get(IN p_id INT)
+BEGIN
+    SELECT * FROM consentimiento_firma WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_consentimiento_firma_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO consentimiento_firma (
+        ficha_especifica_id, firma_digital, fecha_firma, 
+        ip_address, user_agent, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.ficha_especifica_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.firma_digital')),
+        NOW(),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.ip_address')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.user_agent')),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM consentimiento_firma WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_consentimiento_firma_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE consentimiento_firma SET
+        firma_digital = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.firma_digital')), firma_digital),
+        fecha_firma = NOW()
+    WHERE id = p_id;
+    SELECT * FROM consentimiento_firma WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_consentimiento_firma_delete(IN p_id INT)
+BEGIN
+    DELETE FROM consentimiento_firma WHERE id = p_id;
+    SELECT 'Consentimiento eliminado' as mensaje;
+END$$
+
+-- ---------- EVALUACIONES CRUD ----------
+CREATE PROCEDURE sp_evaluaciones_get(IN p_id INT)
+BEGIN
+    SELECT * FROM evaluacion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_evaluaciones_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO evaluacion (
+        ficha_id, profesional_id, fecha_evaluacion, 
+        observaciones, recomendaciones, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.ficha_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
+        NOW(),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.recomendaciones')),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM evaluacion WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_evaluaciones_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE evaluacion SET
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
+        recomendaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.recomendaciones')), recomendaciones),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM evaluacion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_evaluaciones_delete(IN p_id INT)
+BEGIN
+    DELETE FROM evaluacion WHERE id = p_id;
+    SELECT 'Evaluación eliminada' as mensaje;
+END$$
+
+-- ---------- VENTAS CRUD ----------
+CREATE PROCEDURE sp_ventas_get(IN p_id INT)
+BEGIN
+    SELECT * FROM venta WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ventas_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO venta (
+        ficha_id, evaluacion_id, profesional_id, sucursal_id,
+        total_venta, descuento_manual, total_final, 
+        estado, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.ficha_id'),
+        JSON_EXTRACT(p_data, '$.evaluacion_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
+        JSON_EXTRACT(p_data, '$.sucursal_id'),
+        JSON_EXTRACT(p_data, '$.total_venta'),
+        COALESCE(JSON_EXTRACT(p_data, '$.descuento_manual'), 0),
+        JSON_EXTRACT(p_data, '$.total_final'),
+        'creada',
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM venta WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_ventas_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE venta SET
+        total_venta = COALESCE(JSON_EXTRACT(p_data, '$.total_venta'), total_venta),
+        descuento_manual = COALESCE(JSON_EXTRACT(p_data, '$.descuento_manual'), descuento_manual),
+        total_final = COALESCE(JSON_EXTRACT(p_data, '$.total_final'), total_final),
+        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM venta WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ventas_delete(IN p_id INT)
+BEGIN
+    UPDATE venta SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Venta cancelada' as mensaje;
+END$$
+
+-- ---------- AUTH ----------
+CREATE PROCEDURE sp_auth_login(IN p_data JSON)
+BEGIN
+    DECLARE v_usuario_id INT;
+    DECLARE v_nombre VARCHAR(255);
+    DECLARE v_email VARCHAR(255);
+    DECLARE v_rol VARCHAR(50);
+    
+    SELECT id, nombre, email, rol 
+    INTO v_usuario_id, v_nombre, v_email, v_rol
+    FROM usuario 
+    WHERE email = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email'))
+    AND password = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.password'))
+    AND activo = TRUE;
+    
+    IF v_usuario_id IS NOT NULL THEN
+        CALL sp_actualizar_ultimo_login(v_usuario_id);
+        SELECT 
+            v_usuario_id as id,
+            v_nombre as nombre,
+            v_email as email,
+            v_rol as rol,
+            'Login exitoso' as mensaje;
+    ELSE
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Credenciales inválidas';
+    END IF;
+END$$
+
+-- ---------- PAGOS CRUD ----------
+CREATE PROCEDURE sp_pagos_get(IN p_id INT)
+BEGIN
+    SELECT * FROM pago WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_pagos_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO pago (
+        venta_id, monto, metodo_pago, referencia, 
+        estado, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.venta_id'),
+        JSON_EXTRACT(p_data, '$.monto'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.metodo_pago')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.referencia')),
+        'pendiente',
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM pago WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_pagos_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE pago SET
+        monto = COALESCE(JSON_EXTRACT(p_data, '$.monto'), monto),
+        metodo_pago = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.metodo_pago')), metodo_pago),
+        referencia = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.referencia')), referencia),
+        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM pago WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_pagos_delete(IN p_id INT)
+BEGIN
+    UPDATE pago SET estado = 'cancelado', fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Pago cancelado' as mensaje;
+END$$
+
+-- ---------- SESIONES CRUD ----------
+CREATE PROCEDURE sp_sesiones_get(IN p_id INT)
+BEGIN
+    SELECT * FROM sesion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_sesiones_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO sesion (
+        venta_id, profesional_id, box_id, fecha_planificada,
+        duracion_minutos, estado, observaciones, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.venta_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
+        JSON_EXTRACT(p_data, '$.box_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
+        JSON_EXTRACT(p_data, '$.duracion_minutos'),
+        'planificada',
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM sesion WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_sesiones_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE sesion SET
+        fecha_planificada = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')), fecha_planificada),
+        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
+        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM sesion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_sesiones_delete(IN p_id INT)
+BEGIN
+    UPDATE sesion SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Sesión cancelada' as mensaje;
+END$$
+
+-- ---------- AGENDA CRUD ----------
+CREATE PROCEDURE sp_agenda_get(IN p_id INT)
+BEGIN
+    SELECT * FROM sesion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_agenda_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO sesion (
+        venta_id, profesional_id, box_id, fecha_planificada,
+        duracion_minutos, estado, observaciones, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.venta_id'),
+        JSON_EXTRACT(p_data, '$.profesional_id'),
+        JSON_EXTRACT(p_data, '$.box_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
+        JSON_EXTRACT(p_data, '$.duracion_minutos'),
+        'planificada',
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM sesion WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_agenda_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE sesion SET
+        fecha_planificada = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')), fecha_planificada),
+        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
+        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM sesion WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_agenda_delete(IN p_id INT)
+BEGIN
+    UPDATE sesion SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Cita cancelada' as mensaje;
+END$$
+
+-- ---------- OFERTAS CRUD ----------
+CREATE PROCEDURE sp_ofertas_get(IN p_id INT)
+BEGIN
+    SELECT * FROM oferta WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO oferta (
+        nombre, tipo, descripcion, porc_descuento,
+        fecha_inicio, fecha_fin, combinable, activo, prioridad, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.tipo')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        JSON_EXTRACT(p_data, '$.porc_descuento'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_inicio')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_fin')),
+        COALESCE(JSON_EXTRACT(p_data, '$.combinable'), FALSE),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        COALESCE(JSON_EXTRACT(p_data, '$.prioridad'), 1),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM oferta WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE oferta SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        tipo = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.tipo')), tipo),
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        porc_descuento = COALESCE(JSON_EXTRACT(p_data, '$.porc_descuento'), porc_descuento),
+        fecha_inicio = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_inicio')), fecha_inicio),
+        fecha_fin = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_fin')), fecha_fin),
+        combinable = COALESCE(JSON_EXTRACT(p_data, '$.combinable'), combinable),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        prioridad = COALESCE(JSON_EXTRACT(p_data, '$.prioridad'), prioridad),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM oferta WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_delete(IN p_id INT)
+BEGIN
+    UPDATE oferta SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Oferta eliminada' as mensaje;
+END$$
+
+-- ---------- TRATAMIENTOS CRUD ----------
+CREATE PROCEDURE sp_tratamientos_get(IN p_id INT)
+BEGIN
+    SELECT * FROM tratamiento WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_tratamientos_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO tratamiento (
+        nombre, descripcion, requiere_sesiones, 
+        duracion_minutos, intervalo_dias, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        COALESCE(JSON_EXTRACT(p_data, '$.requiere_sesiones'), FALSE),
+        JSON_EXTRACT(p_data, '$.duracion_minutos'),
+        JSON_EXTRACT(p_data, '$.intervalo_dias'),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM tratamiento WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_tratamientos_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE tratamiento SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        requiere_sesiones = COALESCE(JSON_EXTRACT(p_data, '$.requiere_sesiones'), requiere_sesiones),
+        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
+        intervalo_dias = COALESCE(JSON_EXTRACT(p_data, '$.intervalo_dias'), intervalo_dias),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM tratamiento WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_tratamientos_delete(IN p_id INT)
+BEGIN
+    UPDATE tratamiento SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Tratamiento eliminado' as mensaje;
+END$$
+
+-- ---------- PACKS CRUD ----------
+CREATE PROCEDURE sp_packs_get(IN p_id INT)
+BEGIN
+    SELECT * FROM pack WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_packs_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO pack (
+        nombre, descripcion, tratamiento_id, precio_base,
+        sesiones_incluidas, activo, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        JSON_EXTRACT(p_data, '$.tratamiento_id'),
+        JSON_EXTRACT(p_data, '$.precio_base'),
+        JSON_EXTRACT(p_data, '$.sesiones_incluidas'),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM pack WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_packs_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE pack SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        tratamiento_id = COALESCE(JSON_EXTRACT(p_data, '$.tratamiento_id'), tratamiento_id),
+        precio_base = COALESCE(JSON_EXTRACT(p_data, '$.precio_base'), precio_base),
+        sesiones_incluidas = COALESCE(JSON_EXTRACT(p_data, '$.sesiones_incluidas'), sesiones_incluidas),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM pack WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_packs_delete(IN p_id INT)
+BEGIN
+    UPDATE pack SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Pack eliminado' as mensaje;
+END$$
+
+-- ---------- SUCURSALES CRUD ----------
+CREATE PROCEDURE sp_sucursales_get(IN p_id INT)
+BEGIN
+    SELECT * FROM sucursal WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_sucursales_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO sucursal (
+        nombre, direccion, telefono, email, 
+        activo, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.direccion')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM sucursal WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_sucursales_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE sucursal SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        direccion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.direccion')), direccion),
+        telefono = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')), telefono),
+        email = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')), email),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM sucursal WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_sucursales_delete(IN p_id INT)
+BEGIN
+    UPDATE sucursal SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Sucursal eliminada' as mensaje;
+END$$
+
+-- ---------- PROFESIONALES CRUD ----------
+CREATE PROCEDURE sp_profesionales_get(IN p_id INT)
+BEGIN
+    SELECT * FROM profesional WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_profesionales_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO profesional (
+        nombre, apellido, email, telefono, 
+        especialidad, activo, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.apellido')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.especialidad')),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM profesional WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_profesionales_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE profesional SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        apellido = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.apellido')), apellido),
+        email = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')), email),
+        telefono = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')), telefono),
+        especialidad = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.especialidad')), especialidad),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM profesional WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_profesionales_delete(IN p_id INT)
+BEGIN
+    UPDATE profesional SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Profesional eliminado' as mensaje;
+END$$
+
+DELIMITER ;
 
 -- =============================================================================
 -- NOTA IMPORTANTE: TODA LA LoGICA DE NEGOCIO ESTa EN LA BASE DE DATOS
