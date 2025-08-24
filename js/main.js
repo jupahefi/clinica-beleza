@@ -48,7 +48,7 @@ class ClinicaBelezaApp {
         // Inicializar cliente API primero
         initializeApiClient();
         
-        this.setupNavigation();
+        await this.setupNavigation();
         this.setupMobileMenu();
         this.setupSearchFunctionality();
         this.setupGlobalEventListeners();
@@ -100,34 +100,46 @@ class ClinicaBelezaApp {
         }
     }
 
-    setupNavigation() {
+    async setupNavigation() {
         console.log('🧭 Configurando navegación...');
         const navLinks = document.querySelectorAll('.nav-link');
         console.log('🔗 Enlaces encontrados:', navLinks.length);
         navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+            link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const view = link.dataset.view;
                 console.log('🖱️ Clic en enlace:', view);
-                this.switchView(view);
+                await this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
                 console.log('📍 URL actualizada:', window.location.hash);
             });
         });
+        
+        // Configurar pestañas de Mantenedores para que no interfieran con la navegación
+        const mantenedoresTabs = document.querySelectorAll('#mantenedoresTabs .nav-link');
+        mantenedoresTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                // Prevenir que el clic se propague al sistema de navegación
+                e.stopPropagation();
+                
+                // Permitir que Bootstrap maneje las pestañas normalmente
+                // Solo prevenir que se active nuestro sistema de navegación
+            });
+        });
     
         // Manejar el botón atrás/adelante del navegador
-        window.addEventListener('popstate', (e) => {
+        window.addEventListener('popstate', async (e) => {
             if (e.state && e.state.view) {
-                this.switchView(e.state.view);
+                await this.switchView(e.state.view);
             } else {
                 // Si no hay estado, usar el hash de la URL
                 const hash = window.location.hash.slice(1);
                 if (hash) {
-                    this.switchView(hash);
+                    await this.switchView(hash);
                 } else {
-                    this.switchView('fichas');
+                    await this.switchView('fichas');
                 }
             }
         });
@@ -135,10 +147,10 @@ class ClinicaBelezaApp {
         // Manejar enlaces del footer también
         const footerLinks = document.querySelectorAll('.footer-links a');
         footerLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+            link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const view = link.getAttribute('href').slice(1); // Remover el #
-                this.switchView(view);
+                await this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
@@ -148,7 +160,7 @@ class ClinicaBelezaApp {
         // Activar vista inicial basada en la URL
         const hash = window.location.hash.slice(1);
         const initialView = hash || 'fichas';
-        this.switchView(initialView);
+        await this.switchView(initialView);
         
         // Actualizar la URL si no hay hash
         if (!hash) {
@@ -156,7 +168,7 @@ class ClinicaBelezaApp {
         }
     }
     
-    switchView(viewName) {
+    async switchView(viewName) {
         console.log(`🔄 Cambiando a vista: ${viewName}`);
         
         // Ocultar todas las vistas
@@ -191,7 +203,7 @@ class ClinicaBelezaApp {
         this.loadViewData(viewName);
     }
     
-    loadViewData(viewName) {
+    async loadViewData(viewName) {
         console.log(`📊 Cargando datos para vista: ${viewName}`);
         switch (viewName) {
             case 'fichas':
@@ -217,6 +229,14 @@ class ClinicaBelezaApp {
             case 'ofertas':
                 console.log('🎯 Cargando datos de ofertas...');
                 this.modules.ofertas.init();
+                break;
+            case 'mantenedores':
+                console.log('🔧 Cargando datos de mantenedores...');
+                if (this.modules.mantenedores && this.modules.mantenedores.init) {
+                    await this.modules.mantenedores.init();
+                } else {
+                    console.error('❌ Módulo de mantenedores no disponible');
+                }
                 break;
             case 'reportes':
                 console.log('📊 Cargando datos de reportes...');

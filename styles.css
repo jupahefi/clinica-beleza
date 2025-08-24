@@ -1906,6 +1906,15 @@ legend {
 
 .tab-pane {
     animation: fadeIn 0.3s ease-in-out !important;
+    display: none !important;
+}
+
+.tab-pane.show {
+    display: block !important;
+}
+
+.tab-pane.active {
+    display: block !important;
 }
 
 @keyframes fadeIn {
