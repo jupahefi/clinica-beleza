@@ -252,6 +252,7 @@ CREATE TABLE IF NOT EXISTS ficha (
   fecha_nacimiento DATE NOT NULL,
   direccion TEXT NOT NULL,
   observaciones TEXT NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -296,6 +297,7 @@ CREATE TABLE IF NOT EXISTS ficha_especifica (
   datos JSON NOT NULL DEFAULT (JSON_OBJECT()),
   consentimiento_firmado BOOLEAN NOT NULL DEFAULT FALSE,
   observaciones TEXT NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -310,7 +312,8 @@ CREATE TABLE IF NOT EXISTS consentimiento_firma (
   tipo_archivo VARCHAR(10) NOT NULL,
   contenido_leido TEXT NOT NULL,
   fecha_firma TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  observaciones TEXT NOT NULL
+  observaciones TEXT NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE
   -- Unique key se agregara con funcion idempotente
 );
 
@@ -2616,7 +2619,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_fichas_list()
 BEGIN
-    SELECT * FROM ficha ORDER BY fecha_creacion DESC;
+    SELECT * FROM ficha WHERE activo = TRUE ORDER BY fecha_creacion DESC;
 END$$
 DELIMITER ;
 
@@ -2635,6 +2638,7 @@ BEGIN
     SELECT fe.*, tfe.nombre as tipo_nombre, tfe.requiere_consentimiento
     FROM ficha_especifica fe
     JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id
+    WHERE fe.activo = TRUE
     ORDER BY fe.fecha_creacion DESC;
 END$$
 DELIMITER ;
@@ -2647,6 +2651,7 @@ BEGIN
     FROM consentimiento_firma cf
     JOIN ficha_especifica fe ON cf.ficha_especifica_id = fe.id
     JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id
+    WHERE cf.activo = TRUE
     ORDER BY cf.fecha_firma DESC;
 END$$
 DELIMITER ;
@@ -2658,6 +2663,7 @@ BEGIN
     SELECT e.*, f.codigo as ficha_codigo, f.nombres, f.apellidos
     FROM evaluacion e
     JOIN ficha f ON e.ficha_id = f.id
+    WHERE e.estado != 'ELIMINADA' AND f.activo = TRUE
     ORDER BY e.fecha_evaluacion DESC;
 END$$
 DELIMITER ;
@@ -2670,6 +2676,7 @@ BEGIN
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    WHERE f.activo = TRUE AND (e.estado IS NULL OR e.estado != 'ELIMINADA')
     ORDER BY v.fecha_creacion DESC;
 END$$
 DELIMITER ;
@@ -2682,7 +2689,7 @@ BEGIN
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
-    WHERE v.estado = 'COMPLETADA'
+    WHERE v.estado = 'COMPLETADA' AND f.activo = TRUE AND (e.estado IS NULL OR e.estado != 'ELIMINADA')
     ORDER BY v.fecha_creacion DESC;
 END$$
 DELIMITER ;
@@ -2695,6 +2702,7 @@ BEGIN
     FROM pago p
     JOIN venta v ON p.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
+    WHERE f.activo = TRUE
     ORDER BY p.fecha_pago DESC;
 END$$
 DELIMITER ;
@@ -2711,6 +2719,7 @@ BEGIN
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
+    WHERE f.activo = TRUE
     ORDER BY s.fecha_planificada DESC;
 END$$
 DELIMITER ;
@@ -3194,21 +3203,26 @@ END$$
 CREATE PROCEDURE sp_fichas_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
+    DECLARE v_codigo VARCHAR(40);
+    
+    -- Generar código único para la ficha
+    SET v_codigo = CONCAT('FICHA-', DATE_FORMAT(NOW(), '%Y%m%d'), '-', LPAD(FLOOR(RAND() * 10000), 4, '0'));
+    
     INSERT INTO ficha (
-        nombre_completo, fecha_nacimiento, edad, ocupacion, 
-        telefono_fijo, celular, email, medio_conocimiento, 
-        fecha_creacion, activo
+        codigo, nombres, apellidos, rut, telefono, email, 
+        fecha_nacimiento, direccion, observaciones, activo, fecha_creacion
     ) VALUES (
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre_completo')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')),
-        JSON_EXTRACT(p_data, '$.edad'),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.ocupacion')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono_fijo')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.celular')),
+        v_codigo,
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombres')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.apellidos')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.rut')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.medio_conocimiento')),
-        NOW(),
-        TRUE
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.direccion')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        TRUE,
+        NOW()
     );
     SET v_id = LAST_INSERT_ID();
     SELECT * FROM ficha WHERE id = v_id;
@@ -3217,14 +3231,14 @@ END$$
 CREATE PROCEDURE sp_fichas_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE ficha SET
-        nombre_completo = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre_completo')), nombre_completo),
-        fecha_nacimiento = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')), fecha_nacimiento),
-        edad = COALESCE(JSON_EXTRACT(p_data, '$.edad'), edad),
-        ocupacion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.ocupacion')), ocupacion),
-        telefono_fijo = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono_fijo')), telefono_fijo),
-        celular = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.celular')), celular),
+        nombres = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombres')), nombres),
+        apellidos = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.apellidos')), apellidos),
+        rut = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.rut')), rut),
+        telefono = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.telefono')), telefono),
         email = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')), email),
-        medio_conocimiento = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.medio_conocimiento')), medio_conocimiento),
+        fecha_nacimiento = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_nacimiento')), fecha_nacimiento),
+        direccion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.direccion')), direccion),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         fecha_actualizacion = NOW()
     WHERE id = p_id;
     SELECT * FROM ficha WHERE id = p_id;
@@ -3232,8 +3246,11 @@ END$$
 
 CREATE PROCEDURE sp_fichas_delete(IN p_id INT)
 BEGIN
-    UPDATE ficha SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Ficha eliminada' as mensaje;
+    UPDATE ficha SET 
+        activo = FALSE,
+        fecha_actualizacion = NOW() 
+    WHERE id = p_id;
+    SELECT 'Ficha marcada como eliminada' as mensaje;
 END$$
 
 -- ---------- FICHAS ESPECIFICAS CRUD ----------
@@ -3246,14 +3263,15 @@ CREATE PROCEDURE sp_fichas_especificas_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO ficha_especifica (
-        ficha_id, tipo_ficha_especifica_id, datos_json, 
-        fecha_creacion, activo
+        evaluacion_id, tipo_id, datos, 
+        observaciones, activo, fecha_creacion
     ) VALUES (
-        JSON_EXTRACT(p_data, '$.ficha_id'),
-        JSON_EXTRACT(p_data, '$.tipo_ficha_especifica_id'),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos_json')),
-        NOW(),
-        TRUE
+        JSON_EXTRACT(p_data, '$.evaluacion_id'),
+        JSON_EXTRACT(p_data, '$.tipo_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        TRUE,
+        NOW()
     );
     SET v_id = LAST_INSERT_ID();
     SELECT * FROM ficha_especifica WHERE id = v_id;
@@ -3262,7 +3280,8 @@ END$$
 CREATE PROCEDURE sp_fichas_especificas_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE ficha_especifica SET
-        datos_json = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos_json')), datos_json),
+        datos = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.datos')), datos),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         fecha_actualizacion = NOW()
     WHERE id = p_id;
     SELECT * FROM ficha_especifica WHERE id = p_id;
@@ -3270,8 +3289,11 @@ END$$
 
 CREATE PROCEDURE sp_fichas_especificas_delete(IN p_id INT)
 BEGIN
-    UPDATE ficha_especifica SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Ficha específica eliminada' as mensaje;
+    UPDATE ficha_especifica SET 
+        activo = FALSE,
+        fecha_actualizacion = NOW() 
+    WHERE id = p_id;
+    SELECT 'Ficha específica marcada como eliminada' as mensaje;
 END$$
 
 -- ---------- CONSENTIMIENTO FIRMA CRUD ----------
@@ -3309,8 +3331,11 @@ END$$
 
 CREATE PROCEDURE sp_consentimiento_firma_delete(IN p_id INT)
 BEGIN
-    DELETE FROM consentimiento_firma WHERE id = p_id;
-    SELECT 'Consentimiento eliminado' as mensaje;
+    UPDATE consentimiento_firma SET 
+        activo = FALSE,
+        fecha_firma = NOW()
+    WHERE id = p_id;
+    SELECT 'Consentimiento marcado como eliminado' as mensaje;
 END$$
 
 -- ---------- EVALUACIONES CRUD ----------
@@ -3349,8 +3374,11 @@ END$$
 
 CREATE PROCEDURE sp_evaluaciones_delete(IN p_id INT)
 BEGIN
-    DELETE FROM evaluacion WHERE id = p_id;
-    SELECT 'Evaluación eliminada' as mensaje;
+    UPDATE evaluacion SET 
+        estado = 'ELIMINADA',
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT 'Evaluación marcada como eliminada' as mensaje;
 END$$
 
 -- ---------- VENTAS CRUD ----------
