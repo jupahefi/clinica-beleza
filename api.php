@@ -504,7 +504,43 @@ function handleVentas($db, $method, $id, $data) {
                 if (!isset($data['genero']) || !isset($data['genero_indicado_por'])) {
                     throw new Exception('Género y profesional que lo indicó son obligatorios para crear una venta');
                 }
-                $result = $db->selectOne("CALL sp_ventas_create(?)", [json_encode($data)]);
+                
+                // Determinar si es una venta de evaluación o normal
+                $tratamientoId = $data['tratamiento_id'] ?? null;
+                if ($tratamientoId) {
+                    // Obtener el nombre del tratamiento para verificar si es evaluación
+                    $tratamiento = $db->selectOne("CALL sp_tratamientos_get(?)", [$tratamientoId]);
+                    if ($tratamiento && stripos($tratamiento['nombre'], 'EVALUACION') !== false) {
+                        // Es una venta de evaluación
+                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?)", [
+                            $data['ficha_id'],
+                            $data['tratamiento_id'],
+                            $data['pack_id'] ?? null,
+                            $data['cantidad_sesiones'],
+                            $data['precio_lista'],
+                            $data['descuento_manual_pct'] ?? 0,
+                            $data['genero'],
+                            $data['genero_indicado_por']
+                        ]);
+                    } else {
+                        // Es una venta normal
+                        $result = $db->selectOne("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+                            $data['ficha_id'],
+                            $data['evaluacion_id'] ?? null,
+                            $data['ficha_especifica_id'] ?? null,
+                            $data['tratamiento_id'],
+                            $data['pack_id'] ?? null,
+                            $data['cantidad_sesiones'],
+                            $data['precio_lista'],
+                            $data['descuento_manual_pct'] ?? 0,
+                            $data['genero'],
+                            $data['genero_indicado_por']
+                        ]);
+                    }
+                } else {
+                    throw new Exception('ID de tratamiento es obligatorio');
+                }
+                
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
             case 'PUT':

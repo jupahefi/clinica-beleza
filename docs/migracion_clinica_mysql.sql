@@ -3585,27 +3585,8 @@ BEGIN
     SELECT * FROM venta WHERE id = p_id;
 END$$
 
-CREATE PROCEDURE sp_ventas_create(IN p_data JSON)
-BEGIN
-    DECLARE v_id INT;
-    INSERT INTO venta (
-        ficha_id, evaluacion_id, profesional_id, sucursal_id,
-        total_venta, descuento_manual, total_final, 
-        estado, fecha_creacion
-    ) VALUES (
-        JSON_EXTRACT(p_data, '$.ficha_id'),
-        JSON_EXTRACT(p_data, '$.evaluacion_id'),
-        JSON_EXTRACT(p_data, '$.profesional_id'),
-        JSON_EXTRACT(p_data, '$.sucursal_id'),
-        JSON_EXTRACT(p_data, '$.total_venta'),
-        COALESCE(JSON_EXTRACT(p_data, '$.descuento_manual'), 0),
-        JSON_EXTRACT(p_data, '$.total_final'),
-        'creada',
-        NOW()
-    );
-    SET v_id = LAST_INSERT_ID();
-    SELECT * FROM venta WHERE id = v_id;
-END$$
+-- PROCEDURE ELIMINADO: sp_ventas_create tenía columnas incorrectas
+-- Se usa sp_crear_venta y sp_crear_venta_evaluacion en su lugar
 
 CREATE PROCEDURE sp_ventas_update(IN p_id INT, IN p_data JSON)
 BEGIN
