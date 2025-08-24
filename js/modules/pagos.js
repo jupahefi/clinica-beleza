@@ -371,6 +371,7 @@ export class PagosModule {
                     },
                     placeholder: '-- Selecciona cliente --',
                     minimumInputLength: 2,
+                    width: '100%',
                     language: {
                         inputTooShort: function() {
                             return "Por favor ingresa al menos 2 caracteres";
@@ -381,7 +382,10 @@ export class PagosModule {
                         searching: function() {
                             return "Buscando...";
                         }
-                    }
+                    },
+                    // Mejorar accesibilidad
+                    containerCssClass: 'select2-container--accessible',
+                    dropdownCssClass: 'select2-dropdown--accessible'
                 });
                 
                 // Configurar evento para cargar ventas cuando se selecciona un paciente

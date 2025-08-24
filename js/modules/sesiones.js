@@ -1752,6 +1752,7 @@ export class SesionesModule {
                     },
                     placeholder: '-- Selecciona cliente --',
                     minimumInputLength: 2,
+                    width: '100%',
                     language: {
                         inputTooShort: function() {
                             return "Por favor ingresa al menos 2 caracteres";
@@ -1762,7 +1763,10 @@ export class SesionesModule {
                         searching: function() {
                             return "Buscando...";
                         }
-                    }
+                    },
+                    // Mejorar accesibilidad
+                    containerCssClass: 'select2-container--accessible',
+                    dropdownCssClass: 'select2-dropdown--accessible'
                 });
                 
                 // Configurar eventos después de inicializar Select2
@@ -1887,7 +1891,10 @@ export class SesionesModule {
                     searching: function() {
                         return "Buscando...";
                     }
-                }
+                },
+                // Mejorar accesibilidad
+                containerCssClass: 'select2-container--accessible',
+                dropdownCssClass: 'select2-dropdown--accessible'
             });
             
             console.log('✅ Select de profesionales cargado exitosamente:', profesionales.length);

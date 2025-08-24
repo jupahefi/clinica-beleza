@@ -1643,6 +1643,34 @@ body {
     color: var(--calypso-dark);
 }
 
+/* Select2 accessibility improvements */
+.select2-container--accessible .select2-search__field {
+    /* Ensure the search field has proper attributes */
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+}
+
+.select2-container--accessible .select2-search__field:focus {
+    outline: 2px solid var(--primary-color) !important;
+    outline-offset: 2px !important;
+}
+
+.select2-dropdown--accessible .select2-results__option {
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+.select2-dropdown--accessible .select2-results__option:focus {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+/* Ensure proper contrast and focus indicators */
+.select2-container--accessible .select2-selection--single:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(127, 179, 211, 0.25) !important;
+}
+
 /* Estilos para sugerencias de ofertas */
 .sugerencias-ofertas {
     background: #f8f9fa;
