@@ -107,6 +107,22 @@ export class PacientesModule {
                 }
             });
         }
+        
+        // Configurar capitalización automática para nombres y apellidos
+        const nombresInput = document.getElementById('nombresPaciente');
+        const apellidosInput = document.getElementById('apellidosPaciente');
+        
+        if (nombresInput) {
+            nombresInput.addEventListener('blur', (e) => {
+                e.target.value = this.capitalizarTexto(e.target.value);
+            });
+        }
+        
+        if (apellidosInput) {
+            apellidosInput.addEventListener('blur', (e) => {
+                e.target.value = this.capitalizarTexto(e.target.value);
+            });
+        }
     }
     
     async cargarPacientesSelect() {
@@ -210,9 +226,14 @@ export class PacientesModule {
     
     llenarFormularioPaciente(paciente) {
         // Llenar campos principales (solo los que existen en el HTML)
-        const nombreElement = document.getElementById('nombrePaciente');
-        if (nombreElement) {
-            nombreElement.value = `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim();
+        const nombresElement = document.getElementById('nombresPaciente');
+        if (nombresElement) {
+            nombresElement.value = paciente.nombres || '';
+        }
+        
+        const apellidosElement = document.getElementById('apellidosPaciente');
+        if (apellidosElement) {
+            apellidosElement.value = paciente.apellidos || '';
         }
         
         const rutElement = document.getElementById('rutPaciente');
@@ -433,10 +454,16 @@ export class PacientesModule {
     validarFormularioPaciente() {
   const errores = [];
   
-        // Validar nombre
-        const nombre = document.getElementById('nombrePaciente').value.trim();
-  if (!nombre) {
-            errores.push('El nombre es obligatorio');
+        // Validar nombres
+        const nombres = document.getElementById('nombresPaciente').value.trim();
+  if (!nombres) {
+            errores.push('Los nombres son obligatorios');
+  }
+  
+        // Validar apellidos
+        const apellidos = document.getElementById('apellidosPaciente').value.trim();
+  if (!apellidos) {
+            errores.push('Los apellidos son obligatorios');
   }
   
         // Validar RUT
@@ -485,10 +512,9 @@ export class PacientesModule {
         const esNuevo = !this.pacienteActual;
         const datosEspecificos = this.obtenerDatosFichasEspecificas();
         
-        // Separar nombres y apellidos
-        const nombreCompleto = document.getElementById('nombrePaciente').value.trim();
-        const [nombres, ...apellidosArray] = nombreCompleto.split(' ');
-        const apellidos = apellidosArray.join(' ') || '';
+        // Obtener nombres y apellidos directamente, capitalizados y trimmed
+        const nombres = this.capitalizarTexto(document.getElementById('nombresPaciente').value.trim());
+        const apellidos = this.capitalizarTexto(document.getElementById('apellidosPaciente').value.trim());
   
   const paciente = {
             id: this.pacienteActual?.id,
@@ -586,10 +612,20 @@ export class PacientesModule {
         }
     }
     
+    capitalizarTexto(texto) {
+        if (!texto) return '';
+        
+        // Dividir por espacios y capitalizar cada palabra
+        return texto.split(' ')
+            .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
+            .join(' ')
+            .trim();
+    }
+    
     limpiarFormularioPaciente() {
         // Limpiar campos principales con verificación de existencia
         const campos = [
-            'nombrePaciente', 'rutPaciente', 'telefonoPaciente', 'emailPaciente', 
+            'nombresPaciente', 'apellidosPaciente', 'rutPaciente', 'telefonoPaciente', 'emailPaciente', 
             'fechaNacimiento', 'direccionPaciente', 'observacionesPaciente'
         ];
         
