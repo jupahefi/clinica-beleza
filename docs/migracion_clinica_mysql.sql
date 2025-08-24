@@ -232,7 +232,6 @@ CREATE TABLE IF NOT EXISTS profesional (
   fecha_nacimiento DATE NOT NULL,
   direccion TEXT NOT NULL,
   estado_civil VARCHAR(20) NOT NULL,
-  grupo_sanguineo VARCHAR(5) NOT NULL,
   contacto_emergencia VARCHAR(150) NOT NULL,
   telefono_emergencia VARCHAR(50) NOT NULL,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -2571,7 +2570,6 @@ CREATE PROCEDURE sp_crear_profesional_completo(
     IN p_fecha_nacimiento DATE,
     IN p_direccion TEXT,
     IN p_estado_civil VARCHAR(20),
-    IN p_grupo_sanguineo VARCHAR(5),
     IN p_contacto_emergencia VARCHAR(150),
     IN p_telefono_emergencia VARCHAR(50),
     OUT p_profesional_id BIGINT
@@ -2580,12 +2578,12 @@ BEGIN
     INSERT INTO profesional (
         usuario_id, nombre, apellidos, rut, telefono, email, tipo_profesional, 
         bio, foto_url, especialidad, titulo_profesional, numero_colegio, 
-        fecha_nacimiento, direccion, estado_civil, grupo_sanguineo, 
+        fecha_nacimiento, direccion, estado_civil, 
         contacto_emergencia, telefono_emergencia, activo
     ) VALUES (
         p_usuario_id, p_nombre, p_apellidos, p_rut, p_telefono, p_email, p_tipo_profesional,
         p_bio, p_foto_url, p_especialidad, p_titulo_profesional, p_numero_colegio,
-        p_fecha_nacimiento, p_direccion, p_estado_civil, p_grupo_sanguineo,
+        p_fecha_nacimiento, p_direccion, p_estado_civil,
         p_contacto_emergencia, p_telefono_emergencia, TRUE
     );
     SET p_profesional_id = LAST_INSERT_ID();
@@ -3174,7 +3172,7 @@ CALL sp_crear_profesional_completo(
     @usuario_juan_id, 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador',
     'Administrador del sistema y desarrollador principal. Especialista en gestion de clinicas esteticas y sistemas de informacion medica.',
     '/assets/profesionales/juan-herrera.jpg', 'Administracion y Desarrollo', 'Ingeniero en Informatica', 'ADM-00001',
-    '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'O+', 'Maria Herrera', '+56 9 8888 8888',
+    '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'Maria Herrera', '+56 9 8888 8888',
     @profesional_juan_id
 );
 

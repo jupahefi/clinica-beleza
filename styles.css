@@ -1,3 +1,9 @@
+/* 
+ * ESTILOS PRINCIPALES - CLÍNICA BELEZA
+ * IMPORTANTE: Estos estilos tienen prioridad sobre Bootstrap
+ * Todos los estilos importantes usan !important para sobrescribir Bootstrap
+ */
+
 /* Reset and Base Styles */
 * { 
   margin: 0; 
@@ -236,103 +242,103 @@ body {
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
 .form-group label {
-    font-weight: 500;
-    color: var(--dark-gray);
-    font-size: 0.9rem;
+    font-weight: 500 !important;
+    color: var(--dark-gray) !important;
+    font-size: 0.9rem !important;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 0.75rem;
-    border: 2px solid #E9ECEF;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-    font-family: inherit;
+    padding: 0.75rem !important;
+    border: 2px solid #E9ECEF !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    transition: border-color 0.3s ease !important;
+    font-family: inherit !important;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    outline: none;
-    border-color: var(--calypso-pastel);
-    box-shadow: 0 0 0 3px rgba(127, 179, 211, 0.1);
+    outline: none !important;
+    border-color: var(--calypso-pastel) !important;
+    box-shadow: 0 0 0 3px rgba(127, 179, 211, 0.1) !important;
 }
 
 .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
+    resize: vertical !important;
+    min-height: 80px !important;
 }
 
 .form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    display: flex !important;
+    gap: 1rem !important;
+    margin-top: 1rem !important;
 }
 
-/* Button Styles */
+/* Button Styles - FORZADOS */
 .btn {
-    padding: 0.75rem 1.5rem;
-  border: none;
-    border-radius: 8px;
-  font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-  transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    font-family: inherit;
+    padding: 0.75rem 1.5rem !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
 }
 
 .btn-primary {
-    background: var(--calypso-pastel);
-    color: var(--white);
+    background: var(--calypso-pastel) !important;
+    color: var(--white) !important;
 }
 
 .btn-primary:hover {
-    background: var(--calypso-dark);
-  transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    background: var(--calypso-dark) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-hover) !important;
 }
 
 .btn-secondary {
-    background: var(--gray);
-    color: var(--white);
+    background: var(--gray) !important;
+    color: var(--white) !important;
 }
 
 .btn-secondary:hover {
-    background: var(--dark-gray);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    background: var(--dark-gray) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-hover) !important;
 }
 
 .btn-success {
-    background: var(--success);
-    color: var(--white);
+    background: var(--success) !important;
+    color: var(--white) !important;
 }
 
 .btn-warning {
-    background: var(--warning);
-    color: var(--dark-gray);
+    background: var(--warning) !important;
+    color: var(--dark-gray) !important;
 }
 
 .btn-danger {
-    background: var(--danger);
-    color: var(--white);
+    background: var(--danger) !important;
+    color: var(--white) !important;
 }
 
 .btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8rem !important;
 }
 
 /* Data Container */
@@ -1712,63 +1718,67 @@ body {
     font-weight: 600;
 }
 
-/* Estilos elegantes para radio buttons */
+/* Estilos elegantes para radio buttons - FORZADOS */
 .form-check {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    cursor: pointer;
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 10px !important;
+    cursor: pointer !important;
 }
 
 .form-check-input {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    margin-right: 10px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid #ccc !important;
+    border-radius: 50% !important;
+    margin-right: 8px !important;
+    position: relative !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    background-color: white !important;
+    box-shadow: none !important;
 }
 
 .form-check-input:checked {
-    border-color: var(--calypso-pastel);
-    background-color: var(--calypso-pastel);
+    border-color: var(--calypso-pastel) !important;
+    background-color: var(--calypso-pastel) !important;
 }
 
 .form-check-input:checked::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background-color: white;
-    border-radius: 50%;
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 6px !important;
+    height: 6px !important;
+    background-color: white !important;
+    border-radius: 50% !important;
 }
 
 .form-check-input:hover {
-    border-color: var(--calypso-light);
+    border-color: var(--calypso-pastel) !important;
 }
 
 .form-check-input:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(127, 179, 211, 0.25);
+    outline: 2px solid #007bff !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
 }
 
 .form-check-label {
-    font-weight: 500;
-    color: var(--dark-gray);
-    cursor: pointer;
-    user-select: none;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    transition: color 0.2s ease !important;
+    user-select: none !important;
 }
 
 .form-check-label:hover {
-    color: var(--calypso-pastel);
+    color: var(--calypso-pastel) !important;
 }
 
 /* Estilos para el contenedor de radio buttons */
