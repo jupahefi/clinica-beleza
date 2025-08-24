@@ -56,12 +56,16 @@ export class OfertasModule {
             // Cargar tratamientos para el selector
             const response = await fetch('api.php?action=tratamientos');
             const data = await response.json();
-            if (data.success) {
+            if (data.success && data.data) {
                 this.tratamientos = data.data;
                 this.actualizarSelectorTratamientos();
+            } else {
+                console.warn('No se pudieron cargar tratamientos:', data);
+                this.tratamientos = [];
             }
         } catch (error) {
             console.error('Error cargando tratamientos:', error);
+            this.tratamientos = [];
         }
     }
     
@@ -70,12 +74,16 @@ export class OfertasModule {
             // Cargar packs para el selector
             const response = await fetch('api.php?action=packs');
             const data = await response.json();
-            if (data.success) {
+            if (data.success && data.data) {
                 this.packs = data.data;
                 this.actualizarSelectorPacks();
+            } else {
+                console.warn('No se pudieron cargar packs:', data);
+                this.packs = [];
             }
         } catch (error) {
             console.error('Error cargando packs:', error);
+            this.packs = [];
         }
     }
     
@@ -84,6 +92,12 @@ export class OfertasModule {
         if (!select) return;
         
         select.innerHTML = '<option value="">-- Selecciona tratamiento --</option>';
+        
+        if (!this.tratamientos || !Array.isArray(this.tratamientos)) {
+            console.warn('Tratamientos no es un array válido:', this.tratamientos);
+            return;
+        }
+        
         this.tratamientos.forEach(tratamiento => {
             const option = document.createElement('option');
             option.value = tratamiento.id;
@@ -97,6 +111,12 @@ export class OfertasModule {
         if (!select) return;
         
         select.innerHTML = '<option value="">-- Selecciona pack --</option>';
+        
+        if (!this.packs || !Array.isArray(this.packs)) {
+            console.warn('Packs no es un array válido:', this.packs);
+            return;
+        }
+        
         this.packs.forEach(pack => {
             const option = document.createElement('option');
             option.value = pack.id;
