@@ -2766,7 +2766,7 @@ DELIMITER $$
 CREATE PROCEDURE sp_ofertas_aplicables_list()
 BEGIN
     SELECT * FROM v_ofertas_aplicables
-    WHERE fecha_fin >= CURDATE()
+    WHERE aplicable_hoy = TRUE
     ORDER BY porc_descuento DESC;
 END$$
 DELIMITER ;
