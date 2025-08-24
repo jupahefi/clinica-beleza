@@ -2802,7 +2802,16 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_tratamientos_list()
 BEGIN
-    SELECT * FROM tratamiento ORDER BY nombre;
+    SELECT 
+        t.*,
+        pt.precio_regular,
+        pt.precio_oferta,
+        pt.fecha_inicio_oferta,
+        pt.fecha_fin_oferta
+    FROM tratamiento t
+    LEFT JOIN precio_tratamiento pt ON t.id = pt.tratamiento_id AND pt.activo = TRUE
+    WHERE t.activo = TRUE 
+    ORDER BY t.nombre;
 END$$
 DELIMITER ;
 
