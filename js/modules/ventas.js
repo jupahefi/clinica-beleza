@@ -27,12 +27,12 @@ class VentasModule {
 
     async cargarDatos() {
         try {
-            // Cargar tratamientos con precios por sesión (sin género inicialmente)
-            this.tratamientos = await tratamientosAPI.getAll();
-            console.log('[VENTAS] Tratamientos cargados:', this.tratamientos);
+            // Cargar tratamientos con precios por sesión (con género universal por defecto)
+            this.tratamientos = await tratamientosAPI.getAll('U');
+            console.log('[VENTAS] Tratamientos cargados (universal):', this.tratamientos);
             
-            // Los packs se cargarán cuando se seleccione el género
-            console.log('[VENTAS] Packs se cargarán cuando se seleccione género');
+            // Los packs se cargarán cuando se seleccione el género específico
+            console.log('[VENTAS] Packs se cargarán cuando se seleccione género específico');
             
             // Cargar ofertas aplicables
             try {
@@ -114,6 +114,7 @@ class VentasModule {
             radioGeneroM.addEventListener('change', () => {
                 this.generoSeleccionado = 'M';
                 console.log('[VENTAS] Género seleccionado: Masculino');
+                this.cargarTratamientosPorGenero();
                 this.cargarPacksPorGenero();
                 this.mostrarOpciones();
                 this.calcularPrecio();
@@ -124,6 +125,7 @@ class VentasModule {
             radioGeneroF.addEventListener('change', () => {
                 this.generoSeleccionado = 'F';
                 console.log('[VENTAS] Género seleccionado: Femenino');
+                this.cargarTratamientosPorGenero();
                 this.cargarPacksPorGenero();
                 this.mostrarOpciones();
                 this.calcularPrecio();
@@ -166,6 +168,22 @@ class VentasModule {
         const btnConfirmar = document.querySelector('button[onclick="confirmarVenta()"]');
         if (btnConfirmar) {
             btnConfirmar.onclick = () => this.confirmarVenta();
+        }
+    }
+
+    async cargarTratamientosPorGenero() {
+        if (!this.generoSeleccionado) return;
+        
+        try {
+            // Recargar tratamientos con el género específico
+            this.tratamientos = await tratamientosAPI.getAll(this.generoSeleccionado);
+            console.log(`[VENTAS] Tratamientos recargados para género ${this.generoSeleccionado}:`, this.tratamientos);
+            
+            // Recargar el selector de tratamientos
+            this.cargarTratamientosEnSelect();
+        } catch (error) {
+            console.error('[VENTAS] Error cargando tratamientos por género:', error);
+            mostrarNotificacion('Error cargando tratamientos por género', 'error');
         }
     }
 

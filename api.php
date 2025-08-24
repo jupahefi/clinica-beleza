@@ -846,7 +846,9 @@ function handleTratamientos($db, $method, $id, $data) {
                 if ($id) {
                     $result = $db->selectOne("CALL sp_tratamientos_get(?)", [$id]);
                 } else {
-                    $result = $db->select("CALL sp_tratamientos_list()");
+                    // Obtener género de los parámetros de consulta, por defecto 'U' (universal)
+                    $genero = $_GET['genero'] ?? 'U';
+                    $result = $db->select("CALL sp_tratamientos_list(?)", [$genero]);
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;

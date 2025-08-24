@@ -426,7 +426,13 @@ export const ofertasComboAPI = {
 
 export const tratamientosAPI = {
     // Obtener todos los tratamientos
-    getAll: () => get('tratamientos'),
+    getAll: (genero = null) => {
+        const params = {};
+        if (genero) {
+            params.genero = genero;
+        }
+        return get('tratamientos', params);
+    },
     
     // Obtener tratamiento por ID
     getById: (id) => get(`tratamientos/${id}`),
