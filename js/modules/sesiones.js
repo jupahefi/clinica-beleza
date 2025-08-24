@@ -1938,22 +1938,32 @@ export class SesionesModule {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
                 
-                // Crear texto descriptivo más útil
+                // Crear texto descriptivo más útil y detallado
                 let ventaText = `#${venta.id}`;
                 
                 // Agregar nombre del tratamiento
                 if (venta.tratamiento?.nombre) {
-                    ventaText += ` ${venta.tratamiento.nombre}`;
+                    ventaText += ` - ${venta.tratamiento.nombre}`;
+                }
+                
+                // Agregar nombre del pack si existe
+                if (venta.pack?.nombre) {
+                    ventaText += ` (${venta.pack.nombre})`;
                 }
                 
                 // Agregar información de sesiones
                 if (venta.cantidad_sesiones) {
-                    ventaText += ` (${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''})`;
+                    ventaText += ` - ${venta.cantidad_sesiones} sesión${venta.cantidad_sesiones > 1 ? 'es' : ''}`;
                 }
                 
                 // Agregar precio si existe
                 if (venta.precio_total && venta.precio_total > 0) {
                     ventaText += ` - $${venta.precio_total.toLocaleString()}`;
+                }
+                
+                // Agregar estado si existe
+                if (venta.estado) {
+                    ventaText += ` [${venta.estado}]`;
                 }
                 
                 // Agregar fecha si existe

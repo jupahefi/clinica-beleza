@@ -544,8 +544,8 @@ class VentasModule {
             <em>${detalle}</em>
         `;
 
-        console.log(`[VENTAS] Precio calculado para ${tratamiento.nombre}: $${precio} (${sesionesFinales} sesiones)`);
-        return { tratamiento: tratamiento.nombre, sesiones: sesionesFinales, precio, detalle };
+        console.log(`[VENTAS] Precio calculado para ${tratamiento.nombre}: $${precio} (${sesionesFinales} sesiones), descuento manual: ${ofertaVenta}%`);
+        return { tratamiento: tratamiento.nombre, sesiones: sesionesFinales, precio, detalle, descuento_manual_pct: ofertaVenta };
     }
 
     async confirmarVenta() {
@@ -582,18 +582,13 @@ class VentasModule {
                     cantidad_sesiones: venta.sesiones,
                     precio_lista: venta.precio,
                     total_pagado: venta.precio,
+                    descuento_manual_pct: venta.descuento_manual_pct || 0,
                     genero: this.generoSeleccionado,
                     genero_indicado_por: getCurrentProfesionalId()
                 });
 
-                this.historial.push({
-                    ...venta,
-                    cliente: this.clienteSeleccionado?.text || 'Cliente no seleccionado',
-                    fecha: new Date().toLocaleDateString(),
-                    tipo: 'evaluacion'
-                });
-
-                this.renderHistorial();
+                // Recargar historial desde la base de datos en lugar de agregar localmente
+                await this.cargarHistorialCliente();
                 this.limpiarFormulario();
                 console.log(`[VENTAS] Venta de evaluación registrada para cliente ${this.clienteSeleccionado?.text || 'Cliente no seleccionado'}`);
                 mostrarNotificacion('Venta de evaluación registrada exitosamente. Agenda la sesión para completar el proceso.', 'success');
@@ -674,24 +669,21 @@ class VentasModule {
                 });
 
                 const ventaCreada = await ventasAPI.create({
+                    ficha_id: this.clienteSeleccionado.id,
                     evaluacion_id: evaluacion.id,
                     ficha_especifica_id: fichaEspecifica.id,
                     tratamiento_id: tratamientoId,
+                    pack_id: document.getElementById('pack').value || null,
                     cantidad_sesiones: venta.sesiones,
                     precio_lista: venta.precio,
                     total_pagado: venta.precio,
+                    descuento_manual_pct: venta.descuento_manual_pct || 0,
                     genero: this.generoSeleccionado,
                     genero_indicado_por: getCurrentProfesionalId()
                 });
 
-                this.historial.push({
-                    ...venta,
-                    cliente: this.clienteSeleccionado?.text || 'Cliente no seleccionado',
-                    fecha: new Date().toLocaleDateString(),
-                    tipo: 'normal'
-                });
-
-                this.renderHistorial();
+                // Recargar historial desde la base de datos en lugar de agregar localmente
+                await this.cargarHistorialCliente();
                 this.limpiarFormulario();
                 console.log(`[VENTAS] Venta registrada para cliente ${this.clienteSeleccionado.text} (${venta.tratamiento})`);
                 mostrarNotificacion('Venta registrada exitosamente.', 'success');
