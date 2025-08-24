@@ -581,10 +581,8 @@ CALL AddCheckConstraintIfNotExists('venta_oferta', 'ck_venta_oferta_descuento_ra
 CALL AddCheckConstraintIfNotExists('oferta_combo', 'ck_oferta_combo_min_packs', 'min_packs >= 2');
 CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_duracion_pos', 'duracion_sesion_min >= 0');
 CALL AddCheckConstraintIfNotExists('oferta', 'ck_oferta_prioridad_pos', 'prioridad >= 0');
-CALL AddCheckConstraintIfNotExists('precio_tratamiento', 'ck_precio_tratamiento_regular_pos', 'precio_regular >= 0');
-CALL AddCheckConstraintIfNotExists('precio_tratamiento', 'ck_precio_tratamiento_oferta_pos', 'precio_oferta IS NULL OR precio_oferta >= 0');
-CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_precio_regular_pos', 'precio_regular >= 0');
-CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_precio_oferta_pos', 'precio_oferta IS NULL OR precio_oferta >= 0');
+CALL AddCheckConstraintIfNotExists('precio_tratamiento', 'ck_precio_tratamiento_por_sesion_pos', 'precio_por_sesion >= 0');
+CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_precio_total_pos', 'precio_total >= 0');
 CALL AddCheckConstraintIfNotExists('pack', 'ck_pack_sesiones_pos', 'sesiones_incluidas >= 1');
 CALL AddCheckConstraintIfNotExists('pago', 'ck_pago_monto_pos', 'monto_total >= 0');
 CALL AddCheckConstraintIfNotExists('pago', 'ck_pago_estado', 'estado IN (''pendiente'',''pagado'',''anulado'')');
