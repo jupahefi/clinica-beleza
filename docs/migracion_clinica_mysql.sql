@@ -2607,6 +2607,253 @@ END$$
 DELIMITER ;
 
 -- =============================================================================
+-- STORED PROCEDURES DE LISTADO - PARA LA API
+-- =============================================================================
+
+-- ---------- LISTADOS PARA API ----------
+
+-- FIC-004: Listar todas las fichas
+DELIMITER $$
+CREATE PROCEDURE sp_fichas_list()
+BEGIN
+    SELECT * FROM ficha ORDER BY fecha_creacion DESC;
+END$$
+DELIMITER ;
+
+-- FIC-005: Listar tipos de ficha específica
+DELIMITER $$
+CREATE PROCEDURE sp_tipos_ficha_especifica_list()
+BEGIN
+    SELECT * FROM tipo_ficha_especifica ORDER BY nombre;
+END$$
+DELIMITER ;
+
+-- FIC-006: Listar fichas específicas
+DELIMITER $$
+CREATE PROCEDURE sp_fichas_especificas_list()
+BEGIN
+    SELECT fe.*, tfe.nombre as tipo_nombre, tfe.requiere_consentimiento
+    FROM ficha_especifica fe
+    JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id
+    ORDER BY fe.fecha_creacion DESC;
+END$$
+DELIMITER ;
+
+-- CON-001: Listar consentimientos con firma
+DELIMITER $$
+CREATE PROCEDURE sp_consentimiento_firma_list()
+BEGIN
+    SELECT cf.*, fe.id as ficha_especifica_id, tfe.nombre as tipo_ficha
+    FROM consentimiento_firma cf
+    JOIN ficha_especifica fe ON cf.ficha_especifica_id = fe.id
+    JOIN tipo_ficha_especifica tfe ON fe.tipo_id = tfe.id
+    ORDER BY cf.fecha_firma DESC;
+END$$
+DELIMITER ;
+
+-- EVA-002: Listar evaluaciones
+DELIMITER $$
+CREATE PROCEDURE sp_evaluaciones_list()
+BEGIN
+    SELECT e.*, f.codigo as ficha_codigo, f.nombres, f.apellidos
+    FROM evaluacion e
+    JOIN ficha f ON e.ficha_id = f.id
+    ORDER BY e.fecha_evaluacion DESC;
+END$$
+DELIMITER ;
+
+-- VEN-002: Listar ventas
+DELIMITER $$
+CREATE PROCEDURE sp_ventas_list()
+BEGIN
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
+    FROM venta v
+    JOIN ficha f ON v.ficha_id = f.id
+    JOIN evaluacion e ON v.evaluacion_id = e.id
+    ORDER BY v.fecha_venta DESC;
+END$$
+DELIMITER ;
+
+-- VEN-003: Listar historial de ventas
+DELIMITER $$
+CREATE PROCEDURE sp_ventas_historial_list()
+BEGIN
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
+    FROM venta v
+    JOIN ficha f ON v.ficha_id = f.id
+    JOIN evaluacion e ON v.evaluacion_id = e.id
+    WHERE v.estado = 'COMPLETADA'
+    ORDER BY v.fecha_venta DESC;
+END$$
+DELIMITER ;
+
+-- PAG-004: Listar pagos
+DELIMITER $$
+CREATE PROCEDURE sp_pagos_list()
+BEGIN
+    SELECT p.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos
+    FROM pago p
+    JOIN venta v ON p.venta_id = v.id
+    JOIN ficha f ON v.ficha_id = f.id
+    ORDER BY p.fecha_pago DESC;
+END$$
+DELIMITER ;
+
+-- SES-008: Listar sesiones
+DELIMITER $$
+CREATE PROCEDURE sp_sesiones_list()
+BEGIN
+    SELECT s.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos,
+           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
+    FROM sesion s
+    JOIN venta v ON s.venta_id = v.id
+    JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN profesional p ON s.profesional_id = p.id
+    LEFT JOIN box b ON s.box_id = b.id
+    LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
+    ORDER BY s.fecha_sesion DESC;
+END$$
+DELIMITER ;
+
+-- SES-009: Listar agenda
+DELIMITER $$
+CREATE PROCEDURE sp_agenda_list()
+BEGIN
+    SELECT s.*, v.codigo as venta_codigo, f.codigo as ficha_codigo, f.nombres, f.apellidos,
+           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
+    FROM sesion s
+    JOIN venta v ON s.venta_id = v.id
+    JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN profesional p ON s.profesional_id = p.id
+    LEFT JOIN box b ON s.box_id = b.id
+    LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
+    WHERE s.estado IN ('AGENDADA', 'CONFIRMADA')
+    ORDER BY s.fecha_sesion ASC;
+END$$
+DELIMITER ;
+
+-- OFE-004: Listar ofertas
+DELIMITER $$
+CREATE PROCEDURE sp_ofertas_list()
+BEGIN
+    SELECT o.*, 
+           CASE 
+               WHEN o.tipo = 'PACK' THEN (SELECT nombre FROM pack WHERE id = o.pack_id)
+               WHEN o.tipo = 'TRATAMIENTO' THEN (SELECT nombre FROM tratamiento WHERE id = o.tratamiento_id)
+               ELSE NULL
+           END as elemento_nombre
+    FROM oferta o
+    WHERE o.activa = TRUE AND o.fecha_fin >= CURDATE()
+    ORDER BY o.fecha_inicio DESC;
+END$$
+DELIMITER ;
+
+-- OFE-005: Listar ofertas combo
+DELIMITER $$
+CREATE PROCEDURE sp_ofertas_combo_list()
+BEGIN
+    SELECT oc.*, o.nombre as oferta_nombre, o.porcentaje_descuento as oferta_descuento
+    FROM oferta_combo oc
+    JOIN oferta o ON oc.oferta_id = o.id
+    WHERE o.activa = TRUE AND o.fecha_fin >= CURDATE()
+    ORDER BY o.fecha_inicio DESC;
+END$$
+DELIMITER ;
+
+-- OFE-006: Listar ofertas aplicables
+DELIMITER $$
+CREATE PROCEDURE sp_ofertas_aplicables_list()
+BEGIN
+    SELECT * FROM v_ofertas_aplicables
+    WHERE fecha_fin >= CURDATE()
+    ORDER BY porcentaje_descuento DESC;
+END$$
+DELIMITER ;
+
+-- TRA-002: Listar tratamientos
+DELIMITER $$
+CREATE PROCEDURE sp_tratamientos_list()
+BEGIN
+    SELECT * FROM tratamiento ORDER BY nombre;
+END$$
+DELIMITER ;
+
+-- ZON-002: Listar zonas
+DELIMITER $$
+CREATE PROCEDURE sp_zonas_list()
+BEGIN
+    SELECT * FROM zona_cuerpo ORDER BY nombre;
+END$$
+DELIMITER ;
+
+-- PAC-002: Listar packs
+DELIMITER $$
+CREATE PROCEDURE sp_packs_list()
+BEGIN
+    SELECT p.*, t.nombre as tratamiento_nombre
+    FROM pack p
+    JOIN tratamiento t ON p.tratamiento_id = t.id
+    ORDER BY p.nombre;
+END$$
+DELIMITER ;
+
+-- SUC-002: Listar sucursales
+DELIMITER $$
+CREATE PROCEDURE sp_sucursales_list()
+BEGIN
+    SELECT * FROM sucursal ORDER BY nombre;
+END$$
+DELIMITER ;
+
+-- BOX-002: Listar boxes
+DELIMITER $$
+CREATE PROCEDURE sp_boxes_list()
+BEGIN
+    SELECT b.*, s.nombre as sucursal_nombre
+    FROM box b
+    JOIN sucursal s ON b.sucursal_id = s.id
+    ORDER BY s.nombre, b.nombre;
+END$$
+DELIMITER ;
+
+-- PRO-002: Listar profesionales
+DELIMITER $$
+CREATE PROCEDURE sp_profesionales_list()
+BEGIN
+    SELECT p.*, s.nombre as sucursal_nombre
+    FROM profesional p
+    LEFT JOIN sucursal s ON p.sucursal_id = s.id
+    ORDER BY p.nombre;
+END$$
+DELIMITER ;
+
+-- REP-001: Listar reportes disponibles
+DELIMITER $$
+CREATE PROCEDURE sp_reportes_list()
+BEGIN
+    SELECT 'v_venta_progreso' as vista, 'Progreso de sesiones por venta' as descripcion
+    UNION ALL
+    SELECT 'v_plan_vs_ejecucion', 'Comparación plan vs ejecución'
+    UNION ALL
+    SELECT 'v_ofertas_aplicables', 'Ofertas activas y en fecha'
+    UNION ALL
+    SELECT 'v_ofertas_pack', 'Ofertas por pack con descuentos'
+    UNION ALL
+    SELECT 'v_ofertas_tratamiento', 'Ofertas por tratamiento'
+    UNION ALL
+    SELECT 'v_ofertas_combo', 'Ofertas combo con descuento adicional'
+    UNION ALL
+    SELECT 'v_sesiones_completas', 'Sesiones con toda la información'
+    UNION ALL
+    SELECT 'v_ventas_completas', 'Ventas con toda la información'
+    UNION ALL
+    SELECT 'v_reporte_ofertas', 'Reporte de ofertas aplicadas'
+    UNION ALL
+    SELECT 'v_disponibilidad_profesionales', 'Disponibilidad para agenda';
+END$$
+DELIMITER ;
+
+-- =============================================================================
 -- DATOS INICIALES - USANDO STORED PROCEDURES PARA CALIDAD DE DATOS
 -- =============================================================================
 
