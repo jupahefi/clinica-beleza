@@ -559,14 +559,33 @@
                                 <div class="form-group">
                                     <label for="tipoOferta">Tipo</label>
                                     <select name="tipoOferta" id="tipoOferta" required>
-                                        <option value="pack">Pack</option>
+                                        <option value="">-- Selecciona tipo --</option>
                                         <option value="tratamiento">Tratamiento</option>
-                                        <option value="sesiones">Sesiones</option>
-                                        <option value="combo">Combo</option>
-                                        <option value="manual">Manual</option>
+                                        <option value="pack">Pack</option>
                                     </select>
                                 </div>
                             </div>
+                            
+                            <!-- Campos para oferta tipo tratamiento -->
+                            <div id="tratamientoOfertaDiv" style="display:none;">
+                                <div class="form-group">
+                                    <label for="tratamientoOferta">Tratamiento</label>
+                                    <select name="tratamientoOferta" id="tratamientoOferta">
+                                        <option value="">-- Selecciona tratamiento --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos para oferta tipo pack -->
+                            <div id="packOfertaDiv" style="display:none;">
+                                <div class="form-group">
+                                    <label for="packOferta">Pack</label>
+                                    <select name="packOferta" id="packOferta">
+                                        <option value="">-- Selecciona pack --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="porcentajeOferta">Descuento (%)</label>
@@ -627,31 +646,6 @@
                                         <th>Tipo</th>
                                         <th>Descuento</th>
                                         <th>Sesiones Mínimas</th>
-                                        <th>Descripción</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cuerpoTablaOfertas"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                        </form>
-                    </div>
-                    
-                    <div class="data-container">
-                        <div class="data-header">
-                            <h3>Ofertas Activas</h3>
-                        </div>
-                        <div class="table-container">
-                            <table id="tablaOfertas" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Tipo</th>
-                                        <th>Descuento</th>
-                                        <th>Sesiones Mínimas</th>
-                                        <th>Descripción</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>

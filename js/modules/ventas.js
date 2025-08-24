@@ -134,8 +134,9 @@ class VentasModule {
 
         const selectTratamiento = document.getElementById('tratamiento');
         if (selectTratamiento) {
-            selectTratamiento.addEventListener('change', () => {
+            selectTratamiento.addEventListener('change', async () => {
                 console.log('[VENTAS] Cambio de tratamiento seleccionado');
+                await this.cargarPacksDelTratamientoSeleccionado();
                 this.mostrarOpciones();
                 this.calcularPrecio();
             });
@@ -205,6 +206,27 @@ class VentasModule {
         } catch (error) {
             console.error('[VENTAS] Error cargando packs por género:', error);
             mostrarNotificacion('Error cargando packs por género', 'error');
+        }
+    }
+
+    async cargarPacksDelTratamientoSeleccionado() {
+        if (!this.generoSeleccionado) return;
+        
+        const selectTratamiento = document.getElementById('tratamiento');
+        if (!selectTratamiento || !selectTratamiento.value) return;
+        
+        const tratamientoId = parseInt(selectTratamiento.value);
+        const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
+        
+        if (!tratamiento) return;
+        
+        try {
+            // Cargar packs específicos para este tratamiento
+            tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
+            console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre} (${this.generoSeleccionado}):`, tratamiento.packs);
+        } catch (error) {
+            console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, error);
+            tratamiento.packs = [];
         }
     }
 

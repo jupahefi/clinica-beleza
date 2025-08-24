@@ -1711,3 +1711,71 @@ body {
     font-size: 12px;
     font-weight: 600;
 }
+
+/* Estilos elegantes para radio buttons */
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.form-check-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    border-color: var(--calypso-pastel);
+    background-color: var(--calypso-pastel);
+}
+
+.form-check-input:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.form-check-input:hover {
+    border-color: var(--calypso-light);
+}
+
+.form-check-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(127, 179, 211, 0.25);
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: var(--dark-gray);
+    cursor: pointer;
+    user-select: none;
+}
+
+.form-check-label:hover {
+    color: var(--calypso-pastel);
+}
+
+/* Estilos para el contenedor de radio buttons */
+.form-group .form-check {
+    margin-bottom: 8px;
+}
+
+.form-group .form-check:last-child {
+    margin-bottom: 0;
+}
