@@ -8,8 +8,9 @@ import { ventasModule } from './modules/ventas.js';
 import { pagosModule } from './modules/pagos.js';
 import { sesionesModule } from './modules/sesiones.js';
 import { fichasEspecificas } from './modules/fichas-especificas.js';
-import { boxesModule } from './modules/boxes.js';
+
 import { ofertasModule } from './modules/ofertas.js';
+import { mantenedoresModule } from './modules/mantenedores.js';
 import { reportesModule } from './modules/reportes.js';
 
 // Importar utilidades
@@ -29,8 +30,9 @@ class ClinicaBelezaApp {
             pagos: pagosModule,
             sesiones: sesionesModule,
             fichasEspecificas: fichasEspecificas,
-            boxes: boxesModule,
+
             ofertas: ofertasModule,
+            mantenedores: mantenedoresModule,
             reportes: reportesModule
         };
         this.init();
@@ -211,10 +213,7 @@ class ClinicaBelezaApp {
                 this.modules.sesiones.loadSesiones();
                 this.modules.sesiones.loadPacientes();
                 break;
-            case 'boxes':
-                console.log('📦 Cargando datos de boxes...');
-                this.modules.boxes.cargarBoxes();
-                break;
+
             case 'ofertas':
                 console.log('🎯 Cargando datos de ofertas...');
                 this.modules.ofertas.init();
@@ -391,10 +390,7 @@ class ClinicaBelezaApp {
                     console.warn('⚠️ Error cargando sesiones:', e.message);
                     showMessage(`Error cargando sesiones: ${e.dbError || e.message}`, 'error');
                 }),
-                this.modules.boxes.cargarBoxes().catch(e => {
-                    console.warn('⚠️ Error cargando boxes:', e.message);
-                    showMessage(`Error cargando boxes: ${e.dbError || e.message}`, 'error');
-                }),
+
                 this.modules.ofertas.cargarOfertas().catch(e => {
                     console.warn('⚠️ Error cargando ofertas:', e.message);
                     showMessage(`Error cargando ofertas: ${e.dbError || e.message}`, 'error');
@@ -593,9 +589,7 @@ window.limpiarFormularioSesion = () => {
     window.clinicaApp.getModule('sesiones').limpiarFormularioSesion();
 };
 
-window.limpiarFormularioBox = () => {
-    window.clinicaApp.getModule('boxes').limpiarFormularioBox();
-};
+
 
 window.limpiarFormularioOferta = () => {
     window.clinicaApp.getModule('ofertas').limpiarFormularioOferta();

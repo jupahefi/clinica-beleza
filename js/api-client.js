@@ -438,7 +438,13 @@ export const tratamientosAPI = {
     getById: (id) => get(`tratamientos/${id}`),
     
     // Crear tratamiento
-    create: (tratamiento) => post('tratamientos', tratamiento)
+    create: (tratamiento) => post('tratamientos', tratamiento),
+    
+    // Actualizar tratamiento
+    update: (id, tratamiento) => put(`tratamientos/${id}`, tratamiento),
+    
+    // Eliminar tratamiento
+    delete: (id) => del(`tratamientos/${id}`)
 };
 
 export const zonasAPI = {
@@ -469,7 +475,13 @@ export const packsAPI = {
     getAll: () => get('packs'),
     
     // Crear pack
-    create: (pack) => post('packs', pack)
+    create: (pack) => post('packs', pack),
+    
+    // Actualizar pack
+    update: (id, pack) => put(`packs/${id}`, pack),
+    
+    // Eliminar pack
+    delete: (id) => del(`packs/${id}`)
 };
 
 export const sucursalesAPI = {
@@ -480,7 +492,13 @@ export const sucursalesAPI = {
     getById: (id) => get(`sucursales/${id}`),
     
     // Crear sucursal
-    create: (sucursal) => post('sucursales', sucursal)
+    create: (sucursal) => post('sucursales', sucursal),
+    
+    // Actualizar sucursal
+    update: (id, sucursal) => put(`sucursales/${id}`, sucursal),
+    
+    // Eliminar sucursal
+    delete: (id) => del(`sucursales/${id}`)
 };
 
 export const boxesAPI = {
@@ -511,7 +529,13 @@ export const profesionalesAPI = {
     getById: (id) => get(`profesionales/${id}`),
     
     // Crear profesional
-    create: (profesional) => post('profesionales', profesional)
+    create: (profesional) => post('profesionales', profesional),
+    
+    // Actualizar profesional
+    update: (id, profesional) => put(`profesionales/${id}`, profesional),
+    
+    // Eliminar profesional
+    delete: (id) => del(`profesionales/${id}`)
 };
 
 // ---------- REPORTES ----------

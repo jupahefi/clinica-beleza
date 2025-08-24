@@ -1870,3 +1870,159 @@ legend {
     color: var(--dark-gray) !important;
     font-size: 1.05em !important;
 }
+
+/* =============================================================================
+   MANTENEDORES
+   ============================================================================= */
+
+/* Estilos para las pestañas de mantenedores */
+.nav-tabs .nav-link {
+    color: var(--dark-gray) !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    padding: 12px 20px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    background: transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color) !important;
+    border-bottom-color: var(--calypso-pastel) !important;
+    background: rgba(0, 123, 255, 0.05) !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color) !important;
+    border-bottom-color: var(--primary-color) !important;
+    background: rgba(0, 123, 255, 0.1) !important;
+    font-weight: 600 !important;
+}
+
+/* Contenido de las pestañas */
+.tab-content {
+    padding: 20px 0 !important;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Formularios de mantenedores */
+.mantenedor-form {
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.mantenedor-form h4 {
+    color: var(--primary-color) !important;
+    margin-bottom: 20px !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid var(--calypso-pastel) !important;
+    padding-bottom: 10px !important;
+}
+
+/* Tablas de mantenedores */
+.mantenedor-table {
+    background: white !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.mantenedor-table .table {
+    margin-bottom: 0 !important;
+}
+
+.mantenedor-table .table th {
+    background: var(--primary-color) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border: none !important;
+    padding: 12px 15px !important;
+}
+
+.mantenedor-table .table td {
+    padding: 12px 15px !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.mantenedor-table .table tbody tr:hover {
+    background: rgba(0, 123, 255, 0.05) !important;
+}
+
+/* Botones de acción en tablas */
+.btn-action {
+    padding: 4px 8px !important;
+    margin: 0 2px !important;
+    font-size: 0.8rem !important;
+    border-radius: 4px !important;
+}
+
+.btn-edit {
+    background: var(--warning-color) !important;
+    border-color: var(--warning-color) !important;
+    color: white !important;
+}
+
+.btn-edit:hover {
+    background: #e0a800 !important;
+    border-color: #e0a800 !important;
+    color: white !important;
+}
+
+.btn-delete {
+    background: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+    color: white !important;
+}
+
+.btn-delete:hover {
+    background: #c82333 !important;
+    border-color: #c82333 !important;
+    color: white !important;
+}
+
+/* Estados en tablas */
+.estado-activo {
+    color: var(--success-color) !important;
+    font-weight: 600 !important;
+}
+
+.estado-inactivo {
+    color: var(--danger-color) !important;
+    font-weight: 600 !important;
+}
+
+/* Responsive para mantenedores */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .mantenedor-form {
+        padding: 15px !important;
+    }
+    
+    .mantenedor-table .table th,
+    .mantenedor-table .table td {
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .btn-action {
+        padding: 3px 6px !important;
+        font-size: 0.75rem !important;
+    }
+}
