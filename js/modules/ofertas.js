@@ -194,7 +194,7 @@ export class OfertasModule {
             nombre: formData.get('nombreOferta'),
             tipo: tipoOferta,
             porc_descuento: parseFloat(formData.get('porcentajeOferta')),
-            sesiones_minimas: parseInt(formData.get('sesionesMinimas')) || 1,
+            sesiones_minimas: parseInt(formData.get('sesionesMinimas')),
             descripcion: formData.get('descripcionOferta') || '',
             fecha_inicio: formData.get('fechaInicioOferta'),
             fecha_fin: formData.get('fechaFinOferta'),
@@ -252,7 +252,7 @@ export class OfertasModule {
         form.querySelector('[name="nombreOferta"]').value = oferta.nombre;
         form.querySelector('[name="tipoOferta"]').value = oferta.tipo || 'pack';
         form.querySelector('[name="porcentajeOferta"]').value = oferta.porc_descuento;
-        form.querySelector('[name="sesionesMinimas"]').value = oferta.sesiones_minimas || 1;
+        form.querySelector('[name="sesionesMinimas"]').value = oferta.sesiones_minimas;
         form.querySelector('[name="descripcionOferta"]').value = oferta.descripcion || '';
         form.querySelector('[name="fechaInicioOferta"]').value = oferta.fecha_inicio || '';
         form.querySelector('[name="fechaFinOferta"]').value = oferta.fecha_fin || '';

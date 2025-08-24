@@ -2951,9 +2951,9 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_profesionales_list()
 BEGIN
-    SELECT p.*, s.nombre as sucursal_nombre
+    SELECT p.*
     FROM profesional p
-    LEFT JOIN sucursal s ON p.sucursal_id = s.id
+    WHERE p.activo = TRUE
     ORDER BY p.nombre;
 END$$
 DELIMITER ;

@@ -262,7 +262,12 @@ class VentasModule {
         }
 
         // Ajustar automáticamente el número de sesiones al valor del pack
-        const sesionesPack = pack.sesiones_incluidas || 1;
+        if (!pack.sesiones_incluidas) {
+            console.error('[VENTAS] El pack no tiene sesiones_incluidas definidas');
+            mostrarNotificacion('Error: El pack seleccionado no tiene sesiones definidas', 'error');
+            return;
+        }
+        const sesionesPack = pack.sesiones_incluidas;
         inputSesiones.value = sesionesPack;
         
         console.log(`[VENTAS] Sesiones ajustadas automáticamente a ${sesionesPack} según el pack "${pack.nombre}"`);
@@ -321,8 +326,8 @@ class VentasModule {
             tratamiento.packs.forEach((pack, idx) => {
                 const option = document.createElement('option');
                 option.value = idx;
-                const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : '';
-                const precioPorSesion = pack.sesiones_incluidas ? (pack.precio_total / pack.sesiones_incluidas) : pack.precio_total;
+                const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : ' - Sesiones no definidas';
+                const precioPorSesion = pack.sesiones_incluidas ? (pack.precio_total / pack.sesiones_incluidas) : 0;
                 
                 option.textContent = `${pack.nombre}${sesionesInfo} - $${precioPorSesion.toLocaleString()}/sesión`;
                 packSelect.appendChild(option);
@@ -332,7 +337,12 @@ class VentasModule {
             // Tratamiento individual sin packs
             packsDiv.style.display = 'none';
             tratamientoIndividualDiv.style.display = 'block';
-            tratamientoIndividualInput.value = `${tratamiento.nombre} - $${(tratamiento.precio_por_sesion || 0).toLocaleString()}/sesión`;
+            if (!tratamiento.precio_por_sesion) {
+                console.error('[VENTAS] El tratamiento no tiene precio_por_sesion definido');
+                mostrarNotificacion('Error: El tratamiento seleccionado no tiene precio definido', 'error');
+                return;
+            }
+            tratamientoIndividualInput.value = `${tratamiento.nombre} - $${tratamiento.precio_por_sesion.toLocaleString()}/sesión`;
             console.log(`[VENTAS] Tratamiento individual: ${tratamiento?.nombre || 'Desconocido'}`);
         }
         
@@ -422,8 +432,15 @@ class VentasModule {
         if (!selectTratamiento || !inputSesiones || !inputOferta || !packSelect || !resultado) return;
 
         const tratamientoId = parseInt(selectTratamiento.value);
-        const sesiones = parseInt(inputSesiones.value) || 1;
-        const ofertaVenta = parseInt(inputOferta.value) || 0;
+        const sesionesInput = inputSesiones.value;
+        if (!sesionesInput || isNaN(parseInt(sesionesInput))) {
+            resultado.textContent = "Ingresa un número válido de sesiones.";
+            return;
+        }
+        const sesiones = parseInt(sesionesInput);
+        
+        const ofertaInput = inputOferta.value;
+        const ofertaVenta = ofertaInput ? parseInt(ofertaInput) : 0;
         const packIndex = packSelect.value;
 
         if (!tratamientoId) {
@@ -437,10 +454,21 @@ class VentasModule {
 
         if (packIndex !== "") {
             const pack = tratamiento.packs[packIndex];
-            const precioTotal = pack.precio_total || 0;
-            const precioPorSesion = pack.sesiones_incluidas ? (precioTotal / pack.sesiones_incluidas) : precioTotal;
+            if (!pack.precio_total) {
+                console.error('[VENTAS] El pack no tiene precio_total definido');
+                mostrarNotificacion('Error: El pack seleccionado no tiene precio definido', 'error');
+                return;
+            }
+            const precioTotal = pack.precio_total;
+            
+            if (!pack.sesiones_incluidas) {
+                console.error('[VENTAS] El pack no tiene sesiones_incluidas definidas');
+                mostrarNotificacion('Error: El pack seleccionado no tiene sesiones definidas', 'error');
+                return;
+            }
+            const precioPorSesion = precioTotal / pack.sesiones_incluidas;
             const descuentoAplicable = pack.descuento_aplicable || 0;
-            const sesionesRequeridas = pack.sesiones_incluidas || 1;
+            const sesionesRequeridas = pack.sesiones_incluidas;
             
             // Calcular precio base por sesión
             precio = sesiones * precioPorSesion;
@@ -462,7 +490,12 @@ class VentasModule {
             }
         } else {
                             // Tratamiento individual (sin pack)
-                const precioPorSesion = tratamiento.precio_por_sesion || 0;
+                if (!tratamiento.precio_por_sesion) {
+                    console.error('[VENTAS] El tratamiento no tiene precio_por_sesion definido');
+                    mostrarNotificacion('Error: El tratamiento seleccionado no tiene precio definido', 'error');
+                    return;
+                }
+                const precioPorSesion = tratamiento.precio_por_sesion;
                 const descuentoAplicable = tratamiento.descuento_aplicable || 0;
                 
                 // Calcular precio base por sesión
@@ -494,7 +527,12 @@ class VentasModule {
         let sesionesFinales = sesiones;
 
         // Asegurar que precio sea un número válido
-        const precioFinal = (precio || 0);
+        if (isNaN(precio) || precio < 0) {
+            console.error('[VENTAS] Precio calculado no es válido:', precio);
+            mostrarNotificacion('Error: No se pudo calcular un precio válido', 'error');
+            return;
+        }
+        const precioFinal = precio;
         
         resultado.innerHTML = `
             <strong>Tratamiento:</strong> ${tratamiento.nombre}<br>

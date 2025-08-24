@@ -427,11 +427,20 @@ export class SesionesModule {
         
         console.log('📅 Fecha planificada completa:', fechaPlanificadaCompleta);
         
+        // Obtener sucursal_id del box seleccionado
+        const boxSelect = document.getElementById('boxSesion');
+        const selectedBoxOption = boxSelect ? boxSelect.options[boxSelect.selectedIndex] : null;
+        const sucursalId = selectedBoxOption ? selectedBoxOption.getAttribute('data-sucursal-id') : null;
+        
+        if (!sucursalId) {
+            throw new Error('Debe seleccionar un box para obtener la sucursal');
+        }
+        
         // Solo enviar los campos que realmente necesita el SP sp_agendar_sesion
         const formData = {
             venta_id: ventaId,
             numero_sesion: 1, // Primera sesión por defecto
-            sucursal_id: 1, // Sucursal principal por defecto
+            sucursal_id: parseInt(sucursalId),
             box_id: boxId,
             profesional_id: profesionalId,
             fecha_planificada: fechaPlanificadaCompleta,
@@ -1341,10 +1350,10 @@ export class SesionesModule {
             
             if (intensidad || frecuencia || duracion || spot || observaciones) {
                 intensidades[zona.codigo] = {
-                    intensidad: parseFloat(intensidad) || 0,
-                    frecuencia: parseFloat(frecuencia) || 1,
-                    duracion: parseInt(duracion) || 10,
-                    spot_size: parseInt(spot) || 8,
+                    intensidad: intensidad ? parseFloat(intensidad) : 0,
+                    frecuencia: frecuencia ? parseFloat(frecuencia) : 1,
+                    duracion: duracion ? parseInt(duracion) : 10,
+                    spot_size: spot ? parseInt(spot) : 8,
                     observaciones: observaciones || ''
                 };
             }
@@ -1828,6 +1837,8 @@ export class SesionesModule {
                 const option = document.createElement('option');
                 option.value = box.id.toString();
                 option.textContent = `${box.nombre} - ${box.estado}`;
+                // Guardar sucursal_id como data attribute para uso posterior
+                option.setAttribute('data-sucursal-id', box.sucursal_id);
                 select.appendChild(option);
             });
             

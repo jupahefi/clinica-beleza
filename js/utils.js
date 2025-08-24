@@ -20,21 +20,28 @@ export function getCurrentProfesionalId() {
         const userData = localStorage.getItem('userData');
         if (userData) {
             const user = JSON.parse(userData);
-            return user.profesional_id || user.id || 1;
+            if (user.profesional_id) {
+                return user.profesional_id;
+            }
+            if (user.id) {
+                return user.id;
+            }
         }
         
         const profesionalData = localStorage.getItem('profesionalData');
         if (profesionalData) {
             const profesional = JSON.parse(profesionalData);
-            return profesional.id || 1;
+            if (profesional.id) {
+                return profesional.id;
+            }
         }
         
-        // Fallback - idealmente esto debería mostrar una advertencia
-        console.warn('⚠️ No se pudo obtener profesional_id del contexto, usando fallback');
-        return 1;
+        // No hay datos de profesional disponibles
+        console.error('❌ No se pudo obtener profesional_id del contexto');
+        throw new Error('No se pudo obtener el ID del profesional actual');
     } catch (error) {
         console.error('❌ Error obteniendo profesional_id:', error);
-        return 1;
+        throw error;
     }
 }
 

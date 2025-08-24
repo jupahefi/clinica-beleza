@@ -109,7 +109,7 @@ export class BoxesModule {
             nombre: formData.get('nombreBox'),
             sucursal_id: parseInt(formData.get('sucursalBox')),
             descripcion: formData.get('descripcionBox') || '',
-            capacidad: parseInt(formData.get('capacidadBox')) || null,
+            capacidad: formData.get('capacidadBox') ? parseInt(formData.get('capacidadBox')) : null,
             estado: formData.get('estadoBox') || 'activo'
         };
         
