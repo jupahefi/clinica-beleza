@@ -315,13 +315,6 @@ class VentasModule {
         }
         
         let sesionesFinales = sesiones;
-        if (ofertaVenta > 0) {
-            const sesionesAdicionales = Math.floor((ofertaVenta / 10));
-            sesionesFinales = sesiones + sesionesAdicionales;
-            if (sesionesAdicionales > 0) {
-                detalle += `<br>🎁 Sesiones adicionales por oferta: +${sesionesAdicionales} (total: ${sesionesFinales})`;
-            }
-        }
 
         // Asegurar que precio sea un número válido
         const precioFinal = (precio || 0);
