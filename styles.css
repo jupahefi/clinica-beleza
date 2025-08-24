@@ -1781,6 +1781,21 @@ body {
     color: var(--calypso-pastel) !important;
 }
 
+/* Estilos para fieldset y legend - accesibilidad */
+fieldset {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+legend {
+    font-weight: 500 !important;
+    color: var(--dark-gray) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0 !important;
+}
+
 /* Estilos para el contenedor de radio buttons */
 .form-group .form-check {
     margin-bottom: 8px;
