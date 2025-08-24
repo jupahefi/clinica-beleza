@@ -2653,10 +2653,13 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_ventas_list()
 BEGIN
-    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion,
+           t.nombre as tratamiento_nombre, p.nombre as pack_nombre
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
+    LEFT JOIN pack p ON v.pack_id = p.id
     WHERE f.activo = TRUE AND (e.estado IS NULL OR e.estado != 'ELIMINADA')
     ORDER BY v.fecha_creacion DESC;
 END$$
@@ -2666,11 +2669,30 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_ventas_historial_list()
 BEGIN
-    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion,
+           t.nombre as tratamiento_nombre, p.nombre as pack_nombre
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
+    LEFT JOIN pack p ON v.pack_id = p.id
     WHERE v.estado = 'COMPLETADA' AND f.activo = TRUE AND (e.estado IS NULL OR e.estado != 'ELIMINADA')
+    ORDER BY v.fecha_creacion DESC;
+END$$
+DELIMITER ;
+
+-- VEN-004: Listar ventas por ficha
+DELIMITER $$
+CREATE PROCEDURE sp_ventas_list_by_ficha(IN p_ficha_id BIGINT)
+BEGIN
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion,
+           t.nombre as tratamiento_nombre, p.nombre as pack_nombre
+    FROM venta v
+    JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
+    LEFT JOIN pack p ON v.pack_id = p.id
+    WHERE v.ficha_id = p_ficha_id AND f.activo = TRUE AND (e.estado IS NULL OR e.estado != 'ELIMINADA')
     ORDER BY v.fecha_creacion DESC;
 END$$
 DELIMITER ;
@@ -3582,7 +3604,14 @@ END$$
 -- ---------- VENTAS CRUD ----------
 CREATE PROCEDURE sp_ventas_get(IN p_id INT)
 BEGIN
-    SELECT * FROM venta WHERE id = p_id;
+    SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion,
+           t.nombre as tratamiento_nombre, p.nombre as pack_nombre
+    FROM venta v
+    JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN evaluacion e ON v.evaluacion_id = e.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
+    LEFT JOIN pack p ON v.pack_id = p.id
+    WHERE v.id = p_id;
 END$$
 
 -- PROCEDURE ELIMINADO: sp_ventas_create tenía columnas incorrectas

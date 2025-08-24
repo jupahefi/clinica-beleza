@@ -728,12 +728,24 @@ class VentasModule {
         if (!this.clienteSeleccionado) return;
         try {
             const ventasCliente = await ventasAPI.getByFichaId(this.clienteSeleccionado.id);
-            this.historial = ventasCliente.map(venta => ({
-                tratamiento: venta.tratamiento_nombre,
-                precio: venta.total_pagado,
-                fecha: new Date(venta.fecha_creacion).toLocaleDateString(),
-                detalle: `Sesiones: ${venta.cantidad_sesiones}`
-            }));
+            this.historial = ventasCliente.map(venta => {
+                // Crear nombre descriptivo del tratamiento
+                let tratamientoNombre = venta.tratamiento_nombre || 'Tratamiento no especificado';
+                if (venta.pack_nombre) {
+                    tratamientoNombre = `${tratamientoNombre} - ${venta.pack_nombre}`;
+                }
+                
+                return {
+                    id: venta.id,
+                    tratamiento: tratamientoNombre,
+                    precio: parseFloat(venta.total_pagado || venta.precio_lista || 0),
+                    fecha: new Date(venta.fecha_creacion).toLocaleDateString(),
+                    detalle: `Sesiones: ${venta.cantidad_sesiones || 1} - Cliente: ${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
+                    cliente: `${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
+                    tipo: venta.evaluacion_id ? 'evaluacion' : 'normal',
+                    estado: venta.estado || 'PENDIENTE'
+                };
+            });
             this.renderHistorial();
             console.log(`[VENTAS] Historial de ventas cargado para cliente ${this.clienteSeleccionado.text} (${this.historial.length} ventas)`);
             mostrarNotificacion(`Historial de ventas cargado para ${this.clienteSeleccionado.text}`, 'success');
@@ -759,10 +771,25 @@ class VentasModule {
         this.historial.forEach((venta, i) => {
             const div = document.createElement('div');
             div.className = 'venta-item';
+            
+            // Formatear precio con separadores de miles
+            const precioFormateado = venta.precio ? venta.precio.toLocaleString('es-CL', {
+                style: 'currency',
+                currency: 'CLP',
+                minimumFractionDigits: 0
+            }) : 'N/A';
+            
+            // Crear información adicional
+            const infoAdicional = [];
+            if (venta.id) infoAdicional.push(`ID: ${venta.id}`);
+            if (venta.cliente && venta.cliente !== 'N/A') infoAdicional.push(`Cliente: ${venta.cliente}`);
+            if (venta.estado) infoAdicional.push(`Estado: ${venta.estado}`);
+            
             div.innerHTML = `
-                <strong>#${i + 1}</strong> - ${venta.tratamiento}  
-                → $${venta.precio?.toLocaleString() || 'N/A'}<br>
+                <strong>#${i + 1}</strong> - ${venta.tratamiento}<br>
+                <span class="precio">${precioFormateado}</span><br>
                 <small>${venta.detalle || ''} - ${venta.fecha || ''}</small>
+                ${infoAdicional.length > 0 ? `<br><small class="info-adicional">${infoAdicional.join(' | ')}</small>` : ''}
             `;
             lista.appendChild(div);
         });
@@ -813,11 +840,37 @@ class VentasModule {
         try {
             this.ventas = await ventasAPI.getAll();
             console.log(`[VENTAS] Ventas cargadas: ${this.ventas.length}`);
+            
+            // Convertir las ventas de la base de datos al formato del historial
+            this.historial = this.ventas.map(venta => {
+                // Crear nombre descriptivo del tratamiento
+                let tratamientoNombre = venta.tratamiento_nombre || 'Tratamiento no especificado';
+                if (venta.pack_nombre) {
+                    tratamientoNombre = `${tratamientoNombre} - ${venta.pack_nombre}`;
+                }
+                
+                return {
+                    id: venta.id,
+                    tratamiento: tratamientoNombre,
+                    precio: parseFloat(venta.total_pagado || venta.precio_lista || 0),
+                    fecha: new Date(venta.fecha_creacion).toLocaleDateString(),
+                    detalle: `Sesiones: ${venta.cantidad_sesiones || 1} - Cliente: ${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
+                    cliente: `${venta.nombres || 'N/A'} ${venta.apellidos || ''}`,
+                    tipo: venta.evaluacion_id ? 'evaluacion' : 'normal',
+                    estado: venta.estado || 'PENDIENTE'
+                };
+            });
+            
+            // Renderizar el historial con los datos de la base de datos
+            this.renderHistorial();
+            
             mostrarNotificacion(`Ventas cargadas correctamente (${this.ventas.length})`, 'success');
         } catch (error) {
             console.error('[VENTAS] Error cargando ventas:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando ventas';
             mostrarNotificacion(`[VENTAS] Error cargando ventas: ${errorMessage}`, 'error');
+            this.historial = [];
+            this.renderHistorial();
         }
     }
 
@@ -859,10 +912,25 @@ class VentasModule {
         ventas.forEach((venta, i) => {
             const div = document.createElement('div');
             div.className = 'venta-item';
+            
+            // Formatear precio con separadores de miles
+            const precioFormateado = venta.precio ? venta.precio.toLocaleString('es-CL', {
+                style: 'currency',
+                currency: 'CLP',
+                minimumFractionDigits: 0
+            }) : 'N/A';
+            
+            // Crear información adicional
+            const infoAdicional = [];
+            if (venta.id) infoAdicional.push(`ID: ${venta.id}`);
+            if (venta.cliente && venta.cliente !== 'N/A') infoAdicional.push(`Cliente: ${venta.cliente}`);
+            if (venta.estado) infoAdicional.push(`Estado: ${venta.estado}`);
+            
             div.innerHTML = `
-                <strong>#${i + 1}</strong> - ${venta.tratamiento}  
-                → $${venta.precio?.toLocaleString() || 'N/A'}<br>
-                <small>${venta.detalle || ''}</small>
+                <strong>#${i + 1}</strong> - ${venta.tratamiento}<br>
+                <span class="precio">${precioFormateado}</span><br>
+                <small>${venta.detalle || ''} - ${venta.fecha || ''}</small>
+                ${infoAdicional.length > 0 ? `<br><small class="info-adicional">${infoAdicional.join(' | ')}</small>` : ''}
             `;
             lista.appendChild(div);
         });

@@ -495,7 +495,13 @@ function handleVentas($db, $method, $id, $data) {
                 if ($id) {
                     $result = $db->selectOne("CALL sp_ventas_get(?)", [$id]);
                 } else {
-                    $result = $db->select("CALL sp_ventas_list()");
+                    // Verificar si hay filtros en los parámetros GET
+                    $fichaId = $_GET['ficha_id'] ?? null;
+                    if ($fichaId) {
+                        $result = $db->select("CALL sp_ventas_list_by_ficha(?)", [$fichaId]);
+                    } else {
+                        $result = $db->select("CALL sp_ventas_list()");
+                    }
                 }
                 echo json_encode(['success' => true, 'data' => $result]);
                 break;
