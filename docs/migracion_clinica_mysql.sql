@@ -161,6 +161,29 @@ BEGIN
     END IF;
 END$$
 
+CREATE PROCEDURE AddPartialUniqueIndexIfNotExists(
+    IN indexName VARCHAR(64),
+    IN tableName VARCHAR(64),
+    IN columnList VARCHAR(200),
+    IN whereCondition VARCHAR(500)
+)
+BEGIN
+    DECLARE indexExists INT DEFAULT 0;
+    
+    SELECT COUNT(*) INTO indexExists
+    FROM information_schema.statistics 
+    WHERE table_schema = DATABASE()
+    AND table_name = tableName
+    AND index_name = indexName;
+    
+    IF indexExists = 0 THEN
+        SET @sql = CONCAT('CREATE UNIQUE INDEX ', indexName, ' ON ', tableName, ' (', columnList, ') WHERE ', whereCondition);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+
 DELIMITER ;
 
 -- ---------- Tables ----------
@@ -249,7 +272,7 @@ CREATE TABLE IF NOT EXISTS ficha (
   apellidos VARCHAR(120) NOT NULL,
   rut VARCHAR(20) NOT NULL,
   telefono VARCHAR(50) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
+  email VARCHAR(120) NOT NULL,
   fecha_nacimiento DATE NOT NULL,
   direccion TEXT NOT NULL,
   observaciones TEXT NOT NULL,
@@ -259,7 +282,8 @@ CREATE TABLE IF NOT EXISTS ficha (
 );
 
 CALL AddIndexIfNotExists('ux_ficha_codigo', 'ficha', 'codigo', TRUE);
-CALL AddIndexIfNotExists('ux_ficha_email', 'ficha', 'email', TRUE);
+-- Restricción única solo para registros activos
+CALL AddPartialUniqueIndexIfNotExists('ux_ficha_email_activo', 'ficha', 'email', 'activo = TRUE');
 
 -- Primera definicion eliminada (duplicada)
 
