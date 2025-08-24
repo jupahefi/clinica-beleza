@@ -602,8 +602,8 @@ CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_venta_valida', 'venta_id
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_profesional_valido', 'profesional_id IS NOT NULL');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_box_valido', 'box_id IS NOT NULL');
 CALL AddCheckConstraintIfNotExists('sesion', 'ck_sesion_sucursal_valida', 'sucursal_id IS NOT NULL');
-CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_precio_pos', 'precio_sugerido >= 0');
-CALL AddCheckConstraintIfNotExists('evaluacion', 'ck_eval_sesiones_pos', 'sesiones_sugeridas >= 1');
+
+
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_precio_pos', 'precio_lista >= 0');
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_descuento_rango', 'descuento_manual_pct IS NULL OR (descuento_manual_pct >= 0 AND descuento_manual_pct <= 100)');
 CALL AddCheckConstraintIfNotExists('venta', 'ck_venta_total_pos', 'total_pagado >= 0');
@@ -1935,22 +1935,18 @@ CREATE PROCEDURE sp_calcular_precio_zonas(
     OUT p_precio_total DECIMAL(12,2)
 )
 BEGIN
-    DECLARE v_precio_base DECIMAL(12,2) DEFAULT 0;
+    DECLARE v_precio_total_pack DECIMAL(12,2) DEFAULT 0;
     DECLARE v_precio_zonas DECIMAL(12,2) DEFAULT 0;
     DECLARE v_zonas_incluidas JSON;
     DECLARE v_precio_por_zona JSON;
     
     -- Obtener informacion del pack
-    SELECT zonas_incluidas, precio_por_zona INTO v_zonas_incluidas, v_precio_por_zona
+    SELECT precio_total, zonas_incluidas, precio_por_zona INTO v_precio_total_pack, v_zonas_incluidas, v_precio_por_zona
     FROM pack WHERE id = p_pack_id;
     
-    -- Calcular precio base del pack
-    SELECT precio_lista INTO v_precio_base
-    FROM venta WHERE pack_id = p_pack_id LIMIT 1;
-    
-    -- Calcular diferencia de zonas
+    -- Por ahora, usar el precio total del pack
     -- (Esta logica se puede expandir segun necesidades especificas)
-    SET p_precio_total = v_precio_base + v_precio_zonas;
+    SET p_precio_total = v_precio_total_pack;
 END$$
 DELIMITER ;
 
@@ -2265,7 +2261,7 @@ CREATE PROCEDURE sp_calcular_precio_pack_zonas(
     OUT p_precio_final DECIMAL(12,2)
 )
 BEGIN
-    DECLARE v_precio_base DECIMAL(12,2);
+    DECLARE v_precio_total_pack DECIMAL(12,2);
     DECLARE v_precio_zonas DECIMAL(12,2) DEFAULT 0;
     DECLARE v_zonas_incluidas JSON;
     DECLARE v_precio_por_zona JSON;
@@ -2275,7 +2271,7 @@ BEGIN
     DECLARE v_total_zonas INT;
     
     -- Obtener informacion del pack
-    SELECT precio_regular, zonas_incluidas, precio_por_zona INTO v_precio_base, v_zonas_incluidas, v_precio_por_zona
+    SELECT precio_total, zonas_incluidas, precio_por_zona INTO v_precio_total_pack, v_zonas_incluidas, v_precio_por_zona
     FROM pack WHERE id = p_pack_id;
     
     -- Calcular precio de zonas adicionales
@@ -2298,7 +2294,7 @@ BEGIN
         END WHILE;
     END IF;
     
-    SET p_precio_final = v_precio_base + v_precio_zonas;
+    SET p_precio_final = v_precio_total_pack + v_precio_zonas;
 END$$
 DELIMITER ;
 
@@ -3887,14 +3883,19 @@ CREATE PROCEDURE sp_packs_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO pack (
-        nombre, descripcion, tratamiento_id, precio_base,
-        sesiones_incluidas, activo, fecha_creacion
+        nombre, descripcion, tratamiento_id, duracion_sesion_min,
+        sesiones_incluidas, zonas_incluidas, precio_por_zona, precio_total,
+        genero, activo, fecha_creacion
     ) VALUES (
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
         JSON_EXTRACT(p_data, '$.tratamiento_id'),
-        JSON_EXTRACT(p_data, '$.precio_base'),
+        JSON_EXTRACT(p_data, '$.duracion_sesion_min'),
         JSON_EXTRACT(p_data, '$.sesiones_incluidas'),
+        JSON_EXTRACT(p_data, '$.zonas_incluidas'),
+        JSON_EXTRACT(p_data, '$.precio_por_zona'),
+        JSON_EXTRACT(p_data, '$.precio_total'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.genero')),
         COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
         NOW()
     );
@@ -3908,8 +3909,12 @@ BEGIN
         nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
         descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
         tratamiento_id = COALESCE(JSON_EXTRACT(p_data, '$.tratamiento_id'), tratamiento_id),
-        precio_base = COALESCE(JSON_EXTRACT(p_data, '$.precio_base'), precio_base),
+        duracion_sesion_min = COALESCE(JSON_EXTRACT(p_data, '$.duracion_sesion_min'), duracion_sesion_min),
         sesiones_incluidas = COALESCE(JSON_EXTRACT(p_data, '$.sesiones_incluidas'), sesiones_incluidas),
+        zonas_incluidas = COALESCE(JSON_EXTRACT(p_data, '$.zonas_incluidas'), zonas_incluidas),
+        precio_por_zona = COALESCE(JSON_EXTRACT(p_data, '$.precio_por_zona'), precio_por_zona),
+        precio_total = COALESCE(JSON_EXTRACT(p_data, '$.precio_total'), precio_total),
+        genero = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.genero')), genero),
         activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
         fecha_actualizacion = NOW()
     WHERE id = p_id;
@@ -4059,13 +4064,11 @@ CREATE PROCEDURE sp_zonas_create(IN p_data JSON)
 BEGIN
     DECLARE v_codigo VARCHAR(10);
     INSERT INTO zona_cuerpo (
-        codigo, nombre, descripcion, precio_base, 
-        activo, fecha_creacion
+        codigo, nombre, categoria, activo, fecha_creacion
     ) VALUES (
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.codigo')),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
-        JSON_EXTRACT(p_data, '$.precio_base'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.categoria')),
         COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
         NOW()
     );
@@ -4077,8 +4080,7 @@ CREATE PROCEDURE sp_zonas_update(IN p_codigo VARCHAR(10), IN p_data JSON)
 BEGIN
     UPDATE zona_cuerpo SET
         nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
-        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
-        precio_base = COALESCE(JSON_EXTRACT(p_data, '$.precio_base'), precio_base),
+        categoria = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.categoria')), categoria),
         activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
         fecha_actualizacion = NOW()
     WHERE codigo = p_codigo;
@@ -4091,46 +4093,7 @@ BEGIN
     SELECT 'Zona eliminada' as mensaje;
 END$$
 
--- ---------- OFERTAS COMBO CRUD ----------
-CREATE PROCEDURE sp_ofertas_combo_get(IN p_id INT)
-BEGIN
-    SELECT * FROM oferta_combo WHERE id = p_id;
-END$$
 
-CREATE PROCEDURE sp_ofertas_combo_create(IN p_data JSON)
-BEGIN
-    DECLARE v_id INT;
-    INSERT INTO oferta_combo (
-        nombre, descripcion, porc_descuento, activo, 
-        fecha_creacion
-    ) VALUES (
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
-        JSON_EXTRACT(p_data, '$.porc_descuento'),
-        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
-        NOW()
-    );
-    SET v_id = LAST_INSERT_ID();
-    SELECT * FROM oferta_combo WHERE id = v_id;
-END$$
-
-CREATE PROCEDURE sp_ofertas_combo_update(IN p_id INT, IN p_data JSON)
-BEGIN
-    UPDATE oferta_combo SET
-        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
-        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
-        porc_descuento = COALESCE(JSON_EXTRACT(p_data, '$.porc_descuento'), porc_descuento),
-        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
-        fecha_actualizacion = NOW()
-    WHERE id = p_id;
-    SELECT * FROM oferta_combo WHERE id = p_id;
-END$$
-
-CREATE PROCEDURE sp_ofertas_combo_delete(IN p_id INT)
-BEGIN
-    UPDATE oferta_combo SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Oferta combo eliminada' as mensaje;
-END$$
 
 DELIMITER ;
 
