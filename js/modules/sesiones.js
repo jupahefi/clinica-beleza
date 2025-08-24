@@ -211,6 +211,61 @@ export class SesionesModule {
             pacienteSelect.addEventListener('change', this.handlePacienteChange.bind(this));
             console.log('✅ Eventos nativos configurados');
         }
+        
+        // Configurar eventos para el select de ventas
+        this.configurarEventosVenta();
+    }
+    
+    configurarEventosVenta() {
+        const ventaSelect = document.getElementById('ventaSesion');
+        if (!ventaSelect) {
+            console.error('❌ No se encontró el select de ventas');
+            return;
+        }
+        
+        console.log('🔧 Configurando eventos para select de ventas...');
+        
+        // Para Select2, usar el evento de jQuery
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            console.log('🔧 Usando eventos Select2 para ventas');
+            
+            // Remover eventos anteriores si existen
+            $(ventaSelect).off('select2:select select2:clear');
+            
+            $(ventaSelect).on('select2:select', (e) => {
+                console.log('🔍 Venta seleccionada (Select2):', e.params.data);
+                this.handleVentaChange(e.params.data.id);
+            });
+            
+            $(ventaSelect).on('select2:clear', () => {
+                console.log('🔍 Venta deseleccionada (Select2)');
+                this.handleVentaChange(null);
+            });
+            
+            console.log('✅ Eventos Select2 para ventas configurados');
+        } else {
+            console.log('🔧 Usando eventos nativos para ventas');
+            // Fallback para select normal
+            ventaSelect.removeEventListener('change', this.handleVentaChangeNative);
+            ventaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
+            console.log('✅ Eventos nativos para ventas configurados');
+        }
+    }
+    
+    handleVentaChangeNative(e) {
+        console.log('🔍 Venta seleccionada (nativo):', e.target.value);
+        this.handleVentaChange(e.target.value);
+    }
+    
+    handleVentaChange(ventaId) {
+        if (!ventaId) {
+            console.log('🔍 Venta deseleccionada, limpiando duración');
+            this.limpiarDuracionSesion();
+            return;
+        }
+        
+        console.log('🔍 Venta seleccionada, cargando duración para venta ID:', ventaId);
+        this.cargarDuracionSesion(ventaId);
     }
     
     handlePacienteChange(e) {
@@ -409,6 +464,7 @@ export class SesionesModule {
         const horaPlanificada = document.getElementById('horaSesion').value;
         const boxId = document.getElementById('boxSesion').value;
         const profesionalId = document.getElementById('profesionalSesion').value;
+        const duracion = document.getElementById('duracionSesion').value;
         const observaciones = document.getElementById('observacionesSesion').value || '';
         
         console.log('📋 Valores obtenidos del formulario:', {
@@ -417,6 +473,7 @@ export class SesionesModule {
             horaPlanificada,
             boxId,
             profesionalId,
+            duracion,
             observaciones
         });
         
@@ -444,6 +501,7 @@ export class SesionesModule {
             box_id: boxId,
             profesional_id: profesionalId,
             fecha_planificada: fechaPlanificadaCompleta,
+            duracion_minutos: duracion ? parseInt(duracion) : null,
             observaciones: observaciones || null // NULL si está vacío
         };
         
@@ -1988,6 +2046,63 @@ export class SesionesModule {
             console.error('❌ Error cargando ventas del paciente:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
             mostrarNotificacion(`Error cargando ventas del paciente: ${errorMessage}`, 'error');
+        }
+    }
+    
+    async cargarDuracionSesion(ventaId) {
+        try {
+            console.log('🔍 Cargando duración para venta ID:', ventaId);
+            
+            // Importar ventasAPI dinámicamente
+            const { ventasAPI } = await import('../api-client.js');
+            const ventas = await ventasAPI.getAll();
+            
+            // Buscar la venta específica
+            const venta = ventas.find(v => v.id == ventaId);
+            
+            if (!venta) {
+                console.warn('⚠️ No se encontró la venta con ID:', ventaId);
+                return;
+            }
+            
+            console.log('📋 Datos de la venta encontrada:', venta);
+            
+            // Obtener la duración del pack o tratamiento
+            const duracion = venta.duracion_sesion_min;
+            
+            if (duracion && duracion > 0) {
+                console.log('⏱️ Duración encontrada:', duracion, 'minutos');
+                
+                // Actualizar el campo de duración en el formulario si existe
+                const duracionInput = document.getElementById('duracionSesion');
+                if (duracionInput) {
+                    duracionInput.value = duracion;
+                    console.log('✅ Duración actualizada en el formulario:', duracion);
+                } else {
+                    console.log('ℹ️ Campo de duración no encontrado en el formulario');
+                }
+                
+                // Mostrar notificación informativa
+                mostrarNotificacion(`⏱️ Duración predeterminada: ${duracion} minutos`, 'info');
+            } else {
+                console.warn('⚠️ No se encontró duración válida para la venta');
+                mostrarNotificacion('⚠️ No se encontró duración predeterminada para esta venta', 'warning');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando duración de la sesión:', error);
+            const errorMessage = error.message || 'Error desconocido cargando duración';
+            mostrarNotificacion(`Error cargando duración: ${errorMessage}`, 'error');
+        }
+    }
+    
+    limpiarDuracionSesion() {
+        console.log('🧹 Limpiando duración de la sesión');
+        
+        const duracionInput = document.getElementById('duracionSesion');
+        if (duracionInput) {
+            duracionInput.value = '';
+            console.log('✅ Campo de duración limpiado');
         }
     }
     
