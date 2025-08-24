@@ -26,16 +26,36 @@ class VentasModule {
 
     async cargarDatos() {
         try {
+            // Cargar tratamientos con precios por sesión
             this.tratamientos = await tratamientosAPI.getAll();
+            console.log('[VENTAS] Tratamientos cargados:', this.tratamientos);
+            
+            // Cargar packs para cada tratamiento
             for (const tratamiento of this.tratamientos) {
-                tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id);
+                try {
+                    tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id);
+                    console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre}:`, tratamiento.packs);
+                } catch (packError) {
+                    console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, packError);
+                    tratamiento.packs = [];
+                }
             }
-            this.ofertas = await fetch('/api.php/ofertas-aplicables').then(r => r.json()).then(d => d.data || []);
+            
+            // Cargar ofertas aplicables
+            try {
+                const ofertasResponse = await fetch('/api.php/ofertas-aplicables');
+                const ofertasData = await ofertasResponse.json();
+                this.ofertas = ofertasData.data || [];
+                console.log('[VENTAS] Ofertas aplicables cargadas:', this.ofertas);
+            } catch (ofertasError) {
+                console.warn('[VENTAS] Error cargando ofertas aplicables:', ofertasError);
+                this.ofertas = [];
+            }
+            
             console.log(`[VENTAS] Datos cargados: ${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas.`);
             mostrarNotificacion(`Datos de ventas cargados correctamente (${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas)`, 'success');
         } catch (error) {
             console.error('[VENTAS] Error cargando datos:', error);
-            // Si viene error de la db, mostrar el mensaje tal cual
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando datos de ventas';
             mostrarNotificacion(`[VENTAS] Error cargando datos: ${errorMessage}`, 'error');
         }
@@ -159,30 +179,41 @@ class VentasModule {
             packsDiv.style.display = "block";
             this.mostrarSugerenciasOfertas(tratamiento);
             
-            // Solo mostrar packs normales (sin oferta) en el dropdown
-            const packsNormales = tratamiento.packs.filter(pack => 
-                !pack.precio_oferta || pack.precio_oferta >= pack.precio_regular
-            );
-            
-            packsNormales.forEach((pack, idx) => {
+            // Mostrar TODOS los packs con formato correcto
+            tratamiento.packs.forEach((pack, idx) => {
                 const option = document.createElement('option');
                 option.value = idx;
                 const sesionesInfo = pack.sesiones_incluidas ? ` - ${pack.sesiones_incluidas} sesiones` : '';
-                option.textContent = `${pack.nombre}${sesionesInfo} - $${pack.precio_regular.toLocaleString()}`;
+                
+                // Formatear precio con oferta si existe
+                let precioTexto = '';
+                if (pack.descuento_aplicable && pack.descuento_aplicable > 0) {
+                    precioTexto = ` - $${pack.precio_con_descuento.toLocaleString()} (${pack.descuento_aplicable}% OFF)`;
+                } else {
+                    precioTexto = ` - $${pack.precio_total.toLocaleString()}`;
+                }
+                
+                option.textContent = `${pack.nombre}${sesionesInfo}${precioTexto}`;
                 packSelect.appendChild(option);
             });
-            console.log(`[VENTAS] Packs normales cargados para tratamiento: ${tratamiento.nombre}`);
+            console.log(`[VENTAS] Packs cargados para tratamiento: ${tratamiento.nombre} (${tratamiento.packs.length} packs)`);
         } else {
             packsDiv.style.display = "none";
+            console.log(`[VENTAS] No hay packs disponibles para tratamiento: ${tratamiento?.nombre || 'Desconocido'}`);
         }
+        
+        // Siempre mostrar la sección de sesiones
         sesionesDiv.style.display = "block";
+        
+        // Recalcular precio cuando cambia la selección
+        this.calcularPrecio();
     }
     
     mostrarSugerenciasOfertas(tratamiento) {
         const sugerenciasDiv = document.getElementById('sugerenciasOfertas');
         if (!sugerenciasDiv) return;
         const packsConOfertas = tratamiento.packs.filter(pack => 
-            pack.precio_oferta && pack.precio_oferta < pack.precio_regular
+            pack.descuento_aplicable && pack.descuento_aplicable > 0
         );
         if (packsConOfertas.length === 0) {
             sugerenciasDiv.style.display = 'none';
@@ -192,14 +223,14 @@ class VentasModule {
         html += '<h4>💡 Ofertas Disponibles (se aplican automáticamente al alcanzar las sesiones):</h4>';
         html += '<div class="ofertas-grid">';
         packsConOfertas.forEach((pack, index) => {
-            const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
-            const ahorro = pack.precio_regular - pack.precio_oferta;
+            const descuento = pack.descuento_aplicable;
+            const ahorro = pack.precio_total - pack.precio_con_descuento;
             html += `
                 <div class="oferta-card">
                     <h5>${pack.nombre}</h5>
                     <p class="sesiones">${pack.sesiones_incluidas || 'N/A'} sesiones requeridas</p>
-                    <p class="precio-regular">$${pack.precio_regular.toLocaleString()}</p>
-                    <p class="precio-oferta">$${pack.precio_oferta.toLocaleString()}</p>
+                    <p class="precio-regular">$${pack.precio_total.toLocaleString()}</p>
+                    <p class="precio-oferta">$${pack.precio_con_descuento.toLocaleString()}</p>
                     <p class="descuento">${descuento}% OFF</p>
                     <p class="ahorro">Ahorras $${ahorro.toLocaleString()}</p>
                     <button class="btn btn-success btn-sm tomar-oferta" data-pack-index="${index}" data-sesiones="${pack.sesiones_incluidas || 1}">
@@ -270,42 +301,47 @@ class VentasModule {
 
         if (packIndex !== "") {
             const pack = tratamiento.packs[packIndex];
-            const precioRegular = pack.precio_regular || 0;
-            const precioOferta = pack.precio_oferta || 0;
+            const precioTotal = pack.precio_total || 0;
+            const precioConDescuento = pack.precio_con_descuento || precioTotal;
+            const descuentoAplicable = pack.descuento_aplicable || 0;
             const sesionesRequeridas = pack.sesiones_incluidas || 1;
             
             // Aplicar oferta solo si se alcanza el número de sesiones requerido
-            if (sesiones >= sesionesRequeridas && precioOferta > 0 && precioOferta < precioRegular) {
-                precio = precioOferta;
-                const descuento = Math.round(((precioRegular - precioOferta) / precioRegular) * 100);
-                const ahorro = precioRegular - precioOferta;
+            if (sesiones >= sesionesRequeridas && descuentoAplicable > 0) {
+                precio = precioConDescuento;
+                const ahorro = precioTotal - precioConDescuento;
                 detalle = `Pack seleccionado: ${pack.nombre} (${sesionesRequeridas} sesiones requeridas)`;
-                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuento}% OFF (Ahorras $${ahorro.toLocaleString()})`;
-                detalle += `<br>Precio regular: $${precioRegular.toLocaleString()} → <strong>Precio oferta: $${precioOferta.toLocaleString()}</strong>`;
+                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuentoAplicable}% OFF (Ahorras $${ahorro.toLocaleString()})`;
+                detalle += `<br>Precio regular: $${precioTotal.toLocaleString()} → <strong>Precio oferta: $${precioConDescuento.toLocaleString()}</strong>`;
             } else {
-                precio = precioRegular;
+                precio = precioTotal;
                 detalle = `Pack seleccionado: ${pack.nombre}`;
-                if (sesiones < sesionesRequeridas && precioOferta > 0 && precioOferta < precioRegular) {
+                if (sesiones < sesionesRequeridas && descuentoAplicable > 0) {
                     detalle += `<br>⚠️ <em>Oferta disponible con ${sesionesRequeridas} sesiones (actual: ${sesiones})</em>`;
                 }
-                detalle += `<br>Precio: $${precioRegular.toLocaleString()}`;
+                detalle += `<br>Precio: $${precioTotal.toLocaleString()}`;
             }
         } else {
-            const precioRegular = tratamiento.precio_regular || 0;
-            const precioOferta = tratamiento.precio_oferta || 0;
+            // Tratamiento individual (sin pack)
+            const precioPorSesion = tratamiento.precio_por_sesion || 0;
+            const precioConDescuento = tratamiento.precio_con_descuento || precioPorSesion;
+            const descuentoAplicable = tratamiento.descuento_aplicable || 0;
             
             // Para tratamientos individuales, aplicar oferta si existe
-            if (precioOferta > 0 && precioOferta < precioRegular) {
-                precio = sesiones * precioOferta;
-                const descuento = Math.round(((precioRegular - precioOferta) / precioRegular) * 100);
+            if (descuentoAplicable > 0) {
+                precio = sesiones * precioConDescuento;
+                const ahorro = (precioPorSesion - precioConDescuento) * sesiones;
                 detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
-                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuento}% OFF`;
-                detalle += `<br>Precio por sesión: $${precioOferta.toLocaleString()} (regular: $${precioRegular.toLocaleString()})`;
+                detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuentoAplicable}% OFF`;
+                detalle += `<br>Precio por sesión: $${precioConDescuento.toLocaleString()} (regular: $${precioPorSesion.toLocaleString()})`;
+                detalle += `<br>Ahorras: $${ahorro.toLocaleString()}`;
             } else {
-                precio = sesiones * precioRegular;
+                precio = sesiones * precioPorSesion;
                 detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
-                detalle += `<br>Precio por sesión: $${precioRegular.toLocaleString()}`;
+                detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()}`;
             }
+            
+            console.log(`[VENTAS] Precio calculado para tratamiento individual: ${tratamiento.nombre}, ${sesiones} sesiones, precio: $${precio}`);
         }
 
         if (ofertaVenta > 0) {
@@ -628,3 +664,7 @@ class VentasModule {
 }
 
 export const ventasModule = new VentasModule();
+
+// Conectar funciones globales
+window.ventasModule = ventasModule;
+window.confirmarVenta = () => ventasModule.confirmarVenta();

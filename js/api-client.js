@@ -396,7 +396,7 @@ export const agendaAPI = {
 
 export const ofertasAPI = {
     // Obtener ofertas aplicables
-    getAplicables: () => get('ofertas'),
+    getAplicables: () => get('ofertas-aplicables'),
     
     // Obtener todas las ofertas
     getAll: () => get('ofertas'),
@@ -404,11 +404,14 @@ export const ofertasAPI = {
     // Obtener oferta por ID
     getById: (id) => get(`ofertas/${id}`),
     
-    // Crear oferta pack temporal
-    createPackTemporal: (oferta) => post('ofertas', { ...oferta, tipo: 'pack_temporal' }),
+    // Crear oferta
+    create: (oferta) => post('ofertas', oferta),
     
-    // Crear oferta combo
-    createCombo: (oferta) => post('ofertas', { ...oferta, tipo: 'combo_packs' })
+    // Actualizar oferta
+    update: (id, oferta) => put(`ofertas/${id}`, oferta),
+    
+    // Eliminar oferta
+    delete: (id) => del(`ofertas/${id}`)
 };
 
 export const ofertasComboAPI = {

@@ -341,10 +341,7 @@ CALL AddIndexIfNotExists('ux_tratamiento_nombre', 'tratamiento', 'nombre', TRUE)
 CREATE TABLE IF NOT EXISTS precio_tratamiento (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tratamiento_id BIGINT NOT NULL,
-  precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  precio_oferta DECIMAL(12,2) NOT NULL,
-  fecha_inicio_oferta DATE NOT NULL,
-  fecha_fin_oferta DATE NOT NULL,
+  precio_por_sesion DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -360,10 +357,7 @@ CREATE TABLE IF NOT EXISTS pack (
   sesiones_incluidas INT NOT NULL DEFAULT 1,
   zonas_incluidas JSON NOT NULL,
   precio_por_zona JSON NOT NULL,
-  precio_regular DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-  precio_oferta DECIMAL(12,2) NOT NULL,
-  fecha_inicio_oferta DATE NOT NULL,
-  fecha_fin_oferta DATE NOT NULL,
+  precio_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -377,9 +371,10 @@ CALL AddIndexIfNotExists('ux_pack_tratamiento_nombre', 'pack', 'tratamiento_id, 
 CREATE TABLE IF NOT EXISTS oferta (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
-  tipo VARCHAR(40) NOT NULL, -- 'pack_temporal'|'descuento_manual'|'combo_packs'
+  tipo VARCHAR(40) NOT NULL, -- 'pack'|'tratamiento'|'sesiones'|'combo'|'manual'
   descripcion TEXT NOT NULL,
   porc_descuento DECIMAL(5,2) NOT NULL,
+  sesiones_minimas INT NOT NULL DEFAULT 1,
   fecha_inicio DATE NULL,
   fecha_fin DATE NULL,
   combinable BOOLEAN NOT NULL DEFAULT TRUE,
@@ -1660,12 +1655,12 @@ CREATE PROCEDURE sp_crear_oferta_pack_temporal(
     IN p_fecha_inicio DATE,
     IN p_fecha_fin DATE,
     IN p_combinable BOOLEAN,
-    IN p_prioridad INT,
+    IN p_sesiones_minimas INT,
     OUT p_oferta_id BIGINT
 )
 BEGIN
-    INSERT INTO oferta (nombre, tipo, descripcion, porc_descuento, fecha_inicio, fecha_fin, combinable, activo, prioridad)
-    VALUES (p_nombre, 'pack_temporal', p_nombre, p_porc_descuento, p_fecha_inicio, p_fecha_fin, p_combinable, TRUE, p_prioridad);
+    INSERT INTO oferta (nombre, tipo, descripcion, porc_descuento, sesiones_minimas, fecha_inicio, fecha_fin, combinable, activo, prioridad)
+    VALUES (p_nombre, 'pack', p_nombre, p_porc_descuento, p_sesiones_minimas, p_fecha_inicio, p_fecha_fin, p_combinable, TRUE, 0);
     SET p_oferta_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
@@ -2059,10 +2054,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_crear_precio_tratamiento(
     IN p_tratamiento_id BIGINT,
-    IN p_precio_regular DECIMAL(12,2),
-    IN p_precio_oferta DECIMAL(12,2),
-    IN p_fecha_inicio_oferta DATE,
-    IN p_fecha_fin_oferta DATE,
+    IN p_precio_por_sesion DECIMAL(12,2),
     OUT p_precio_id BIGINT
 )
 BEGIN
@@ -2074,8 +2066,8 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO precio_tratamiento (tratamiento_id, precio_regular, precio_oferta, fecha_inicio_oferta, fecha_fin_oferta, activo)
-    VALUES (p_tratamiento_id, p_precio_regular, p_precio_oferta, p_fecha_inicio_oferta, p_fecha_fin_oferta, TRUE);
+    INSERT INTO precio_tratamiento (tratamiento_id, precio_por_sesion, activo)
+    VALUES (p_tratamiento_id, p_precio_por_sesion, TRUE);
     
     SET p_precio_id = LAST_INSERT_ID();
     
@@ -2092,13 +2084,7 @@ BEGIN
     SELECT 
         pt.*,
         t.nombre AS tratamiento_nombre,
-        CASE 
-            WHEN pt.precio_oferta IS NOT NULL 
-                AND (pt.fecha_inicio_oferta IS NULL OR pt.fecha_inicio_oferta <= CURDATE())
-                AND (pt.fecha_fin_oferta IS NULL OR pt.fecha_fin_oferta >= CURDATE())
-            THEN pt.precio_oferta
-            ELSE pt.precio_regular
-        END AS precio_actual
+        pt.precio_por_sesion AS precio_actual
     FROM precio_tratamiento pt
     JOIN tratamiento t ON pt.tratamiento_id = t.id
     WHERE pt.tratamiento_id = p_tratamiento_id
@@ -2112,10 +2098,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_actualizar_precio_pack(
     IN p_pack_id BIGINT,
-    IN p_precio_regular DECIMAL(12,2),
-    IN p_precio_oferta DECIMAL(12,2),
-    IN p_fecha_inicio_oferta DATE,
-    IN p_fecha_fin_oferta DATE
+    IN p_precio_total DECIMAL(12,2)
 )
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2127,10 +2110,7 @@ BEGIN
     START TRANSACTION;
     
     UPDATE pack 
-    SET precio_regular = p_precio_regular,
-        precio_oferta = p_precio_oferta,
-        fecha_inicio_oferta = p_fecha_inicio_oferta,
-        fecha_fin_oferta = p_fecha_fin_oferta
+    SET precio_total = p_precio_total
     WHERE id = p_pack_id;
     
     COMMIT;
@@ -2489,21 +2469,16 @@ CREATE PROCEDURE sp_crear_pack_completo(
     IN p_sesiones_incluidas INT,
     IN p_zonas_incluidas JSON,
     IN p_precio_por_zona JSON,
-    IN p_precio_regular DECIMAL(12,2),
-    IN p_precio_oferta DECIMAL(12,2),
-    IN p_fecha_inicio_oferta DATE,
-    IN p_fecha_fin_oferta DATE,
+    IN p_precio_total DECIMAL(12,2),
     OUT p_pack_id BIGINT
 )
 BEGIN
     INSERT INTO pack (
         tratamiento_id, nombre, descripcion, duracion_sesion_min, sesiones_incluidas,
-        zonas_incluidas, precio_por_zona, precio_regular, precio_oferta,
-        fecha_inicio_oferta, fecha_fin_oferta, activo
+        zonas_incluidas, precio_por_zona, precio_total, activo
     ) VALUES (
         p_tratamiento_id, p_nombre, p_descripcion, p_duracion_sesion_min, p_sesiones_incluidas,
-        p_zonas_incluidas, p_precio_por_zona, p_precio_regular, p_precio_oferta,
-        p_fecha_inicio_oferta, p_fecha_fin_oferta, TRUE
+        p_zonas_incluidas, p_precio_por_zona, p_precio_total, TRUE
     );
     SET p_pack_id = LAST_INSERT_ID();
 END$$
@@ -2804,10 +2779,39 @@ CREATE PROCEDURE sp_tratamientos_list()
 BEGIN
     SELECT 
         t.*,
-        pt.precio_regular,
-        pt.precio_oferta,
-        pt.fecha_inicio_oferta,
-        pt.fecha_fin_oferta
+        pt.precio_por_sesion,
+        -- Buscar oferta aplicable para este tratamiento
+        (SELECT o.porc_descuento 
+         FROM oferta o 
+         JOIN oferta_tratamiento ot ON o.id = ot.oferta_id 
+         WHERE ot.tratamiento_id = t.id 
+         AND o.activo = TRUE 
+         AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+         AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+         ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+         LIMIT 1) as descuento_aplicable,
+        -- Calcular precio con descuento si aplica
+        CASE 
+            WHEN (SELECT o.porc_descuento 
+                  FROM oferta o 
+                  JOIN oferta_tratamiento ot ON o.id = ot.oferta_id 
+                  WHERE ot.tratamiento_id = t.id 
+                  AND o.activo = TRUE 
+                  AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                  AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                  ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                  LIMIT 1) IS NOT NULL
+            THEN pt.precio_por_sesion * (1 - (SELECT o.porc_descuento 
+                                             FROM oferta o 
+                                             JOIN oferta_tratamiento ot ON o.id = ot.oferta_id 
+                                             WHERE ot.tratamiento_id = t.id 
+                                             AND o.activo = TRUE 
+                                             AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                                             AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                                             ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                                             LIMIT 1) / 100)
+            ELSE pt.precio_por_sesion
+        END as precio_con_descuento
     FROM tratamiento t
     LEFT JOIN precio_tratamiento pt ON t.id = pt.tratamiento_id AND pt.activo = TRUE
     WHERE t.activo = TRUE 
@@ -2827,7 +2831,41 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_packs_list()
 BEGIN
-    SELECT p.*, t.nombre as tratamiento_nombre
+    SELECT 
+        p.*, 
+        t.nombre as tratamiento_nombre,
+        -- Buscar oferta aplicable para este pack
+        (SELECT o.porc_descuento 
+         FROM oferta o 
+         JOIN oferta_pack op ON o.id = op.oferta_id 
+         WHERE op.pack_id = p.id 
+         AND o.activo = TRUE 
+         AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+         AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+         ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+         LIMIT 1) as descuento_aplicable,
+        -- Calcular precio con descuento si aplica
+        CASE 
+            WHEN (SELECT o.porc_descuento 
+                  FROM oferta o 
+                  JOIN oferta_pack op ON o.id = op.oferta_id 
+                  WHERE op.pack_id = p.id 
+                  AND o.activo = TRUE 
+                  AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                  AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                  ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                  LIMIT 1) IS NOT NULL
+            THEN p.precio_total * (1 - (SELECT o.porc_descuento 
+                                       FROM oferta o 
+                                       JOIN oferta_pack op ON o.id = op.oferta_id 
+                                       WHERE op.pack_id = p.id 
+                                       AND o.activo = TRUE 
+                                       AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                                       AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                                       ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                                       LIMIT 1) / 100)
+            ELSE p.precio_total
+        END as precio_con_descuento
     FROM pack p
     JOIN tratamiento t ON p.tratamiento_id = t.id
     WHERE p.activo = TRUE AND t.activo = TRUE
@@ -2839,7 +2877,41 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_packs_by_tratamiento(IN p_tratamiento_id INT)
 BEGIN
-    SELECT p.*, t.nombre as tratamiento_nombre
+    SELECT 
+        p.*, 
+        t.nombre as tratamiento_nombre,
+        -- Buscar oferta aplicable para este pack
+        (SELECT o.porc_descuento 
+         FROM oferta o 
+         JOIN oferta_pack op ON o.id = op.oferta_id 
+         WHERE op.pack_id = p.id 
+         AND o.activo = TRUE 
+         AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+         AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+         ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+         LIMIT 1) as descuento_aplicable,
+        -- Calcular precio con descuento si aplica
+        CASE 
+            WHEN (SELECT o.porc_descuento 
+                  FROM oferta o 
+                  JOIN oferta_pack op ON o.id = op.oferta_id 
+                  WHERE op.pack_id = p.id 
+                  AND o.activo = TRUE 
+                  AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                  AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                  ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                  LIMIT 1) IS NOT NULL
+            THEN p.precio_total * (1 - (SELECT o.porc_descuento 
+                                       FROM oferta o 
+                                       JOIN oferta_pack op ON o.id = op.oferta_id 
+                                       WHERE op.pack_id = p.id 
+                                       AND o.activo = TRUE 
+                                       AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                                       AND (o.fecha_fin IS NULL OR o.fecha_fin >= CURDATE())
+                                       ORDER BY o.prioridad DESC, o.porc_descuento DESC 
+                                       LIMIT 1) / 100)
+            ELSE p.precio_total
+        END as precio_con_descuento
     FROM pack p
     JOIN tratamiento t ON p.tratamiento_id = t.id
     WHERE p.tratamiento_id = p_tratamiento_id 
@@ -3098,97 +3170,97 @@ CALL sp_crear_profesional_completo(
 
 -- ---------- PACKS DE TRATAMIENTOS FACIAL ----------
 -- Usando SP para crear packs faciales con validaciones
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, JSON_ARRAY(), JSON_OBJECT(), 39900, 24900, '2025-01-01', '2025-12-31', @pack_limpieza_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 250000, 199000, '2025-01-01', '2025-12-31', @pack_radiofrecuencia_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 399000, 299000, '2025-01-01', '2025-12-31', @pack_criolipolisis_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, JSON_ARRAY(), JSON_OBJECT(), 299000, 299000, '2025-01-01', '2025-12-31', @pack_hifu_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 199000, 149900, '2025-01-01', '2025-12-31', @pack_prp_facial_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, JSON_ARRAY(), JSON_OBJECT(), 450000, 390000, '2025-01-01', '2025-12-31', @pack_radiofrecuencia_fraccionada_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 350000, 250000, '2025-01-01', '2025-12-31', @pack_tecnologia_plasmatica_id);
-CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 189000, 139900, '2025-01-01', '2025-12-31', @pack_pink_glow_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Limpieza Facial Profunda', 'Limpieza facial profunda con productos especializados', 60, 1, JSON_ARRAY(), JSON_OBJECT(), 39900, @pack_limpieza_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Facial', 'Radiofrecuencia facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 250000, @pack_radiofrecuencia_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Criolipolisis Facial Dinamica', 'Criolipolisis facial reafirmante', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 399000, @pack_criolipolisis_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Hifu Facial 4D + PRP', 'Hifu facial 4D con plasma rico en plaquetas', 90, 2, JSON_ARRAY(), JSON_OBJECT(), 299000, @pack_hifu_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Plasma Rico en Plaquetas', 'Tratamiento con plasma rico en plaquetas', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 199000, @pack_prp_facial_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Radiofrecuencia Fraccionada + Vitamina C', 'Radiofrecuencia fraccionada con vitamina C', 75, 3, JSON_ARRAY(), JSON_OBJECT(), 450000, @pack_radiofrecuencia_fraccionada_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Tecnologia Plasmatica Parpados', 'Tratamiento plasmatico para parpados', 45, 1, JSON_ARRAY(), JSON_OBJECT(), 350000, @pack_tecnologia_plasmatica_id);
+CALL sp_crear_pack_completo(@tratamiento_facial_id, 'Pink Glow + Ultrasonido', 'Pink Glow con ultrasonido', 60, 3, JSON_ARRAY(), JSON_OBJECT(), 189000, @pack_pink_glow_id);
 
 -- ---------- PACKS DE TRATAMIENTOS CAPILAR ----------
 -- Usando SP para crear packs capilares con validaciones
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_carboxiterapia_capilar_id);
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_prp_capilar_id);
-CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, 499000, '2025-01-01', '2025-12-31', @pack_fotobiomodulacion_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Carboxiterapia Capilar', 'Carboxiterapia para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, @pack_carboxiterapia_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Plasma Rico en Plaquetas Capilar', 'PRP para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, @pack_prp_capilar_id);
+CALL sp_crear_pack_completo(@tratamiento_capilar_id, 'Fotobiomodulacion Capilar', 'Fotobiomodulacion para el cabello', 60, 6, JSON_ARRAY(), JSON_OBJECT(), 579000, @pack_fotobiomodulacion_capilar_id);
 
 -- ---------- PACKS DE TRATAMIENTOS DEPILACION ----------
 -- Usando SP para crear packs de depilación con validaciones
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo', 'Depilacion laser cuerpo completo', 120, 6, 
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO', 'BARBA'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000, 'BARBA', 25000),
- 499000, 499000, '2025-01-01', '2025-12-31', @pack_cuerpo_completo_id);
+ 499000, @pack_cuerpo_completo_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Cuerpo Completo Sin Rostro', 'Depilacion laser cuerpo completo sin rostro', 90, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'REBAJE', 'INTERGLUTEO', 'AXILA', 'ESPALDA', 'ABDOMEN', 'GLUTEOS', 'PECHO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000, 'ESPALDA', 40000, 'ABDOMEN', 30000, 'GLUTEOS', 25000, 'PECHO', 30000),
- 399000, 399000, '2025-01-01', '2025-12-31', @pack_cuerpo_sin_rostro_id);
+ 399000, @pack_cuerpo_sin_rostro_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Rostro Completo', 'Depilacion laser rostro completo', 45, 8,
  JSON_ARRAY('ROSTRO_C', 'CUELLO', 'BOZO', 'AXILA', 'MENTON', 'PATILLAS', 'BARBA'), 
  JSON_OBJECT('ROSTRO_C', 30000, 'CUELLO', 25000, 'BOZO', 15000, 'AXILA', 20000, 'MENTON', 15000, 'PATILLAS', 15000, 'BARBA', 25000),
- 149900, 149900, '2025-01-01', '2025-12-31', @pack_rostro_completo_id);
+ 149900, @pack_rostro_completo_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Full Body', 'Depilacion laser full body: piernas, brazos, axilas, rebaje, intergluteo', 75, 6,
  JSON_ARRAY('PIERNAS', 'BRAZOS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'BRAZOS', 35000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
- 259000, 199000, '2025-01-01', '2025-12-31', @pack_full_body_id);
+ 259000, @pack_full_body_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Semi Full', 'Depilacion laser semi full: piernas, axilas, rebaje, intergluteo', 60, 6,
  JSON_ARRAY('PIERNAS', 'AXILA', 'REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('PIERNAS', 45000, 'AXILA', 20000, 'REBAJE', 25000, 'INTERGLUTEO', 20000),
- 199000, 159000, '2025-01-01', '2025-12-31', @pack_semi_full_id);
+ 199000, @pack_semi_full_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full', 'Depilacion laser bikini full: rebaje e intergluteo', 30, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000),
- 99000, 79900, '2025-01-01', '2025-12-31', @pack_bikini_full_id);
+ 99000, @pack_bikini_full_id);
 
 CALL sp_crear_pack_completo(@tratamiento_depilacion_id, 'Bikini Full + Axilas', 'Depilacion laser bikini full con axilas', 35, 6,
  JSON_ARRAY('REBAJE', 'INTERGLUTEO', 'AXILA'), 
  JSON_OBJECT('REBAJE', 25000, 'INTERGLUTEO', 20000, 'AXILA', 20000),
- 120000, 99000, '2025-01-01', '2025-12-31', @pack_bikini_axilas_id);
+ 120000, @pack_bikini_axilas_id);
 
 -- ---------- PACKS DE EVALUACIÓN ----------
 -- Usando SP para crear packs de evaluación con validaciones
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Depilación', 'Evaluación médica para depilación láser', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_depilacion_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, @pack_evaluacion_depilacion_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Corporal/Facial', 'Evaluación médica para tratamientos corporales y faciales', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_corporal_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, @pack_evaluacion_corporal_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Completa', 'Evaluación médica para depilación y tratamientos corporales/faciales', 45, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 0, 0, '2025-01-01', '2025-12-31', @pack_evaluacion_completa_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, @pack_evaluacion_completa_id);
 
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
 -- Usando SP para crear precios de tratamientos con validaciones
-CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, 0, '2025-01-01', '2025-12-31', @precio_evaluacion_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, 24900, '2025-01-01', '2025-12-31', @precio_facial_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, 499000, '2025-01-01', '2025-12-31', @precio_capilar_id);
-CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, 499000, '2025-01-01', '2025-12-31', @precio_depilacion_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_evaluacion_id, 0, @precio_evaluacion_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_facial_id, 39900, @precio_facial_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_capilar_id, 579000, @precio_capilar_id);
+CALL sp_crear_precio_tratamiento(@tratamiento_depilacion_id, 499000, @precio_depilacion_id);
 
 -- ---------- OFERTAS DE PACKS (PROMOCIONES) ----------
 -- Usando SP para crear ofertas con validaciones
 -- Ofertas FACIAL
 CALL sp_crear_oferta_pack_temporal('Promo Limpieza Facial', 37.5, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_limpieza_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Facial', 20.4, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_radiofrecuencia_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Criolipolisis Facial', 25.1, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_criolipolisis_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Plasma Rico en Plaquetas', 24.7, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_prp_facial_id);
-CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Fraccionada', 13.3, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_radiofrecuencia_fraccionada_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Facial', 20.4, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_radiofrecuencia_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Criolipolisis Facial', 25.1, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_criolipolisis_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Plasma Rico en Plaquetas', 24.7, '2025-01-01', '2025-12-31', TRUE, 3, @oferta_prp_facial_id);
+CALL sp_crear_oferta_pack_temporal('Promo Radiofrecuencia Fraccionada', 13.3, '2025-01-01', '2025-12-31', TRUE, 3, @oferta_radiofrecuencia_fraccionada_id);
 CALL sp_crear_oferta_pack_temporal('Promo Tecnologia Plasmatica', 28.6, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_tecnologia_plasmatica_id);
-CALL sp_crear_oferta_pack_temporal('Promo Pink Glow', 26.0, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_pink_glow_id);
+CALL sp_crear_oferta_pack_temporal('Promo Pink Glow', 26.0, '2025-01-01', '2025-12-31', TRUE, 3, @oferta_pink_glow_id);
 
 -- Ofertas CAPILAR
-CALL sp_crear_oferta_pack_temporal('Promo Carboxiterapia Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_carboxiterapia_capilar_id);
-CALL sp_crear_oferta_pack_temporal('Promo PRP Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_prp_capilar_id);
-CALL sp_crear_oferta_pack_temporal('Promo Fotobiomodulacion Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_fotobiomodulacion_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo Carboxiterapia Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_carboxiterapia_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo PRP Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_prp_capilar_id);
+CALL sp_crear_oferta_pack_temporal('Promo Fotobiomodulacion Capilar', 13.8, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_fotobiomodulacion_capilar_id);
 
 -- Ofertas DEPILACION
-CALL sp_crear_oferta_pack_temporal('Promo Full Body', 23.2, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_full_body_id);
-CALL sp_crear_oferta_pack_temporal('Promo Semi Full', 20.1, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_semi_full_id);
-CALL sp_crear_oferta_pack_temporal('Promo Bikini Full', 19.3, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_bikini_full_id);
-CALL sp_crear_oferta_pack_temporal('Promo Bikini Full + Axilas', 17.5, '2025-01-01', '2025-12-31', TRUE, 1, @oferta_bikini_axilas_id);
+CALL sp_crear_oferta_pack_temporal('Promo Full Body', 23.2, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_full_body_id);
+CALL sp_crear_oferta_pack_temporal('Promo Semi Full', 20.1, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_semi_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full', 19.3, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_bikini_full_id);
+CALL sp_crear_oferta_pack_temporal('Promo Bikini Full + Axilas', 17.5, '2025-01-01', '2025-12-31', TRUE, 6, @oferta_bikini_axilas_id);
 
 -- ---------- ASOCIAR OFERTAS CON PACKS FACIAL ----------
 -- Usando SP para asociar ofertas con packs

@@ -526,29 +526,59 @@
                     <div class="form-container">
                         <h3>Nueva Oferta</h3>
                         <form id="ofertaForm" class="form">
+                            <input type="hidden" name="ofertaId" id="ofertaId">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="tituloOferta">Título</label>
-                                    <input type="text" id="tituloOferta" required>
+                                    <label for="nombreOferta">Nombre</label>
+                                    <input type="text" name="nombreOferta" id="nombreOferta" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="descuentoOferta">Descuento (%)</label>
-                                    <input type="number" id="descuentoOferta" min="0" max="100" required>
+                                    <label for="tipoOferta">Tipo</label>
+                                    <select name="tipoOferta" id="tipoOferta" required>
+                                        <option value="pack">Pack</option>
+                                        <option value="tratamiento">Tratamiento</option>
+                                        <option value="sesiones">Sesiones</option>
+                                        <option value="combo">Combo</option>
+                                        <option value="manual">Manual</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="porcentajeOferta">Descuento (%)</label>
+                                    <input type="number" name="porcentajeOferta" id="porcentajeOferta" min="0" max="100" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sesionesMinimas">Sesiones Mínimas</label>
+                                    <input type="number" name="sesionesMinimas" id="sesionesMinimas" min="1" value="1" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="fechaInicioOferta">Fecha Inicio</label>
-                                    <input type="date" id="fechaInicioOferta" required>
+                                    <input type="date" name="fechaInicioOferta" id="fechaInicioOferta">
                                 </div>
                                 <div class="form-group">
                                     <label for="fechaFinOferta">Fecha Fin</label>
-                                    <input type="date" id="fechaFinOferta" required>
+                                    <input type="date" name="fechaFinOferta" id="fechaFinOferta">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="combinableOferta">Combinable</label>
+                                    <select name="combinableOferta" id="combinableOferta" required>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prioridadOferta">Prioridad</label>
+                                    <input type="number" name="prioridadOferta" id="prioridadOferta" min="0" value="0">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="descripcionOferta">Descripción</label>
-                                <textarea id="descripcionOferta" rows="3" required></textarea>
+                                <textarea name="descripcionOferta" id="descripcionOferta" rows="3"></textarea>
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-primary">
@@ -569,10 +599,35 @@
                             <table id="tablaOfertas" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
                                         <th>Descuento</th>
-                                        <th>Fecha Inicio</th>
-                                        <th>Fecha Fin</th>
+                                        <th>Sesiones Mínimas</th>
+                                        <th>Descripción</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaOfertas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Ofertas Activas</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaOfertas" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
+                                        <th>Descuento</th>
+                                        <th>Sesiones Mínimas</th>
+                                        <th>Descripción</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -656,6 +711,13 @@
                     // Esta función será llamada desde el HTML
                     // El módulo de ventas se encarga de la lógica
                     console.log('Función confirmarVenta llamada');
+                };
+                
+                // Función global para limpiar formulario de ofertas
+                window.limpiarFormularioOferta = function() {
+                    // Esta función será llamada desde el HTML
+                    // El módulo de ofertas se encarga de la lógica
+                    console.log('Función limpiarFormularioOferta llamada');
                 };
             </script>
 </body>

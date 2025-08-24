@@ -70,7 +70,7 @@ export class OfertasModule {
         tbody.innerHTML = '';
         
         if (this.ofertas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay ofertas registradas</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay ofertas registradas</td></tr>';
             return;
         }
         
@@ -78,10 +78,11 @@ export class OfertasModule {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Nombre">${oferta.nombre}</td>
-                <td data-label="Descuento">${oferta.porcentaje_descuento}%</td>
+                <td data-label="Tipo">${this.formatearTipo(oferta.tipo)}</td>
+                <td data-label="Descuento">${oferta.porc_descuento}%</td>
+                <td data-label="Sesiones Mínimas">${oferta.sesiones_minimas || 'N/A'}</td>
                 <td data-label="Descripción">${oferta.descripcion || 'Sin descripción'}</td>
-                <td data-label="Prioridad">${oferta.prioridad || 'N/A'}</td>
-                <td data-label="Estado"><span class="status-badge status-${oferta.estado}">${this.formatearEstado(oferta.estado)}</span></td>
+                <td data-label="Estado"><span class="status-badge status-${oferta.activo ? 'activa' : 'inactiva'}">${oferta.activo ? 'Activa' : 'Inactiva'}</span></td>
                 <td data-label="Acciones">
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-primary" onclick="ofertasModule.editarOferta(${oferta.id})">
@@ -136,10 +137,15 @@ export class OfertasModule {
         
         const ofertaData = {
             nombre: formData.get('nombreOferta'),
-            porcentaje_descuento: parseFloat(formData.get('porcentajeOferta')),
+            tipo: formData.get('tipoOferta') || 'pack',
+            porc_descuento: parseFloat(formData.get('porcentajeOferta')),
+            sesiones_minimas: parseInt(formData.get('sesionesMinimas')) || 1,
             descripcion: formData.get('descripcionOferta') || '',
-            prioridad: parseInt(formData.get('prioridadOferta')) || 1,
-            estado: formData.get('estadoOferta') || 'activa'
+            fecha_inicio: formData.get('fechaInicioOferta'),
+            fecha_fin: formData.get('fechaFinOferta'),
+            combinable: formData.get('combinableOferta') === 'true',
+            prioridad: parseInt(formData.get('prioridadOferta')) || 0,
+            activo: true
         };
         
         const ofertaId = formData.get('ofertaId');
@@ -220,10 +226,14 @@ export class OfertasModule {
         const form = document.getElementById('ofertaForm');
         form.querySelector('[name="ofertaId"]').value = oferta.id;
         form.querySelector('[name="nombreOferta"]').value = oferta.nombre;
-        form.querySelector('[name="porcentajeOferta"]').value = oferta.porcentaje_descuento;
+        form.querySelector('[name="tipoOferta"]').value = oferta.tipo || 'pack';
+        form.querySelector('[name="porcentajeOferta"]').value = oferta.porc_descuento;
+        form.querySelector('[name="sesionesMinimas"]').value = oferta.sesiones_minimas || 1;
         form.querySelector('[name="descripcionOferta"]').value = oferta.descripcion || '';
-        form.querySelector('[name="prioridadOferta"]').value = oferta.prioridad || 1;
-        form.querySelector('[name="estadoOferta"]').value = oferta.estado;
+        form.querySelector('[name="fechaInicioOferta"]').value = oferta.fecha_inicio || '';
+        form.querySelector('[name="fechaFinOferta"]').value = oferta.fecha_fin || '';
+        form.querySelector('[name="combinableOferta"]').value = oferta.combinable ? 'true' : 'false';
+        form.querySelector('[name="prioridadOferta"]').value = oferta.prioridad || 0;
         
         // Cambiar texto del botón
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -310,6 +320,17 @@ export class OfertasModule {
         }
     }
     
+    formatearTipo(tipo) {
+        const tipos = {
+            'pack': 'Pack',
+            'tratamiento': 'Tratamiento',
+            'sesiones': 'Sesiones',
+            'combo': 'Combo',
+            'manual': 'Manual'
+        };
+        return tipos[tipo] || tipo;
+    }
+    
     formatearEstado(estado) {
         const estados = {
             'activa': 'Activa',
@@ -318,8 +339,26 @@ export class OfertasModule {
         };
         return estados[estado] || estado;
     }
+    
+    limpiarFormularioOferta() {
+        const form = document.getElementById('ofertaForm');
+        if (form) {
+            form.reset();
+            document.getElementById('ofertaId').value = '';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Crear Oferta';
+            }
+            console.log('[OFERTAS] Formulario limpiado');
+            mostrarNotificacion('Formulario de oferta limpiado', 'info');
+        }
+    }
 }
 
 // Exportar instancia global
 export const ofertasModule = new OfertasModule();
+
+// Conectar funciones globales
+window.ofertasModule = ofertasModule;
+window.limpiarFormularioOferta = () => ofertasModule.limpiarFormularioOferta();
 
