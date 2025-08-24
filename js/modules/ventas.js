@@ -233,24 +233,27 @@ class VentasModule {
 
         if (packIndex !== "") {
             const pack = tratamiento.packs[packIndex];
-            precio = pack.precio_oferta || pack.precio_regular;
+            const precioRegular = pack.precio_regular || 0;
+            const precioOferta = pack.precio_oferta || 0;
+            precio = precioOferta > 0 ? precioOferta : precioRegular;
+            
             detalle = `Pack seleccionado: ${pack.nombre}`;
             if (pack.sesiones_incluidas) {
                 detalle += ` (${pack.sesiones_incluidas} sesiones incluidas)`;
             }
-            if (pack.precio_oferta && pack.precio_oferta < pack.precio_regular) {
-                const descuento = Math.round(((pack.precio_regular - pack.precio_oferta) / pack.precio_regular) * 100);
-                const ahorro = pack.precio_regular - pack.precio_oferta;
+            if (precioOferta > 0 && precioOferta < precioRegular) {
+                const descuento = Math.round(((precioRegular - precioOferta) / precioRegular) * 100);
+                const ahorro = precioRegular - precioOferta;
                 detalle += `<br>💰 <strong>OFERTA ACTIVA:</strong> ${descuento}% OFF (Ahorras $${ahorro.toLocaleString()})`;
-                detalle += `<br>Precio regular: $${pack.precio_regular.toLocaleString()} → <strong>Precio oferta: $${pack.precio_oferta.toLocaleString()}</strong>`;
+                detalle += `<br>Precio regular: $${precioRegular.toLocaleString()} → <strong>Precio oferta: $${precioOferta.toLocaleString()}</strong>`;
             } else {
-                detalle += `<br>Precio: $${pack.precio_regular.toLocaleString()}`;
+                detalle += `<br>Precio: $${precioRegular.toLocaleString()}`;
             }
         } else {
-            precio = sesiones * (tratamiento.precio_oferta || tratamiento.precio_regular);
+            const precioBase = (tratamiento.precio_oferta || tratamiento.precio_regular || 0);
+            precio = sesiones * precioBase;
             detalle = `Sesión individual x${sesiones}: $${precio.toLocaleString()}`;
-            const precioPorSesion = tratamiento.precio_oferta || tratamiento.precio_regular;
-            detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()}`;
+            detalle += `<br>Precio por sesión: $${precioBase.toLocaleString()}`;
         }
 
         if (ofertaVenta > 0) {
@@ -268,9 +271,12 @@ class VentasModule {
             }
         }
 
+        // Asegurar que precio sea un número válido
+        const precioFinal = (precio || 0);
+        
         resultado.innerHTML = `
             <strong>Tratamiento:</strong> ${tratamiento.nombre}<br>
-            <strong>Precio final:</strong> $${precio.toLocaleString()}<br>
+            <strong>Precio final:</strong> $${precioFinal.toLocaleString()}<br>
             <em>${detalle}</em>
         `;
 
