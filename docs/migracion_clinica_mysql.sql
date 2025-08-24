@@ -4042,10 +4042,7 @@ BEGIN
 END$$
 
 -- ---------- BOXES CRUD ----------
-CREATE PROCEDURE sp_boxes_get(IN p_id INT)
-BEGIN
-    SELECT * FROM box WHERE id = p_id;
-END$$
+-- sp_boxes_get ya está definido anteriormente con JOIN completo
 
 CREATE PROCEDURE sp_boxes_create(IN p_data JSON)
 BEGIN
