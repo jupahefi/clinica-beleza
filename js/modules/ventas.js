@@ -30,7 +30,7 @@ class VentasModule {
             for (const tratamiento of this.tratamientos) {
                 tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id);
             }
-            this.ofertas = await fetch('/api.php/ofertas/aplicables').then(r => r.json()).then(d => d.data || []);
+            this.ofertas = await fetch('/api.php/ofertas-aplicables').then(r => r.json()).then(d => d.data || []);
             console.log(`[VENTAS] Datos cargados: ${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas.`);
             mostrarNotificacion(`Datos de ventas cargados correctamente (${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas)`, 'success');
         } catch (error) {
