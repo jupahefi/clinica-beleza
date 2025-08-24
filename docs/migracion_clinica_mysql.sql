@@ -3908,6 +3908,132 @@ BEGIN
     SELECT 'Profesional eliminado' as mensaje;
 END$$
 
+-- ---------- BOXES CRUD ----------
+CREATE PROCEDURE sp_boxes_get(IN p_id INT)
+BEGIN
+    SELECT * FROM box WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_boxes_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO box (
+        numero, sucursal_id, estado, observaciones, 
+        activo, fecha_creacion
+    ) VALUES (
+        JSON_EXTRACT(p_data, '$.numero'),
+        JSON_EXTRACT(p_data, '$.sucursal_id'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM box WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_boxes_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE box SET
+        numero = COALESCE(JSON_EXTRACT(p_data, '$.numero'), numero),
+        sucursal_id = COALESCE(JSON_EXTRACT(p_data, '$.sucursal_id'), sucursal_id),
+        estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM box WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_boxes_delete(IN p_id INT)
+BEGIN
+    UPDATE box SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Box eliminado' as mensaje;
+END$$
+
+-- ---------- ZONAS CRUD ----------
+CREATE PROCEDURE sp_zonas_get(IN p_codigo VARCHAR(10))
+BEGIN
+    SELECT * FROM zona_cuerpo WHERE codigo = p_codigo;
+END$$
+
+CREATE PROCEDURE sp_zonas_create(IN p_data JSON)
+BEGIN
+    DECLARE v_codigo VARCHAR(10);
+    INSERT INTO zona_cuerpo (
+        codigo, nombre, descripcion, precio_base, 
+        activo, fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.codigo')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        JSON_EXTRACT(p_data, '$.precio_base'),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_codigo = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.codigo'));
+    SELECT * FROM zona_cuerpo WHERE codigo = v_codigo;
+END$$
+
+CREATE PROCEDURE sp_zonas_update(IN p_codigo VARCHAR(10), IN p_data JSON)
+BEGIN
+    UPDATE zona_cuerpo SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        precio_base = COALESCE(JSON_EXTRACT(p_data, '$.precio_base'), precio_base),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE codigo = p_codigo;
+    SELECT * FROM zona_cuerpo WHERE codigo = p_codigo;
+END$$
+
+CREATE PROCEDURE sp_zonas_delete(IN p_codigo VARCHAR(10))
+BEGIN
+    UPDATE zona_cuerpo SET activo = FALSE, fecha_actualizacion = NOW() WHERE codigo = p_codigo;
+    SELECT 'Zona eliminada' as mensaje;
+END$$
+
+-- ---------- OFERTAS COMBO CRUD ----------
+CREATE PROCEDURE sp_ofertas_combo_get(IN p_id INT)
+BEGIN
+    SELECT * FROM oferta_combo WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_combo_create(IN p_data JSON)
+BEGIN
+    DECLARE v_id INT;
+    INSERT INTO oferta_combo (
+        nombre, descripcion, porc_descuento, activo, 
+        fecha_creacion
+    ) VALUES (
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')),
+        JSON_EXTRACT(p_data, '$.porc_descuento'),
+        COALESCE(JSON_EXTRACT(p_data, '$.activo'), TRUE),
+        NOW()
+    );
+    SET v_id = LAST_INSERT_ID();
+    SELECT * FROM oferta_combo WHERE id = v_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_combo_update(IN p_id INT, IN p_data JSON)
+BEGIN
+    UPDATE oferta_combo SET
+        nombre = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.nombre')), nombre),
+        descripcion = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.descripcion')), descripcion),
+        porc_descuento = COALESCE(JSON_EXTRACT(p_data, '$.porc_descuento'), porc_descuento),
+        activo = COALESCE(JSON_EXTRACT(p_data, '$.activo'), activo),
+        fecha_actualizacion = NOW()
+    WHERE id = p_id;
+    SELECT * FROM oferta_combo WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE sp_ofertas_combo_delete(IN p_id INT)
+BEGIN
+    UPDATE oferta_combo SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Oferta combo eliminada' as mensaje;
+END$$
+
 DELIMITER ;
 
 -- =============================================================================
