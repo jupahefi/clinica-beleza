@@ -1208,8 +1208,9 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, genero, genero_indicado_por, observaciones)
-    VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, p_genero, p_genero_indicado_por, 'Venta normal');
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, genero, genero_indicado_por, estado, observaciones)
+    VALUES (p_ficha_id, p_evaluacion_id, p_ficha_especifica_id, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, p_genero, p_genero_indicado_por, 
+            CASE WHEN p_precio_lista = 0 THEN 'pagado' ELSE 'pendiente' END, 'Venta normal');
     
     SET p_venta_id = LAST_INSERT_ID();
     
@@ -1240,8 +1241,9 @@ BEGIN
     START TRANSACTION;
     
     -- Para evaluación, evaluacion_id y ficha_especifica_id son NULL
-    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, genero, genero_indicado_por, observaciones)
-    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, p_genero, p_genero_indicado_por, 'Venta de evaluación inicial');
+    INSERT INTO venta (ficha_id, evaluacion_id, ficha_especifica_id, tratamiento_id, pack_id, cantidad_sesiones, precio_lista, descuento_manual_pct, genero, genero_indicado_por, estado, observaciones)
+    VALUES (p_ficha_id, NULL, NULL, p_tratamiento_id, p_pack_id, p_cantidad_sesiones, p_precio_lista, p_descuento_manual_pct, p_genero, p_genero_indicado_por, 
+            CASE WHEN p_precio_lista = 0 THEN 'pagado' ELSE 'pendiente' END, 'Venta de evaluación inicial');
     
     SET p_venta_id = LAST_INSERT_ID();
     
@@ -3333,13 +3335,13 @@ CALL sp_crear_pack_completo(@tratamiento_corporal_id, 'Levantamiento de Gluteos'
 -- ---------- PACKS DE EVALUACIÓN ----------
 -- Usando SP para crear packs de evaluación con validaciones
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Depilación', 'Evaluación médica para depilación láser', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 25000, TRUE, @pack_evaluacion_depilacion_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, TRUE, @pack_evaluacion_depilacion_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Corporal/Facial', 'Evaluación médica para tratamientos corporales y faciales', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 25000, TRUE, @pack_evaluacion_corporal_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, TRUE, @pack_evaluacion_corporal_id);
 
 CALL sp_crear_pack_completo(@tratamiento_evaluacion_id, 'Evaluación Completa', 'Evaluación médica para depilación y tratamientos corporales/faciales', 30, 1, 
- JSON_ARRAY(), JSON_OBJECT(), 35000, TRUE, @pack_evaluacion_completa_id);
+ JSON_ARRAY(), JSON_OBJECT(), 0, TRUE, @pack_evaluacion_completa_id);
 
 -- ---------- PRECIOS DE TRATAMIENTOS ----------
 -- Usando SP para crear precios de tratamientos con validaciones
@@ -3604,9 +3606,9 @@ END$$
 CREATE PROCEDURE sp_ventas_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE venta SET
-        total_venta = COALESCE(JSON_EXTRACT(p_data, '$.total_venta'), total_venta),
-        descuento_manual = COALESCE(JSON_EXTRACT(p_data, '$.descuento_manual'), descuento_manual),
-        total_final = COALESCE(JSON_EXTRACT(p_data, '$.total_final'), total_final),
+        precio_lista = COALESCE(JSON_EXTRACT(p_data, '$.precio_lista'), precio_lista),
+        descuento_manual_pct = COALESCE(JSON_EXTRACT(p_data, '$.descuento_manual_pct'), descuento_manual_pct),
+        total_pagado = COALESCE(JSON_EXTRACT(p_data, '$.total_pagado'), total_pagado),
         estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
         fecha_actualizacion = NOW()
     WHERE id = p_id;
@@ -3615,8 +3617,8 @@ END$$
 
 CREATE PROCEDURE sp_ventas_delete(IN p_id INT)
 BEGIN
-    UPDATE venta SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Venta cancelada' as mensaje;
+    UPDATE venta SET estado = 'anulado', fecha_actualizacion = NOW() WHERE id = p_id;
+    SELECT 'Venta anulada' as mensaje;
 END$$
 
 -- ---------- AUTH ----------
@@ -3657,13 +3659,12 @@ CREATE PROCEDURE sp_pagos_create(IN p_data JSON)
 BEGIN
     DECLARE v_id INT;
     INSERT INTO pago (
-        venta_id, monto, metodo_pago, referencia, 
+        venta_id, monto_total, observaciones, 
         estado, fecha_creacion
     ) VALUES (
         JSON_EXTRACT(p_data, '$.venta_id'),
-        JSON_EXTRACT(p_data, '$.monto'),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.metodo_pago')),
-        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.referencia')),
+        JSON_EXTRACT(p_data, '$.monto_total'),
+        JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
         'pendiente',
         NOW()
     );
@@ -3674,9 +3675,8 @@ END$$
 CREATE PROCEDURE sp_pagos_update(IN p_id INT, IN p_data JSON)
 BEGIN
     UPDATE pago SET
-        monto = COALESCE(JSON_EXTRACT(p_data, '$.monto'), monto),
-        metodo_pago = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.metodo_pago')), metodo_pago),
-        referencia = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.referencia')), referencia),
+        monto_total = COALESCE(JSON_EXTRACT(p_data, '$.monto_total'), monto_total),
+        observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
         fecha_actualizacion = NOW()
     WHERE id = p_id;
