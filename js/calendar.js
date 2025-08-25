@@ -229,13 +229,26 @@ class Calendar {
     }
     
     renderEventsInSlot(events, time, date = null) {
+        console.log('🔍 renderEventsInSlot - eventos totales:', events.length);
+        console.log('🔍 renderEventsInSlot - time:', time, 'date:', date);
+        
         const slotEvents = events.filter(event => {
             // Usar fecha_planificada en lugar de fecha_inicio
             const eventTime = this.formatTime(new Date(event.fecha_planificada));
             const eventDate = date ? this.formatDate(new Date(event.fecha_planificada)) : this.formatDate(new Date(event.fecha_planificada));
             
+            console.log('🔍 Evento:', {
+                id: event.id,
+                fecha_planificada: event.fecha_planificada,
+                eventTime: eventTime,
+                eventDate: eventDate,
+                matches: eventTime === time && (!date || eventDate === this.formatDate(date))
+            });
+            
             return eventTime === time && (!date || eventDate === this.formatDate(date));
         });
+        
+        console.log('🔍 slotEvents filtrados:', slotEvents.length);
         
         return slotEvents.map(event => {
             // Crear título usando nombres y apellidos del paciente
@@ -764,7 +777,7 @@ class Calendar {
     
     getEventsForDate(date) {
         if (!this.events || !Array.isArray(this.events)) return [];
-        return this.events.filter(event => this.isSameDay(new Date(event.fecha_inicio), date));
+        return this.events.filter(event => this.isSameDay(new Date(event.fecha_planificada), date));
     }
     
     getEventsForWeek(start) {
@@ -773,7 +786,7 @@ class Calendar {
         end.setDate(end.getDate() + 7);
         
         return this.events.filter(event => {
-            const eventDate = new Date(event.fecha_inicio);
+            const eventDate = new Date(event.fecha_planificada);
             return eventDate >= start && eventDate < end;
         });
     }
@@ -784,7 +797,7 @@ class Calendar {
         const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         
         return this.events.filter(event => {
-            const eventDate = new Date(event.fecha_inicio);
+            const eventDate = new Date(event.fecha_planificada);
             return eventDate >= start && eventDate <= end;
         });
     }
@@ -804,7 +817,10 @@ class Calendar {
     }
     
     formatDate(date) {
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     formatTime(date) {
