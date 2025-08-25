@@ -24,23 +24,23 @@
  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
  $referer = $_SERVER['HTTP_REFERER'] ?? '';
  $host = $_SERVER['HTTP_HOST'] ?? '';
-
+ $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+ 
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
  $access_allowed = false;
+ $valid_referers = ['/login.html', '/index.html', '/'];
  
  if (!empty($origin)) {
      $origin_host = parse_url($origin, PHP_URL_HOST);
      if ($origin_host === $allowed_host) {
-         $access_allowed = true;
-     }
- }
- 
- if (!empty($referer)) {
-     $referer_host = parse_url($referer, PHP_URL_HOST);
-     if ($referer_host === $allowed_host) {
-         $referer_path = parse_url($referer, PHP_URL_PATH);
-         if (strpos($referer_path, '/login.html') !== false || strpos($referer_path, '/index.html') !== false || $referer_path === '/') {
+         if (!empty($referer)) {
+             $referer_host = parse_url($referer, PHP_URL_HOST);
+             $referer_path = parse_url($referer, PHP_URL_PATH);
+             if ($referer_host === $allowed_host && in_array($referer_path, $valid_referers)) {
+                 $access_allowed = true;
+             }
+         } else {
              $access_allowed = true;
          }
      }
@@ -49,9 +49,33 @@
  if (!$access_allowed) {
      http_response_code(403);
      echo json_encode([
-         'error' => 'Acceso denegado'
+         'error' => 'Acceso denegado - Verificación de origen fallida'
      ]);
      exit();
+ }
+ 
+ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'DELETE') {
+     $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+     $session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? '';
+     
+     if (empty($csrf_token) || empty($session_token)) {
+         http_response_code(403);
+         echo json_encode([
+             'error' => 'Acceso denegado - Tokens de seguridad requeridos'
+         ]);
+         exit();
+     }
+     
+     $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+     $expected_session = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
+     
+     if ($csrf_token !== $expected_csrf || $session_token !== $expected_session) {
+         http_response_code(403);
+         echo json_encode([
+             'error' => 'Acceso denegado - Tokens de seguridad inválidos'
+         ]);
+         exit();
+     }
  }
 
  header('Content-Type: application/json; charset=UTF-8');
@@ -238,10 +262,13 @@ try {
         case 'profesionales':
             handleProfesionales($db, $method, $id, $data);
             break;
-        case 'reportes':
-            handleReportes($db, $method, $id, $data);
-            break;
-        default:
+                 case 'reportes':
+             handleReportes($db, $method, $id, $data);
+             break;
+         case 'tokens':
+             handleTokens($db, $method, $id, $data);
+             break;
+         default:
             http_response_code(404);
             echo json_encode([
                 'success' => false,
@@ -1231,34 +1258,73 @@ function handleProfesionales($db, $method, $id, $data) {
     }
 }
 
-function handleReportes($db, $method, $id, $data) {
-    try {
-        switch ($method) {
-            case 'GET':
-                $result = $db->select("CALL sp_reportes_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
-                break;
-            default:
-                http_response_code(405);
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'Método no permitido',
-                    'timestamp' => date('Y-m-d H:i:s'),
-                    'endpoint' => 'reportes',
-                    'method' => $method
-                ]);
-        }
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'error_code' => $e->getCode(),
-            'timestamp' => date('Y-m-d H:i:s'),
-            'endpoint' => 'reportes',
-            'method' => $method
-        ]);
-    }
-}
+ function handleReportes($db, $method, $id, $data) {
+     try {
+         switch ($method) {
+             case 'GET':
+                 $result = $db->select("CALL sp_reportes_list()");
+                 echo json_encode(['success' => true, 'data' => $result]);
+                 break;
+             default:
+                 http_response_code(405);
+                 echo json_encode([
+                     'success' => false,
+                     'error' => 'Método no permitido',
+                     'timestamp' => date('Y-m-d H:i:s'),
+                     'endpoint' => 'reportes',
+                     'method' => $method
+                 ]);
+         }
+     } catch (Exception $e) {
+         http_response_code(500);
+         echo json_encode([
+             'success' => false,
+             'error' => $e->getMessage(),
+             'error_code' => $e->getCode(),
+             'timestamp' => date('Y-m-d H:i:s'),
+             'endpoint' => 'reportes',
+             'method' => $method
+         ]);
+     }
+ }
+ 
+ function handleTokens($db, $method, $id, $data) {
+     try {
+         switch ($method) {
+             case 'GET':
+                 $allowed_host = parse_url(getenv('API_URL'), PHP_URL_HOST);
+                 $csrf_token = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+                 $session_token = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
+                 
+                 echo json_encode([
+                     'success' => true,
+                     'data' => [
+                         'csrf_token' => $csrf_token,
+                         'session_token' => $session_token
+                     ]
+                 ]);
+                 break;
+             default:
+                 http_response_code(405);
+                 echo json_encode([
+                     'success' => false,
+                     'error' => 'Método no permitido',
+                     'timestamp' => date('Y-m-d H:i:s'),
+                     'endpoint' => 'tokens',
+                     'method' => $method
+                 ]);
+         }
+     } catch (Exception $e) {
+         http_response_code(500);
+         echo json_encode([
+             'success' => false,
+             'error' => $e->getMessage(),
+             'error_code' => $e->getCode(),
+             'timestamp' => date('Y-m-d H:i:s'),
+             'endpoint' => 'tokens',
+             'method' => $method
+         ]);
+     }
+ }
 
 ?>

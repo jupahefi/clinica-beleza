@@ -310,10 +310,19 @@
                 this.setLoading(true);
                 
                 try {
+                    const tokensResponse = await fetch('/api.php/tokens');
+                    const tokensData = await tokensResponse.json();
+                    
+                    if (!tokensData.success) {
+                        throw new Error('Error obteniendo tokens de seguridad');
+                    }
+                    
                     const response = await fetch('/api.php/auth', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': tokensData.data.csrf_token,
+                            'X-Session-Token': tokensData.data.session_token
                         },
                         body: JSON.stringify({ username, password })
                     });
