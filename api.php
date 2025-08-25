@@ -22,9 +22,16 @@
  
  $allowed_origin = getenv('API_URL');
  
- // Fallback si no se puede leer la variable de entorno
+ // Si no se puede leer la variable de entorno, fallar de forma segura
  if (!$allowed_origin) {
-     $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
+     http_response_code(500);
+     echo json_encode([
+         'success' => false,
+         'error' => 'Error de configuración - API_URL no definida',
+         'security' => 'Configuration error - missing API_URL environment variable',
+         'timestamp' => date('Y-m-d H:i:s')
+     ]);
+     exit();
  }
  
  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -1345,9 +1352,20 @@ function handleProfesionales($db, $method, $id, $data) {
    function handleTokens($db, $method, $id, $data) {
       try {
           switch ($method) {
-              case 'GET':
-                  $allowed_host = parse_url(getenv('API_URL'), PHP_URL_HOST);
-                  $csrf_token = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+                             case 'GET':
+                   $api_url = getenv('API_URL');
+                   if (!$api_url) {
+                       http_response_code(500);
+                       echo json_encode([
+                           'success' => false,
+                           'error' => 'Error de configuración - API_URL no definida',
+                           'security' => 'Configuration error - missing API_URL environment variable',
+                           'timestamp' => date('Y-m-d H:i:s')
+                       ]);
+                       return;
+                   }
+                   $allowed_host = parse_url($api_url, PHP_URL_HOST);
+                   $csrf_token = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
                   
                   echo json_encode([
                       'success' => true,
