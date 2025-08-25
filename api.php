@@ -8,8 +8,21 @@
 
  $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+ $referer = $_SERVER['HTTP_REFERER'] ?? '';
  
- if ($origin !== $allowed_origin) {
+ if (empty($origin) && empty($referer)) {
+     http_response_code(403);
+     echo json_encode(['error' => 'Acceso denegado']);
+     exit();
+ }
+ 
+ if (!empty($origin) && $origin !== $allowed_origin) {
+     http_response_code(403);
+     echo json_encode(['error' => 'Acceso denegado']);
+     exit();
+ }
+ 
+ if (!empty($referer) && strpos($referer, $allowed_origin) === false) {
      http_response_code(403);
      echo json_encode(['error' => 'Acceso denegado']);
      exit();
