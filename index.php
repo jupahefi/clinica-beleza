@@ -21,10 +21,10 @@ $user_data = getCurrentUserData();
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://clinicabeleza.cl/">
+    <meta property="og:url" content="https://clinica-beleza.equalitech.xyz/">
     <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
     <meta property="og:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
-    <meta property="og:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    <meta property="og:image" content="https://clinica-beleza.equalitech.xyz/android-chrome-512x512.png">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta property="og:site_name" content="Clínica Beleza">
@@ -32,10 +32,10 @@ $user_data = getCurrentUserData();
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://clinicabeleza.cl/">
+    <meta property="twitter:url" content="https://clinica-beleza.equalitech.xyz/">
     <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
     <meta property="twitter:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
-    <meta property="twitter:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    <meta property="twitter:image" content="https://clinica-beleza.equalitech.xyz/android-chrome-512x512.png">
     
     <!-- WhatsApp -->
     <meta property="og:image:type" content="image/png">
