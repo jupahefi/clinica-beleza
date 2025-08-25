@@ -776,30 +776,95 @@ class Calendar {
     }
     
     getEventsForDate(date) {
-        if (!this.events || !Array.isArray(this.events)) return [];
-        return this.events.filter(event => this.isSameDay(new Date(event.fecha_planificada), date));
+        console.log('🔍 getEventsForDate - date:', date);
+        console.log('🔍 getEventsForDate - this.events:', this.events);
+        
+        if (!this.events || !Array.isArray(this.events)) {
+            console.log('🔍 getEventsForDate - no hay eventos');
+            return [];
+        }
+        
+        const filteredEvents = this.events.filter(event => {
+            const eventDate = new Date(event.fecha_planificada);
+            const isSameDay = this.isSameDay(eventDate, date);
+            
+            console.log('🔍 Evento en getEventsForDate:', {
+                id: event.id,
+                fecha_planificada: event.fecha_planificada,
+                eventDate: eventDate,
+                targetDate: date,
+                isSameDay: isSameDay
+            });
+            
+            return isSameDay;
+        });
+        
+        console.log('🔍 getEventsForDate - eventos filtrados:', filteredEvents.length);
+        return filteredEvents;
     }
     
     getEventsForWeek(start) {
-        if (!this.events || !Array.isArray(this.events)) return [];
+        console.log('🔍 getEventsForWeek - start:', start);
+        console.log('🔍 getEventsForWeek - this.events:', this.events);
+        
+        if (!this.events || !Array.isArray(this.events)) {
+            console.log('🔍 getEventsForWeek - no hay eventos');
+            return [];
+        }
+        
         const end = new Date(start);
         end.setDate(end.getDate() + 7);
         
-        return this.events.filter(event => {
+        const filteredEvents = this.events.filter(event => {
             const eventDate = new Date(event.fecha_planificada);
-            return eventDate >= start && eventDate < end;
+            const isInRange = eventDate >= start && eventDate < end;
+            
+            console.log('🔍 Evento:', {
+                id: event.id,
+                fecha_planificada: event.fecha_planificada,
+                eventDate: eventDate,
+                start: start,
+                end: end,
+                isInRange: isInRange
+            });
+            
+            return isInRange;
         });
+        
+        console.log('🔍 getEventsForWeek - eventos filtrados:', filteredEvents.length);
+        return filteredEvents;
     }
     
     getEventsForMonth(date) {
-        if (!this.events || !Array.isArray(this.events)) return [];
+        console.log('🔍 getEventsForMonth - date:', date);
+        console.log('🔍 getEventsForMonth - this.events:', this.events);
+        
+        if (!this.events || !Array.isArray(this.events)) {
+            console.log('🔍 getEventsForMonth - no hay eventos');
+            return [];
+        }
+        
         const start = new Date(date.getFullYear(), date.getMonth(), 1);
         const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         
-        return this.events.filter(event => {
+        const filteredEvents = this.events.filter(event => {
             const eventDate = new Date(event.fecha_planificada);
-            return eventDate >= start && eventDate <= end;
+            const isInRange = eventDate >= start && eventDate <= end;
+            
+            console.log('🔍 Evento en getEventsForMonth:', {
+                id: event.id,
+                fecha_planificada: event.fecha_planificada,
+                eventDate: eventDate,
+                start: start,
+                end: end,
+                isInRange: isInRange
+            });
+            
+            return isInRange;
         });
+        
+        console.log('🔍 getEventsForMonth - eventos filtrados:', filteredEvents.length);
+        return filteredEvents;
     }
     
     isSameDay(date1, date2) {
