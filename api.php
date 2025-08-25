@@ -17,7 +17,15 @@
      $origin_host = parse_url($origin, PHP_URL_HOST);
      if ($origin_host !== $allowed_host) {
          http_response_code(403);
-         echo json_encode(['error' => 'Acceso denegado - Origin']);
+         echo json_encode([
+             'error' => 'Acceso denegado - Origin',
+             'debug' => [
+                 'origin' => $origin,
+                 'origin_host' => $origin_host,
+                 'allowed_origin' => $allowed_origin,
+                 'allowed_host' => $allowed_host
+             ]
+         ]);
          exit();
      }
  }
