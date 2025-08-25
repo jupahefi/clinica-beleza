@@ -200,7 +200,7 @@ class Database {
      */
     public function healthCheck() {
         try {
-            $result = $this->selectOne("SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ?", [$this->config['dbname']]);
+            $result = $this->selectOne("CALL sp_db_health_check(?)", [$this->config['dbname']]);
             return [
                 'status' => 'ok',
                 'tables' => $result['count'],
@@ -278,7 +278,7 @@ class Database {
             
             foreach ($tables as $table) {
                 try {
-                    $result = $this->selectOne("SELECT COUNT(*) as count FROM $table");
+                    $result = $this->selectOne("CALL sp_get_table_stats(?)", [$table]);
                     $stats[$table] = $result['count'];
                 } catch (Exception $e) {
                     $stats[$table] = 0; // Tabla no existe aún

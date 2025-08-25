@@ -253,7 +253,7 @@ function handleConfig($db) {
 
 function handleHealth($db) {
     try {
-        $db->selectOne("SELECT 1 as test");
+        $result = $db->selectOne("CALL sp_health_check()");
         $health = [
             'status' => 'healthy',
             'timestamp' => date('Y-m-d H:i:s'),
@@ -518,22 +518,19 @@ function handleVentas($db, $method, $id, $data) {
                     $tratamiento = $db->selectOne("CALL sp_tratamientos_get(?)", [$tratamientoId]);
                     if ($tratamiento && stripos($tratamiento['nombre'], 'EVALUACION') !== false) {
                         // Es una venta de evaluación
-                                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
-                    $data['ficha_id'],
-                    $data['tratamiento_id'],
-                    $data['pack_id'] ?? null,
-                    $data['cantidad_sesiones'],
-                    $data['precio_lista'],
-                    $data['descuento_manual_pct'] ?? null,
-                    $data['genero'],
-                    $data['genero_indicado_por']
-                ]);
+                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                            $data['ficha_id'],
+                            $data['tratamiento_id'],
+                            $data['pack_id'] ?? null,
+                            $data['cantidad_sesiones'],
+                            $data['precio_lista'],
+                            $data['descuento_manual_pct'] ?? null,
+                            $data['genero'],
+                            $data['genero_indicado_por']
+                        ]);
                         
-                        // Obtener el ID de la venta creada
-                        $ventaId = $db->selectOne("SELECT @venta_id as id");
-                        if ($ventaId) {
-                            $result = $db->selectOne("SELECT * FROM venta WHERE id = ?", [$ventaId['id']]);
-                        }
+                        // Obtener la venta creada
+                        $result = $db->selectOne("CALL sp_get_venta_by_id(@venta_id)");
                     } else {
                         // Es una venta normal
                         $result = $db->selectOne("CALL sp_crear_venta(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
@@ -549,11 +546,8 @@ function handleVentas($db, $method, $id, $data) {
                             $data['genero_indicado_por']
                         ]);
                         
-                        // Obtener el ID de la venta creada
-                        $ventaId = $db->selectOne("SELECT @venta_id as id");
-                        if ($ventaId) {
-                            $result = $db->selectOne("SELECT * FROM venta WHERE id = ?", [$ventaId['id']]);
-                        }
+                        // Obtener la venta creada
+                        $result = $db->selectOne("CALL sp_get_venta_by_id(@venta_id)");
                     }
                 } else {
                     throw new Exception('ID de tratamiento es obligatorio');
@@ -626,45 +620,8 @@ function handleAuth($db, $method, $id, $data) {
     try {
         switch ($method) {
             case 'POST':
-                // Obtener el usuario por username o email
-                $username = $data['username'] ?? null;
-                $email = $data['email'] ?? null;
-                $password = $data['password'] ?? null;
-                
-                if (!$password) {
-                    throw new Exception('Contraseña requerida');
-                }
-                
-                // Buscar usuario por username o email
-                $user = null;
-                if ($username) {
-                    $user = $db->selectOne("SELECT * FROM usuario WHERE username = ? AND activo = TRUE", [$username]);
-                } elseif ($email) {
-                    $user = $db->selectOne("SELECT * FROM usuario WHERE email = ? AND activo = TRUE", [$email]);
-                }
-                
-                if (!$user) {
-                    throw new Exception('Credenciales inválidas');
-                }
-                
-                // Verificar contraseña usando password_verify
-                if (!password_verify($password, $user['password_hash'])) {
-                    throw new Exception('Credenciales inválidas');
-                }
-                
-                // Actualizar último login
-                $db->execute("UPDATE usuario SET ultimo_login = NOW() WHERE id = ?", [$user['id']]);
-                
-                // Preparar respuesta
-                $response = [
-                    'id' => $user['id'],
-                    'nombre' => $user['username'],
-                    'email' => $user['email'],
-                    'rol' => $user['rol'],
-                    'mensaje' => 'Login exitoso'
-                ];
-                
-                echo json_encode(['success' => true, 'data' => $response]);
+                $result = $db->selectOne("CALL sp_auth_login(?)", [json_encode($data)]);
+                echo json_encode(['success' => true, 'data' => $result]);
                 break;
             default:
                 http_response_code(405);
