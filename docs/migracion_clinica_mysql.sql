@@ -3632,22 +3632,22 @@ END$$
 CREATE PROCEDURE sp_auth_login(IN p_data JSON)
 BEGIN
     DECLARE v_usuario_id INT;
-    DECLARE v_nombre VARCHAR(255);
+    DECLARE v_username VARCHAR(255);
     DECLARE v_email VARCHAR(255);
     DECLARE v_rol VARCHAR(50);
     
-    SELECT id, nombre, email, rol 
-    INTO v_usuario_id, v_nombre, v_email, v_rol
+    SELECT id, username, email, rol 
+    INTO v_usuario_id, v_username, v_email, v_rol
     FROM usuario 
     WHERE email = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email'))
-    AND password = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.password'))
+    AND password_hash = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.password'))
     AND activo = TRUE;
     
     IF v_usuario_id IS NOT NULL THEN
         CALL sp_actualizar_ultimo_login(v_usuario_id);
         SELECT 
             v_usuario_id as id,
-            v_nombre as nombre,
+            v_username as nombre,
             v_email as email,
             v_rol as rol,
             'Login exitoso' as mensaje;
