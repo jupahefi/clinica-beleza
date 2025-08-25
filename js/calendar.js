@@ -292,15 +292,32 @@ class Calendar {
     }
     
     calculateEventPosition(event) {
+        console.log('🔍 calculateEventPosition - event:', event);
+        console.log('🔍 calculateEventPosition - fecha_planificada:', event.fecha_planificada);
+        
         const startTime = new Date(event.fecha_planificada);
+        console.log('🔍 calculateEventPosition - startTime:', startTime);
+        
         const minutes = startTime.getHours() * 60 + startTime.getMinutes();
-        return (minutes - 8 * 60) * (60 / 30); // 60px por hora, 30 minutos por slot
+        console.log('🔍 calculateEventPosition - minutes:', minutes);
+        
+        const position = (minutes - 8 * 60) * (60 / 30); // 60px por hora, 30 minutos por slot
+        console.log('🔍 calculateEventPosition - position:', position);
+        
+        return position;
     }
     
     calculateEventHeight(event) {
-        const startTime = new Date(event.fecha_planificada);
+        console.log('🔍 calculateEventHeight - event:', event);
+        console.log('🔍 calculateEventHeight - duracion_sesion_min:', event.duracion_sesion_min);
+        
         const duracion = event.duracion_sesion_min || 30; // duración en minutos
-        return duracion * (60 / 30); // 60px por hora, 30 minutos por slot
+        console.log('🔍 calculateEventHeight - duracion:', duracion);
+        
+        const height = duracion * (60 / 30); // 60px por hora, 30 minutos por slot
+        console.log('🔍 calculateEventHeight - height:', height);
+        
+        return height;
     }
     
     updateTitle() {
