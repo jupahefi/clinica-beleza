@@ -63,28 +63,22 @@ class ClinicaBelezaApp {
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('userData');
         
-        console.log('🔍 Verificando autenticación...');
-        console.log('Token:', token ? 'Presente' : 'Ausente');
-        console.log('UserData:', userData);
+
         
         if (!token || !userData) {
-            console.log('❌ No hay token o userData');
             return false;
         }
         
         try {
             const user = JSON.parse(userData);
-            console.log('👤 Usuario parseado:', user);
             
             // Verificar que el usuario tenga un rol válido
             if (!user.rol) {
-                console.log('❌ Usuario sin rol válido');
                 return false;
             }
             
             // Verificar que el usuario esté activo (si el campo existe)
             if (user.hasOwnProperty('activo') && !user.activo) {
-                console.log('❌ Usuario inactivo');
                 return false;
             }
             
@@ -92,37 +86,29 @@ class ClinicaBelezaApp {
             this.currentUser = user;
             // No necesitamos profesionalData por ahora, ya que no lo estamos guardando
             
-            console.log('✅ Autenticación exitosa');
             return true;
         } catch (error) {
-            console.error('❌ Error verificando autenticación:', error);
             return false;
         }
     }
 
     async setupNavigation() {
-        console.log('🧭 Configurando navegación...');
         const navLinks = document.querySelectorAll('.nav-menu .nav-link');
-        console.log('🔗 Enlaces encontrados:', navLinks.length);
         navLinks.forEach(link => {
             link.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const view = link.dataset.view;
-                console.log('🖱️ Clic en enlace de navegación:', view);
                 await this.switchView(view);
                 
                 // Actualizar la URL sin recargar la página
                 history.pushState({ view }, '', `#${view}`);
-                console.log('📍 URL actualizada:', window.location.hash);
             });
         });
         
         // Configurar pestañas de Mantenedores para que no interfieran con la navegación
         const mantenedoresTabs = document.querySelectorAll('#mantenedoresTabs .nav-link');
-        console.log('🔧 Configurando pestañas de mantenedores:', mantenedoresTabs.length);
         mantenedoresTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
-                console.log('🖱️ Clic en pestaña de mantenedor:', tab.id);
                 // Prevenir que el clic se propague al sistema de navegación
                 e.preventDefault();
                 e.stopPropagation();
@@ -196,25 +182,17 @@ class ClinicaBelezaApp {
     }
     
     async switchView(viewName) {
-        console.log(`🔄 Cambiando a vista: ${viewName}`);
-        
         // Ocultar todas las vistas
         const views = document.querySelectorAll('.view-section');
-        console.log('📋 Vistas encontradas:', views.length);
         views.forEach(view => {
             view.classList.remove('active');
-            console.log('👁️ Vista oculta:', view.id);
         });
         
         // Mostrar vista seleccionada
         const targetView = document.getElementById(viewName);
-        console.log('🎯 Vista objetivo:', targetView);
         if (targetView) {
             targetView.classList.add('active');
             this.currentView = viewName;
-            console.log(`✅ Vista ${viewName} activada`);
-        } else {
-            console.error(`❌ Vista ${viewName} no encontrada`);
         }
         
         // Actualizar navegación
@@ -231,42 +209,32 @@ class ClinicaBelezaApp {
     }
     
     async loadViewData(viewName) {
-        console.log(`📊 Cargando datos para vista: ${viewName}`);
         switch (viewName) {
             case 'fichas':
-                console.log('📋 Cargando datos de fichas...');
                 this.modules.pacientes.cargarPacientes();
                 break;
             case 'ventas':
-                console.log('💰 Cargando datos de ventas...');
                 this.modules.ventas.loadVentas();
                 this.modules.ventas.loadPacientes();
                 break;
             case 'pagos':
-                console.log('💳 Cargando datos de pagos...');
                 this.modules.pagos.loadPagosConFeedback && this.modules.pagos.loadPagosConFeedback();
                 this.modules.pagos.loadPacientes && this.modules.pagos.loadPacientes();
                 break;
             case 'sesiones':
-                console.log('📅 Cargando datos de sesiones...');
                 this.modules.sesiones.loadSesiones();
                 this.modules.sesiones.loadPacientes();
                 break;
 
             case 'ofertas':
-                console.log('🎯 Cargando datos de ofertas...');
                 this.modules.ofertas.init();
                 break;
             case 'mantenedores':
-                console.log('🔧 Cargando datos de mantenedores...');
                 if (this.modules.mantenedores && this.modules.mantenedores.init) {
                     await this.modules.mantenedores.init();
-                } else {
-                    console.error('❌ Módulo de mantenedores no disponible');
                 }
                 break;
             case 'reportes':
-                console.log('📊 Cargando datos de reportes...');
                 this.modules.reportes.cargarReportesDisponibles();
                 break;
         }
@@ -401,7 +369,6 @@ class ClinicaBelezaApp {
     
     async loadInitialData() {
         try {
-            console.log('🔄 Cargando datos iniciales...');
             
             // Cargar datos básicos de forma individual para manejar errores
             const loadPromises = [
@@ -444,10 +411,7 @@ class ClinicaBelezaApp {
             ];
             
             await Promise.allSettled(loadPromises);
-            
-            console.log('✅ Datos iniciales cargados (con errores manejados)');
         } catch (error) {
-            console.error('❌ Error crítico cargando datos iniciales:', error);
             showMessage('Error cargando datos iniciales', 'error');
         }
     }
@@ -494,20 +458,7 @@ class ClinicaBelezaApp {
     }
     
     showWelcomeMessage() {
-        const now = new Date();
-        const hour = now.getHours();
-        let greeting = '';
-        
-        if (hour < 12) {
-            greeting = 'Buenos días';
-        } else if (hour < 18) {
-            greeting = 'Buenas tardes';
-        } else {
-            greeting = 'Buenas noches';
-        }
-        
-        console.log(`🏥 ${greeting}! Bienvenido al Sistema de Gestión de Clínica Beleza`);
-        console.log('📊 Sistema cargado y listo para usar');
+        // Mensaje de bienvenida silencioso
     }
     
     // Métodos de utilidad global
@@ -521,32 +472,7 @@ class ClinicaBelezaApp {
     
     // Método para mostrar estadísticas rápidas
     async showQuickStats() {
-        try {
-            // Obtener datos actualizados de cada módulo
-            const pacientes = this.modules.pacientes.pacientes || [];
-            const ventas = this.modules.ventas?.ventas || [];
-            const pagos = this.modules.pagos?.pagos || [];
-            const sesiones = this.modules.sesiones?.sesiones || [];
-            
-            const stats = {
-                pacientes: pacientes.length,
-                ventas: ventas.length,
-                pagos: pagos.length,
-                sesiones: sesiones.length
-            };
-            
-            const statsMessage = `
-                📊 Estadísticas Rápidas:
-                • Pacientes: ${stats.pacientes}
-                • Ventas: ${stats.ventas}
-                • Pagos: ${stats.pagos}
-                • Sesiones: ${stats.sesiones}
-            `;
-            
-            console.log(statsMessage);
-        } catch (error) {
-            console.error('Error obteniendo estadísticas:', error);
-        }
+        // Estadísticas silenciosas
     }
     
     // Método para exportar datos
@@ -599,13 +525,10 @@ class ClinicaBelezaApp {
 
 // Inicializar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM cargado, inicializando aplicación...');
     window.clinicaApp = new ClinicaBelezaApp();
     
     // Hacer disponible globalmente para debugging
     window.app = window.clinicaApp;
-    
-    console.log('✅ Aplicación inicializada:', window.clinicaApp);
     
     // Mostrar estadísticas iniciales después de 2 segundos
     setTimeout(() => {

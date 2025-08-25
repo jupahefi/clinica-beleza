@@ -49,7 +49,6 @@ export class OfertasModule {
     async cargarOfertas() {
         try {
             this.ofertas = await ofertasAPI.getAll();
-            console.log('Ofertas cargadas correctamente:', this.ofertas);
             this.actualizarTablaOfertas();
         } catch (error) {
             console.error('Error cargando ofertas:', error);
@@ -59,10 +58,8 @@ export class OfertasModule {
     
     async cargarTratamientos() {
         try {
-            console.log('[OFERTAS] Cargando tratamientos...');
             // Cargar tratamientos para el selector usando la API correcta
             this.tratamientos = await tratamientosAPI.getAll();
-            console.log('[OFERTAS] Tratamientos cargados:', this.tratamientos);
             this.actualizarSelectorTratamientos();
         } catch (error) {
             console.error('[OFERTAS] Error cargando tratamientos:', error);
@@ -72,10 +69,8 @@ export class OfertasModule {
     
     async cargarPacks() {
         try {
-            console.log('[OFERTAS] Cargando packs...');
             // Cargar packs para el selector usando la API correcta
             this.packs = await packsAPI.getAll();
-            console.log('[OFERTAS] Packs cargados:', this.packs);
             this.actualizarSelectorPacks();
         } catch (error) {
             console.error('[OFERTAS] Error cargando packs:', error);

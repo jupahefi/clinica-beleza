@@ -51,14 +51,6 @@ export class MantenedoresModule {
             // Cargar selects dependientes
             await this.cargarSelectsDependientes();
             
-            console.log('📊 Datos de mantenedores cargados:', {
-                boxes: this.boxes.length,
-                sucursales: this.sucursales.length,
-                tratamientos: this.tratamientos.length,
-                packs: this.packs.length,
-                profesionales: this.profesionales.length
-            });
-            
 
         } catch (error) {
             console.error('Error cargando datos de mantenedores:', error);

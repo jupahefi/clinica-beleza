@@ -18,26 +18,16 @@ export class SesionesModule {
     }
     
     async init() {
-        console.log('🚀 Inicializando módulo de sesiones...');
         try {
             await this.cargarZonas();
-            console.log('✅ Zonas cargadas:', this.zonas.length);
             this.setupEventListeners();
-            console.log('✅ Event listeners configurados');
             this.initCalendar();
-            console.log('✅ Calendario inicializado');
             await this.loadSesiones();
-            console.log('✅ Sesiones cargadas:', this.sesiones.length);
             await this.cargarPacientesSelect();
-            console.log('✅ Select de pacientes cargado');
             await this.cargarVentasSelect();
-            console.log('✅ Select de ventas cargado');
             await this.cargarBoxesSelect();
-            console.log('✅ Select de boxes cargado');
             await this.cargarProfesionalesSelect();
-            console.log('✅ Select de profesionales cargado');
         } catch (error) {
-            console.error('❌ Error inicializando módulo de sesiones:', error);
             const errorMessage = error.message || 'Error desconocido inicializando módulo de sesiones';
             mostrarNotificacion(`Error inicializando módulo de sesiones: ${errorMessage}`, 'error');
         }
@@ -48,9 +38,7 @@ export class SesionesModule {
             // Importar zonasAPI dinámicamente
             const { zonasAPI } = await import('../api-client.js');
             this.zonas = await zonasAPI.getAll();
-            console.log('✅ Zonas cargadas:', this.zonas.length);
         } catch (error) {
-            console.error('❌ Error cargando zonas:', error);
             const errorMessage = error.message || 'Error desconocido cargando zonas';
             mostrarNotificacion(`Error cargando zonas: ${errorMessage}`, 'error');
             this.zonas = [];
@@ -58,15 +46,12 @@ export class SesionesModule {
     }
     
     initCalendar() {
-        console.log('🔍 Inicializando calendario...');
-        
         // Intentar inicializar inmediatamente
         this.tryInitCalendar();
         
         // Si no funciona, intentar después de un pequeño delay
         setTimeout(() => {
             if (!this.calendar) {
-                console.log('🔄 Reintentando inicialización del calendario...');
                 this.tryInitCalendar();
             }
         }, 100);
@@ -75,7 +60,6 @@ export class SesionesModule {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 if (!this.calendar) {
-                    console.log('🔄 Inicializando calendario después de DOMContentLoaded...');
                     this.tryInitCalendar();
                 }
             });
@@ -84,11 +68,8 @@ export class SesionesModule {
     
     tryInitCalendar() {
         const calendarContainer = document.getElementById('calendar-wrapper');
-        console.log('📦 Contenedor encontrado:', calendarContainer);
-        console.log('📅 Calendar disponible:', typeof Calendar !== 'undefined');
         
         if (calendarContainer && typeof Calendar !== 'undefined') {
-            console.log('✅ Inicializando calendario...');
             
             // Generar eventos iniciales usando la misma lógica que updateCalendarEvents
             const events = this.sesiones.map(sesion => {
@@ -1833,10 +1814,7 @@ export class SesionesModule {
                 
                 // Configurar eventos para select nativo
                 this.configurarEventosPaciente();
-                console.log('✅ Select nativo configurado para pacientes');
             }
-            
-            console.log('✅ Select de pacientes cargado exitosamente');
         } catch (error) {
             console.error('❌ Error cargando pacientes:', error);
             const errorMessage = error.message || 'Error desconocido cargando pacientes';
@@ -1846,17 +1824,13 @@ export class SesionesModule {
     
     async cargarVentasSelect() {
         try {
-            console.log('💰 Inicializando select de ventas...');
             const select = document.getElementById('ventaSesion');
             if (!select) {
-                console.error('❌ No se encontró el select de ventas');
                 return;
             }
             
             // Inicializar select vacío - se cargará cuando se seleccione un paciente
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
-            
-            console.log('✅ Select de ventas inicializado exitosamente');
         } catch (error) {
             console.error('❌ Error inicializando select de ventas:', error);
             const errorMessage = error.message || 'Error desconocido inicializando select de ventas';
@@ -1866,18 +1840,14 @@ export class SesionesModule {
     
     async cargarBoxesSelect() {
         try {
-            console.log('📦 Cargando select de boxes...');
             const select = document.getElementById('boxSesion');
             if (!select) {
-                console.error('❌ No se encontró el select de boxes');
                 return;
             }
             
             // Importar boxesAPI dinámicamente
             const { boxesAPI } = await import('../api-client.js');
             const boxes = await boxesAPI.getAll();
-            
-            console.log('📦 Boxes obtenidos:', boxes.length);
             
             select.innerHTML = '<option value="">Seleccionar box...</option>';
             
@@ -1889,8 +1859,6 @@ export class SesionesModule {
                 option.setAttribute('data-sucursal-id', box.sucursal_id);
                 select.appendChild(option);
             });
-            
-            console.log('✅ Select de boxes cargado exitosamente:', boxes.length);
         } catch (error) {
             console.error('❌ Error cargando boxes:', error);
             const errorMessage = error.message || 'Error desconocido cargando boxes';
@@ -1900,18 +1868,14 @@ export class SesionesModule {
     
     async cargarProfesionalesSelect() {
         try {
-            console.log('👨‍⚕️ Cargando select de profesionales...');
             const select = document.getElementById('profesionalSesion');
             if (!select) {
-                console.error('❌ No se encontró el select de profesionales');
                 return;
             }
             
             // Importar profesionalesAPI dinámicamente
             const { profesionalesAPI } = await import('../api-client.js');
             const profesionales = await profesionalesAPI.getAll();
-            
-            console.log('👨‍⚕️ Profesionales obtenidos:', profesionales.length);
             
             select.innerHTML = '<option value="">Seleccionar profesional...</option>';
             
@@ -1940,8 +1904,6 @@ export class SesionesModule {
                 containerCssClass: 'select2-container--accessible',
                 dropdownCssClass: 'select2-dropdown--accessible'
             });
-            
-            console.log('✅ Select de profesionales cargado exitosamente:', profesionales.length);
         } catch (error) {
             console.error('❌ Error cargando profesionales:', error);
             const errorMessage = error.message || 'Error desconocido cargando profesionales';

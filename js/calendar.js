@@ -436,7 +436,6 @@ class Calendar {
             
             if (data.success) {
                 this.events = data.data || [];
-                        console.log(`✅ Eventos cargados correctamente (${this.events.length} eventos)`);
                 this.renderCalendar();
             } else {
                 this.events = [];
@@ -452,14 +451,11 @@ class Calendar {
     
     async loadBoxes() {
         try {
-            console.log('🔄 Cargando boxes...');
             const response = await fetch('/api.php/boxes');
             const data = await response.json();
             
             if (data.success) {
                 this.boxes = data.data || [];
-                console.log(`✅ Boxes cargados correctamente (${this.boxes.length} boxes)`);
-                mostrarNotificacion('Boxes cargados correctamente', 'success');
                 this.updateBoxFilter();
             } else {
                 this.boxes = [];
@@ -490,8 +486,6 @@ class Calendar {
     }
     
     handleSlotClick(date, time, datetime) {
-        console.log('🎯 Slot clickeado en calendario:', { date, time, datetime });
-        
         // Prevenir cualquier comportamiento por defecto
         event.preventDefault();
         event.stopPropagation();
@@ -501,8 +495,6 @@ class Calendar {
         
         // Hacer scroll a la sección de inputs
         this.scrollToSessionForm();
-        
-        console.log('✅ Proceso de slot completado');
     }
     
     fillSessionForm(date, time, datetime) {
@@ -518,8 +510,6 @@ class Calendar {
             // Convertir formato de hora (ej: "14:00" a "14:00")
             horaInput.value = time;
         }
-        
-        console.log('✅ Formulario llenado con fecha:', date, 'hora:', time);
     }
     
     scrollToSessionForm() {

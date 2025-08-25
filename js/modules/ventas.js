@@ -29,28 +29,17 @@ class VentasModule {
         try {
             // Cargar tratamientos con precios por sesión (con género universal por defecto)
             this.tratamientos = await tratamientosAPI.getAll('U');
-            console.log('[VENTAS] Tratamientos cargados (universal):', this.tratamientos);
             
             // Los packs se cargarán cuando se seleccione el género específico
-            console.log('[VENTAS] Packs se cargarán cuando se seleccione género específico');
             
             // Cargar ofertas aplicables
             try {
                 const ofertasResponse = await fetch('/api.php/ofertas-aplicables');
                 const ofertasData = await ofertasResponse.json();
                 this.ofertas = ofertasData.data || [];
-                console.log('[VENTAS] Ofertas aplicables cargadas:', this.ofertas);
-                
-                // Verificar fechas de vigencia de ofertas
-                this.ofertas.forEach(oferta => {
-                    console.log(`[VENTAS] Oferta: ${oferta.nombre}, Vigente: ${oferta.aplicable_hoy}, Fecha inicio: ${oferta.fecha_inicio}, Fecha fin: ${oferta.fecha_fin}`);
-                });
             } catch (ofertasError) {
-                console.warn('[VENTAS] Error cargando ofertas aplicables:', ofertasError);
                 this.ofertas = [];
             }
-            
-            console.log(`[VENTAS] Datos cargados: ${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas.`);
     
         } catch (error) {
             console.error('[VENTAS] Error cargando datos:', error);
@@ -102,10 +91,7 @@ class VentasModule {
         });
 
         $('#cliente').on('select2:select', (e) => {
-            console.log('[VENTAS] Evento select2:select disparado', e.params);
             this.clienteSeleccionado = e.params.data;
-            console.log(`[VENTAS] Cliente seleccionado:`, this.clienteSeleccionado);
-            console.log(`[VENTAS] Cliente seleccionado: ${this.clienteSeleccionado?.text || 'NO TEXT'}`);
             mostrarNotificacion(`Cliente seleccionado: ${this.clienteSeleccionado?.text || 'Cliente'}`, 'info');
             this.cargarHistorialCliente();
         });
@@ -119,7 +105,6 @@ class VentasModule {
         if (radioGeneroM) {
             radioGeneroM.addEventListener('change', () => {
                 this.generoSeleccionado = 'M';
-                console.log('[VENTAS] Género seleccionado: Masculino');
                 this.cargarTratamientosPorGenero();
                 this.cargarPacksPorGenero();
                 this.mostrarOpciones();
@@ -130,7 +115,6 @@ class VentasModule {
         if (radioGeneroF) {
             radioGeneroF.addEventListener('change', () => {
                 this.generoSeleccionado = 'F';
-                console.log('[VENTAS] Género seleccionado: Femenino');
                 this.cargarTratamientosPorGenero();
                 this.cargarPacksPorGenero();
                 this.mostrarOpciones();
@@ -141,34 +125,30 @@ class VentasModule {
         const selectTratamiento = document.getElementById('tratamiento');
         if (selectTratamiento) {
             selectTratamiento.addEventListener('change', async () => {
-                console.log('[VENTAS] Cambio de tratamiento seleccionado');
                 await this.cargarPacksDelTratamientoSeleccionado();
                 this.mostrarOpciones();
                 this.calcularPrecio();
             });
         }
-
+        
         const selectPack = document.getElementById('pack');
         if (selectPack) {
             selectPack.addEventListener('change', () => {
-                console.log('[VENTAS] Cambio de pack seleccionado');
                 this.ajustarSesionesSegunPack();
                 this.calcularPrecio();
             });
         }
-
+        
         const inputSesiones = document.getElementById('cantidadSesiones');
         if (inputSesiones) {
             inputSesiones.addEventListener('input', () => {
-                console.log('[VENTAS] Cambio en cantidad de sesiones');
                 this.calcularPrecio();
             });
         }
-
+        
         const inputOferta = document.getElementById('ofertaVenta');
         if (inputOferta) {
             inputOferta.addEventListener('input', () => {
-                console.log('[VENTAS] Cambio en oferta/porcentaje descuento');
                 this.calcularPrecio();
             });
         }

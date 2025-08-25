@@ -19,7 +19,6 @@ export class PagosModule {
             this.cargarMetodosPago();
             this.configurarEventosPagos();
             await this.renderHistorialPagos();
-            console.log('✅ PagosModule inicializado correctamente');
         } catch (error) {
             console.error('❌ Error inicializando PagosModule:', error);
             mostrarNotificacion(`Error inicializando módulo de pagos: ${error.message || error}`, 'error');
@@ -90,7 +89,6 @@ export class PagosModule {
             option.textContent = metodo.label;
             select.appendChild(option);
         });
-        console.log('✅ Métodos de pago cargados en el select');
     }
     
     async seleccionarVentaPago() {
@@ -100,7 +98,6 @@ export class PagosModule {
         if (!ventaId) {
             this.ventaSeleccionadaPago = null;
             this.limpiarFormularioPago();
-            console.log('ℹ️ Selección de venta limpiada');
             return;
         }
         
@@ -416,7 +413,7 @@ export class PagosModule {
                 });
             }
             
-            console.log('✅ Select de pacientes cargado en pagos');
+
         } catch (error) {
             console.error('❌ Error cargando pacientes en pagos:', error);
             mostrarNotificacion(error.message || 'Error cargando pacientes en pagos', 'error');
