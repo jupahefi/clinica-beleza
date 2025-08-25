@@ -223,44 +223,17 @@ export class SesionesModule {
             return;
         }
         
-        console.log('🔧 Configurando eventos para select de ventas...');
-        console.log('🔍 Select de ventas encontrado:', ventaSelect);
-        console.log('🔍 jQuery disponible:', typeof $ !== 'undefined');
-        console.log('🔍 Select2 disponible:', typeof $ !== 'undefined' && $.fn.select2);
+        // El select de ventas es NATIVO, no Select2
+        console.log('🔧 Configurando eventos NATIVOS para select de ventas...');
         
-        // Para Select2, usar el evento de jQuery
-        if (typeof $ !== 'undefined' && $.fn.select2) {
-            console.log('🔧 Usando eventos Select2 para ventas');
-            
-            // Remover eventos anteriores si existen
-            $(ventaSelect).off('select2:select select2:clear');
-            
-            $(ventaSelect).on('select2:select', (e) => {
-                console.log('🔍 Venta seleccionada (Select2):', e.params.data);
-                this.handleVentaChange(e.params.data.id);
-            });
-            
-            $(ventaSelect).on('select2:clear', () => {
-                console.log('🔍 Venta deseleccionada (Select2)');
-                this.handleVentaChange(null);
-            });
-            
-            console.log('✅ Eventos Select2 para ventas configurados');
-        } else {
-            console.log('🔧 Usando eventos nativos para ventas');
-            // Fallback para select normal
-            ventaSelect.removeEventListener('change', this.handleVentaChangeNative);
-            ventaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
-            console.log('✅ Eventos nativos para ventas configurados');
-            console.log('🔍 Event listener agregado al select de ventas');
-        }
+        // Remover eventos anteriores si existen
+        ventaSelect.removeEventListener('change', this.handleVentaChangeNative);
+        ventaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
+        console.log('✅ Eventos nativos para ventas configurados');
     }
     
     handleVentaChangeNative(e) {
         console.log('🔍 Venta seleccionada (nativo):', e.target.value);
-        console.log('🔍 Evento nativo disparado correctamente');
-        console.log('🔍 Evento completo:', e);
-        console.log('🔍 Target:', e.target);
         this.handleVentaChange(e.target.value);
     }
     
@@ -2055,17 +2028,6 @@ export class SesionesModule {
              }
              
              console.log('✅ Ventas del paciente cargadas exitosamente:', ventasOrdenadas.length);
-             console.log('🔍 Opciones en el select de ventas:', select.options.length);
-             console.log('🔍 Primera opción:', select.options[0]?.textContent);
-             
-             // Verificar que el event listener esté configurado
-             console.log('🔍 Verificando que el select de ventas tenga event listeners...');
-             console.log('🔍 Select de ventas:', select);
-             console.log('🔍 Select value actual:', select.value);
-             
-             // Test manual del evento change
-             console.log('🧪 Probando evento change manualmente...');
-             select.dispatchEvent(new Event('change', { bubbles: true }));
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
