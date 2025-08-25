@@ -542,6 +542,8 @@
     padding: 0.5rem;
     position: relative;
     background: var(--white);
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .calendar-month-day.other-month {
@@ -565,6 +567,8 @@
     margin-top: 2rem;
     max-height: 80px;
     overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .calendar-month-event {
@@ -578,6 +582,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
 }
 
 /* Modal de evento */
