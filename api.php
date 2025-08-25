@@ -1,17 +1,11 @@
 <?php
-// Configurar cookies de sesión seguras
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 1);
-ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_samesite', 'Strict');
-
 /**
  * API REST para Clínica Beleza
  * PASSTHROUGH A STORED PROCEDURES - Sin lógica de negocio
  * Toda la lógica está en la base de datos
  */
 
- require_once 'init.php';
+require_once 'init.php';
 
 $allowed_origin = getAllowedOrigin();
  
