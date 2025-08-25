@@ -419,14 +419,10 @@ class Calendar {
         try {
             const data = await get('sesiones');
             
-            if (data.success) {
-                this.events = data.data || [];
-                this.renderCalendar();
-            } else {
-                this.events = [];
-                console.warn('❌ Error al cargar eventos:', data.error);
-                mostrarNotificacion(data.error || 'Error al cargar eventos', 'error');
-            }
+            // La función get ya procesa la respuesta y devuelve result.data
+            // o lanza un error si result.success es false
+            this.events = data || [];
+            this.renderCalendar();
         } catch (error) {
             console.error('❌ Error al cargar eventos:', error);
             this.events = [];
@@ -438,14 +434,10 @@ class Calendar {
         try {
             const data = await get('boxes');
             
-            if (data.success) {
-                this.boxes = data.data || [];
-                this.updateBoxFilter();
-            } else {
-                this.boxes = [];
-                console.warn('❌ Error al cargar boxes:', data.error);
-                mostrarNotificacion(data.error || 'Error al cargar boxes', 'error');
-            }
+            // La función get ya procesa la respuesta y devuelve result.data
+            // o lanza un error si result.success es false
+            this.boxes = data || [];
+            this.updateBoxFilter();
         } catch (error) {
             console.error('❌ Error al cargar boxes:', error);
             this.boxes = [];
