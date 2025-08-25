@@ -477,9 +477,8 @@ class ClinicaBelezaApp {
         const userInfo = document.getElementById('userInfo');
         if (userInfo && this.currentUser) {
             const roleText = this.currentUser.rol === 'admin' ? 'Administrador' : 'Profesional';
-            const name = this.currentUser.profesional ? 
-                `${this.currentUser.profesional.nombre} ${this.currentUser.profesional.apellidos}` : 
-                this.currentUser.username;
+            // Usar 'nombre' que es lo que devuelve nuestro stored procedure
+            const name = this.currentUser.nombre || this.currentUser.username || 'Usuario';
             
             userInfo.textContent = `${name} (${roleText})`;
         }
