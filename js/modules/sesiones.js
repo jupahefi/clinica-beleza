@@ -113,11 +113,11 @@ export class SesionesModule {
                 }
                 
                 // Calcular duración (usar duración del pack o por defecto)
-                const duracion = sesion.duracion_sesion_min || sesion.duracion || 60;
+                const duracion = sesion.duracion_sesion_min || sesion.duracion || 30;
                 
                 // Crear título descriptivo
-                const pacienteNombre = sesion.paciente_nombres && sesion.paciente_apellidos 
-                    ? `${sesion.paciente_nombres} ${sesion.paciente_apellidos}`
+                const pacienteNombre = sesion.nombres && sesion.apellidos 
+                    ? `${sesion.nombres} ${sesion.apellidos}`
                     : sesion.paciente_nombre || 'Paciente';
                 
                 const tratamientoNombre = sesion.tratamiento_nombre || sesion.tratamiento || 'Tratamiento';
@@ -1472,7 +1472,7 @@ export class SesionesModule {
                 <td data-label="Box">${sesion.box_nombre || 'N/A'}</td>
                 <td data-label="Fecha">${formatDate(sesion.fecha_planificada)}</td>
                 <td data-label="Hora">${sesion.hora_planificada || this.extractHoraFromFecha(sesion.fecha_planificada) || 'N/A'}</td>
-                <td data-label="Duración">${sesion.duracion || sesion.duracion_sesion_min || 'N/A'} min</td>
+                <td data-label="Duración">${sesion.duracion_sesion_min || sesion.duracion || 'N/A'} min</td>
                 <td data-label="Estado">
                     <span class="status-badge status-${sesion.estado}">
                         ${this.getEstadoLabel(sesion.estado)}
@@ -2203,11 +2203,11 @@ export class SesionesModule {
                 }
                 
                 // Calcular duración (usar duración del pack o por defecto)
-                const duracion = sesion.duracion_sesion_min || sesion.duracion || 60;
+                const duracion = sesion.duracion_sesion_min || sesion.duracion || 30;
                 
                 // Crear título descriptivo
-                const pacienteNombre = sesion.paciente_nombres && sesion.paciente_apellidos 
-                    ? `${sesion.paciente_nombres} ${sesion.paciente_apellidos}`
+                const pacienteNombre = sesion.nombres && sesion.apellidos 
+                    ? `${sesion.nombres} ${sesion.apellidos}`
                     : sesion.paciente_nombre || 'Paciente';
                 
                 const tratamientoNombre = sesion.tratamiento_nombre || sesion.tratamiento || 'Tratamiento';

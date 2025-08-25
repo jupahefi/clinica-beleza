@@ -2693,10 +2693,13 @@ DELIMITER $$
 CREATE PROCEDURE sp_sesiones_list()
 BEGIN
     SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
-           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
+           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre,
+           COALESCE(pack.duracion_sesion_min, t.duracion_sesion_min) as duracion_sesion_min
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN pack ON v.pack_id = pack.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
@@ -2710,10 +2713,13 @@ DELIMITER $$
 CREATE PROCEDURE sp_agenda_list()
 BEGIN
     SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
-           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre
+           p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre,
+           COALESCE(pack.duracion_sesion_min, t.duracion_sesion_min) as duracion_sesion_min
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
+    LEFT JOIN pack ON v.pack_id = pack.id
+    LEFT JOIN tratamiento t ON v.tratamiento_id = t.id
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
