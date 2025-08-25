@@ -6,7 +6,7 @@
  * Toda la lógica está en la base de datos
  */
 
- $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
+ $allowed_origin = getenv('API_URL');
  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
  $referer = $_SERVER['HTTP_REFERER'] ?? '';
  
@@ -29,7 +29,7 @@
  }
 
  header('Content-Type: application/json; charset=UTF-8');
- header('Access-Control-Allow-Origin: https://clinica-beleza.equalitech.xyz');
+ header('Access-Control-Allow-Origin: ' . getenv('API_URL'));
  header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
  header('Access-Control-Allow-Headers: Content-Type, Authorization');
 // Manejar preflight OPTIONS request
