@@ -3178,7 +3178,7 @@ CALL sp_crear_box(@sucursal_principal_id, 'Box 2', 'Box secundario para tratamie
 
 -- ---------- USUARIOS ----------
 -- Usando SP para crear usuarios con validaciones (solo Juan Herrera por ahora)
-CALL sp_crear_usuario('juan.herrera', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'juan.herrera@programadores.org', 'admin', TRUE, @usuario_juan_id);
+CALL sp_crear_usuario('juan.herrera', '$2y$10$GwgTT/T/zLaLTw2EtnFuRu8r74C0Nrjb/DNmApbnPMmJmQXVbEJem', 'juan.herrera@programadores.org', 'admin', TRUE, @usuario_juan_id);
 
 -- ---------- PROFESIONALES ----------
 -- Usando SP para crear profesionales con validaciones (solo Juan Herrera por ahora)
