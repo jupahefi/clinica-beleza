@@ -49,13 +49,7 @@
  if (!$access_allowed) {
      http_response_code(403);
      echo json_encode([
-         'error' => 'Acceso denegado - Solo permitido desde login.html o index.html',
-         'debug' => [
-             'origin' => $origin,
-             'referer' => $referer,
-             'allowed_origin' => $allowed_origin,
-             'allowed_host' => $allowed_host
-         ]
+         'error' => 'Acceso denegado'
      ]);
      exit();
  }
