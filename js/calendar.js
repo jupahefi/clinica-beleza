@@ -416,8 +416,7 @@ class Calendar {
     
     async loadEvents() {
         try {
-                        const response = await fetch('/api.php/sesiones');
-            const data = await response.json();
+            const data = await window.apiClient.get('sesiones');
             
             if (data.success) {
                 this.events = data.data || [];
@@ -436,8 +435,7 @@ class Calendar {
     
     async loadBoxes() {
         try {
-            const response = await fetch('/api.php/boxes');
-            const data = await response.json();
+            const data = await window.apiClient.get('boxes');
             
             if (data.success) {
                 this.boxes = data.data || [];
@@ -652,12 +650,9 @@ class Calendar {
     // Versión asíncrona para abrir sesión con feedback descriptivo
     async openSessionAsync(sessionId) {
         try {
-                        const response = await fetch(`./api.php/sesiones/${sessionId}/abrir`, {
-                method: 'POST'
-            });
-            const data = await response.json().catch(() => ({}));
+            const data = await window.apiClient.post(`sesiones/${sessionId}/abrir`);
             
-            if (!response.ok) {
+            if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe
                 const msg = data?.error || 'Error abriendo sesión';
                 console.error('❌ Error abriendo sesión:', msg);
@@ -669,7 +664,7 @@ class Calendar {
             await this.loadEvents();
             this.renderCalendar();
             
-                        mostrarNotificacion('Sesión abierta exitosamente', 'success');
+            mostrarNotificacion('Sesión abierta exitosamente', 'success');
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error abriendo sesión';
@@ -681,24 +676,20 @@ class Calendar {
     // Versión asíncrona para cerrar sesión con feedback descriptivo
     async closeSessionAsync(sessionId) {
         try {
-                        const response = await fetch(`./api.php/sesiones/${sessionId}/cerrar`, {
-                method: 'POST'
-            });
-            const data = await response.json().catch(() => ({}));
+            const data = await window.apiClient.post(`sesiones/${sessionId}/cerrar`);
             
-            if (!response.ok) {
+            if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe
                 const msg = data?.error || 'Error cerrando sesión';
                 console.error('❌ Error cerrando sesión:', msg);
                 mostrarNotificacion(msg, 'error');
-                return;
             }
             
             // Recargar calendario
             await this.loadEvents();
             this.renderCalendar();
             
-                        mostrarNotificacion('Sesión cerrada exitosamente', 'success');
+            mostrarNotificacion('Sesión cerrada exitosamente', 'success');
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error cerrando sesión';

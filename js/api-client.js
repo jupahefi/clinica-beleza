@@ -693,3 +693,32 @@ export async function getConfig() {
     }
 }
 
+// ---------- EXPORTACIÓN GLOBAL ----------
+
+// Hacer disponible globalmente para compatibilidad con módulos no-ES6
+if (typeof window !== 'undefined') {
+    window.apiClient = {
+        get,
+        post,
+        put,
+        del,
+        fetchWithRetry,
+        handleApiError,
+        healthCheck,
+        getConfig
+    };
+    
+    // También exportar las APIs específicas
+    window.pacientesAPI = pacientesAPI;
+    window.ventasAPI = ventasAPI;
+    window.pagosAPI = pagosAPI;
+    window.sesionesAPI = sesionesAPI;
+    window.ofertasAPI = ofertasAPI;
+    window.boxesAPI = boxesAPI;
+    window.profesionalesAPI = profesionalesAPI;
+    window.reportesAPI = reportesAPI;
+    
+    // Inicializar el cliente API
+    initializeApiClient();
+}
+
