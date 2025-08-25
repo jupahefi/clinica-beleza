@@ -258,30 +258,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #2f855a;
             border: 1px solid #9ae6b4;
         }
-
-        .demo-credentials {
-            margin-top: 20px;
-            padding: 15px;
-            background: var(--light-gray);
-            border-radius: 10px;
-            border-left: 4px solid var(--calypso-pastel);
-        }
-
-        .demo-credentials h4 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-
-        .demo-credentials p {
-            color: #666;
-            font-size: 0.8rem;
-            margin-bottom: 5px;
-        }
-
-        .demo-credentials strong {
-            color: #333;
-        }
     </style>
 </head>
 <body>
@@ -325,11 +301,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
         </form>
 
-        <div class="demo-credentials">
-            <h4><i class="fas fa-info-circle"></i> Credenciales de Demo</h4>
-            <p><strong>Usuario:</strong> admin</p>
-            <p><strong>Contraseña:</strong> admin123</p>
-        </div>
     </div>
 
     <script>
