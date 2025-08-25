@@ -29,7 +29,7 @@ $allowed_origin = getAllowedOrigin();
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
    $access_allowed = false;
-  $valid_referers = ['/login.php', '/index.html', '/index.php', '/'];
+  $valid_referers = ['/login.php', '/index.php', '/'];
  
  // Verificar origin si está presente
  if (!empty($origin)) {
@@ -51,17 +51,7 @@ $allowed_origin = getAllowedOrigin();
  if (!$access_allowed) {
      http_response_code(403);
      echo json_encode([
-         'error' => 'Acceso denegado - Verificación de origen fallida',
-         'debug' => [
-             'origin' => $origin,
-             'origin_host' => parse_url($origin, PHP_URL_HOST),
-             'referer' => $referer,
-             'referer_host' => parse_url($referer, PHP_URL_HOST),
-             'referer_path' => parse_url($referer, PHP_URL_PATH),
-             'allowed_origin' => $allowed_origin,
-             'allowed_host' => $allowed_host,
-             'valid_referers' => $valid_referers
-         ]
+         'error' => 'Acceso denegado',
      ]);
      exit();
  }
