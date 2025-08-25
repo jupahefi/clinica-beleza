@@ -11,19 +11,21 @@
  $referer = $_SERVER['HTTP_REFERER'] ?? '';
  $host = $_SERVER['HTTP_HOST'] ?? '';
  
- if (!empty($origin) && $origin !== $allowed_origin) {
+ $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
+ 
+ if (!empty($origin) && parse_url($origin, PHP_URL_HOST) !== $allowed_host) {
      http_response_code(403);
      echo json_encode(['error' => 'Acceso denegado']);
      exit();
  }
  
- if (!empty($referer) && strpos($referer, $allowed_origin) === false) {
+ if (!empty($referer) && parse_url($referer, PHP_URL_HOST) !== $allowed_host) {
      http_response_code(403);
      echo json_encode(['error' => 'Acceso denegado']);
      exit();
  }
  
- if (empty($origin) && empty($referer) && $host !== parse_url($allowed_origin, PHP_URL_HOST)) {
+ if (empty($origin) && empty($referer) && $host !== $allowed_host) {
      http_response_code(403);
      echo json_encode(['error' => 'Acceso denegado']);
      exit();
