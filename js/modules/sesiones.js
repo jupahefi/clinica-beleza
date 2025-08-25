@@ -226,10 +226,13 @@ export class SesionesModule {
         // El select de ventas es NATIVO, no Select2
         console.log('🔧 Configurando eventos NATIVOS para select de ventas...');
         
-        // Remover eventos anteriores si existen
-        ventaSelect.removeEventListener('change', this.handleVentaChangeNative);
-        ventaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
-        console.log('✅ Eventos nativos para ventas configurados');
+        // Remover TODOS los event listeners anteriores
+        const newVentaSelect = ventaSelect.cloneNode(true);
+        ventaSelect.parentNode.replaceChild(newVentaSelect, ventaSelect);
+        
+        // Agregar el event listener al nuevo elemento
+        newVentaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
+        console.log('✅ Eventos nativos para ventas configurados (limpiados)');
     }
     
     handleVentaChangeNative(e) {
