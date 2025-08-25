@@ -2218,6 +2218,10 @@ export class SesionesModule {
                     start: `${fecha}T${hora}`,
                     end: this.calculateEndTime(fecha, hora, duracion),
                     backgroundColor: this.getEventColor(sesion.estado),
+                    fecha_planificada: sesion.fecha_planificada,
+                    nombres: sesion.nombres,
+                    apellidos: sesion.apellidos,
+                    duracion_sesion_min: sesion.duracion_sesion_min,
                     extendedProps: sesion
                 };
             });
