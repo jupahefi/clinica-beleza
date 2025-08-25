@@ -254,6 +254,7 @@ export class SesionesModule {
     
     handleVentaChangeNative(e) {
         console.log('🔍 Venta seleccionada (nativo):', e.target.value);
+        console.log('🔍 Evento nativo disparado correctamente');
         this.handleVentaChange(e.target.value);
     }
     
@@ -1993,9 +1994,11 @@ export class SesionesModule {
                 console.log('📋 Datos completos de la primera venta:', ventasPaciente[0]);
             }
             
-            select.innerHTML = '<option value="">Seleccionar venta...</option>';
-            
-            for (const venta of ventasPaciente) {
+                         select.innerHTML = '<option value="">Seleccionar venta...</option>';
+             
+             console.log('🔧 Configurando opciones del select de ventas...');
+             
+             for (const venta of ventasPaciente) {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
                 
@@ -2034,11 +2037,13 @@ export class SesionesModule {
                     ventaText += ` - ${fecha}`;
                 }
                 
-                option.textContent = ventaText;
-                select.appendChild(option);
-            }
-            
-            console.log('✅ Ventas del paciente cargadas exitosamente:', ventasPaciente.length);
+                                 option.textContent = ventaText;
+                 select.appendChild(option);
+             }
+             
+             console.log('✅ Ventas del paciente cargadas exitosamente:', ventasPaciente.length);
+             console.log('🔍 Opciones en el select de ventas:', select.options.length);
+             console.log('🔍 Primera opción:', select.options[0]?.textContent);
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
