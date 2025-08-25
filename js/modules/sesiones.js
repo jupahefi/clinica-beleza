@@ -224,6 +224,9 @@ export class SesionesModule {
         }
         
         console.log('🔧 Configurando eventos para select de ventas...');
+        console.log('🔍 Select de ventas encontrado:', ventaSelect);
+        console.log('🔍 jQuery disponible:', typeof $ !== 'undefined');
+        console.log('🔍 Select2 disponible:', typeof $ !== 'undefined' && $.fn.select2);
         
         // Para Select2, usar el evento de jQuery
         if (typeof $ !== 'undefined' && $.fn.select2) {
@@ -249,12 +252,15 @@ export class SesionesModule {
             ventaSelect.removeEventListener('change', this.handleVentaChangeNative);
             ventaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
             console.log('✅ Eventos nativos para ventas configurados');
+            console.log('🔍 Event listener agregado al select de ventas');
         }
     }
     
     handleVentaChangeNative(e) {
         console.log('🔍 Venta seleccionada (nativo):', e.target.value);
         console.log('🔍 Evento nativo disparado correctamente');
+        console.log('🔍 Evento completo:', e);
+        console.log('🔍 Target:', e.target);
         this.handleVentaChange(e.target.value);
     }
     
@@ -1979,26 +1985,33 @@ export class SesionesModule {
                 return;
             }
             
-            // Importar ventasAPI dinámicamente
-            const { ventasAPI } = await import('../api-client.js');
-            const ventasPaciente = await ventasAPI.getByFichaId(pacienteId);
-            
-            console.log('📊 Ventas obtenidas para paciente:', ventasPaciente.length);
-            
-            console.log('🔍 Ventas filtradas para paciente', pacienteId, ':', ventasPaciente.length);
-            console.log('📋 Ventas del paciente:', ventasPaciente);
-            
-            // Log detallado de la primera venta para ver la estructura de datos
-            if (ventasPaciente.length > 0) {
-                console.log('🔍 Estructura de datos de la primera venta:', Object.keys(ventasPaciente[0]));
-                console.log('📋 Datos completos de la primera venta:', ventasPaciente[0]);
-            }
-            
-                         select.innerHTML = '<option value="">Seleccionar venta...</option>';
+                         // Importar ventasAPI dinámicamente
+             const { ventasAPI } = await import('../api-client.js');
+             const ventasPaciente = await ventasAPI.getByFichaId(pacienteId);
+             
+             console.log('📊 Ventas obtenidas para paciente:', ventasPaciente.length);
+             
+             // Ordenar ventas del más reciente al más antiguo por fecha_creacion
+             const ventasOrdenadas = ventasPaciente.sort((a, b) => {
+                 const fechaA = new Date(a.fecha_creacion || 0);
+                 const fechaB = new Date(b.fecha_creacion || 0);
+                 return fechaB - fechaA; // Orden descendente (más reciente primero)
+             });
+             
+             console.log('🔍 Ventas ordenadas del más reciente al más antiguo:', ventasOrdenadas.length);
+             console.log('📋 Ventas del paciente:', ventasOrdenadas);
+             
+             // Log detallado de la primera venta para ver la estructura de datos
+             if (ventasOrdenadas.length > 0) {
+                 console.log('🔍 Estructura de datos de la primera venta:', Object.keys(ventasOrdenadas[0]));
+                 console.log('📋 Datos completos de la primera venta:', ventasOrdenadas[0]);
+             }
+             
+             select.innerHTML = '<option value="">Seleccionar venta...</option>';
              
              console.log('🔧 Configurando opciones del select de ventas...');
              
-             for (const venta of ventasPaciente) {
+             for (const venta of ventasOrdenadas) {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
                 
@@ -2041,9 +2054,18 @@ export class SesionesModule {
                  select.appendChild(option);
              }
              
-             console.log('✅ Ventas del paciente cargadas exitosamente:', ventasPaciente.length);
+             console.log('✅ Ventas del paciente cargadas exitosamente:', ventasOrdenadas.length);
              console.log('🔍 Opciones en el select de ventas:', select.options.length);
              console.log('🔍 Primera opción:', select.options[0]?.textContent);
+             
+             // Verificar que el event listener esté configurado
+             console.log('🔍 Verificando que el select de ventas tenga event listeners...');
+             console.log('🔍 Select de ventas:', select);
+             console.log('🔍 Select value actual:', select.value);
+             
+             // Test manual del evento change
+             console.log('🧪 Probando evento change manualmente...');
+             select.dispatchEvent(new Event('change', { bubbles: true }));
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
