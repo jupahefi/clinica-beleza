@@ -3591,7 +3591,8 @@ END$$
 CREATE PROCEDURE sp_ventas_get(IN p_id INT)
 BEGIN
     SELECT v.*, f.codigo as ficha_codigo, f.nombres, f.apellidos, e.fecha_evaluacion,
-           t.nombre as tratamiento_nombre, p.nombre as pack_nombre
+           t.nombre as tratamiento_nombre, p.nombre as pack_nombre,
+           COALESCE(p.duracion_sesion_min, t.duracion_sesion_min) as duracion_sesion_min
     FROM venta v
     JOIN ficha f ON v.ficha_id = f.id
     LEFT JOIN evaluacion e ON v.evaluacion_id = e.id

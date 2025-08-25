@@ -1929,12 +1929,12 @@ export class SesionesModule {
             
             select.innerHTML = '<option value="">Seleccionar profesional...</option>';
             
-            profesionales.forEach(profesional => {
-                const option = document.createElement('option');
-                option.value = profesional.id.toString();
-                option.textContent = `${profesional.nombre} ${profesional.apellido}`;
-                select.appendChild(option);
-            });
+                         profesionales.forEach(profesional => {
+                 const option = document.createElement('option');
+                 option.value = profesional.id.toString();
+                 option.textContent = `${profesional.nombre} ${profesional.apellidos}`.trim();
+                 select.appendChild(option);
+             });
             
             // Configurar Select2 para profesionales con búsqueda sin mínimo de caracteres
             $(select).select2({
@@ -1980,12 +1980,9 @@ export class SesionesModule {
             
             // Importar ventasAPI dinámicamente
             const { ventasAPI } = await import('../api-client.js');
-            const ventas = await ventasAPI.getAll();
+            const ventasPaciente = await ventasAPI.getByFichaId(pacienteId);
             
-            console.log('📊 Total de ventas obtenidas:', ventas.length);
-            
-            // Filtrar ventas por paciente
-            const ventasPaciente = ventas.filter(venta => venta.ficha_id == pacienteId);
+            console.log('📊 Ventas obtenidas para paciente:', ventasPaciente.length);
             
             console.log('🔍 Ventas filtradas para paciente', pacienteId, ':', ventasPaciente.length);
             console.log('📋 Ventas del paciente:', ventasPaciente);
@@ -2053,19 +2050,34 @@ export class SesionesModule {
         try {
             console.log('🔍 Cargando duración para venta ID:', ventaId);
             
-            // Importar ventasAPI dinámicamente
-            const { ventasAPI } = await import('../api-client.js');
-            const ventas = await ventasAPI.getAll();
+            // Obtener la venta del select actual
+            const ventaSelect = document.getElementById('ventaSesion');
+            if (!ventaSelect) {
+                console.error('❌ No se encontró el select de ventas');
+                return;
+            }
             
-            // Buscar la venta específica
-            const venta = ventas.find(v => v.id == ventaId);
+            // Buscar la venta específica en las opciones del select
+            const ventaOption = Array.from(ventaSelect.options).find(option => option.value == ventaId);
+            if (!ventaOption) {
+                console.warn('⚠️ No se encontró la venta con ID:', ventaId);
+                return;
+            }
+            
+            // Obtener los datos de la venta del atributo data o del texto
+            const ventaText = ventaOption.textContent;
+            console.log('📋 Texto de la venta:', ventaText);
+            
+            // Importar ventasAPI para obtener los datos completos de la venta
+            const { ventasAPI } = await import('../api-client.js');
+            const venta = await ventasAPI.getById(ventaId);
             
             if (!venta) {
                 console.warn('⚠️ No se encontró la venta con ID:', ventaId);
                 return;
             }
             
-            console.log('📋 Datos de la venta encontrada:', venta);
+            console.log('📋 Datos completos de la venta:', venta);
             
             // Obtener la duración del pack o tratamiento
             const duracion = venta.duracion_sesion_min;
