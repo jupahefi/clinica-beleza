@@ -184,57 +184,9 @@ function setSecurityHeaders() {
     header('Referrer-Policy: strict-origin-when-cross-origin');
 }
 
-// Función para detectar SQL Injection
-function detectSQLInjection($data) {
-    $sql_patterns = [
-        '/\b(union|select|insert|update|delete|drop|create|alter|exec|execute|script)\b/i',
-        '/[\'";]/',
-        '/--/',
-        '/\/\*.*\*\//',
-        '/xp_cmdshell/i',
-        '/sp_/i'
-    ];
-    
-    if (is_array($data)) {
-        foreach ($data as $value) {
-            if (detectSQLInjection($value)) {
-                return true;
-            }
-        }
-    } else {
-        $string_data = (string)$data;
-        foreach ($sql_patterns as $pattern) {
-            if (preg_match($pattern, $string_data)) {
-                return true;
-            }
-        }
-    }
-    
-    return false;
-}
 
-// Función para verificar sesión en API
-function verificarSesion($db, $endpoint) {
-    // Endpoints que no requieren autenticación
-    $public_endpoints = ['auth', 'tokens', 'health', 'config'];
-    
-    if (in_array($endpoint, $public_endpoints)) {
-        return true;
-    }
-    
-    // Verificar sesión para endpoints protegidos
-    if (!validateSession()) {
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Sesión no válida - Debe iniciar sesión',
-            'code' => 'SESSION_INVALID'
-        ]);
-        return false;
-    }
-    
-    return true;
-}
+
+
 
 // Función para registrar actividad
 function logActivity($action, $details = null) {
