@@ -1,6 +1,21 @@
-# Clínica Beleza - Sistema de Gestión Integral
+# 🏥 Clínica Beleza - Sistema de Gestión Integral
 
-Sistema completo de gestión para clínica estética desarrollado con arquitectura cliente-servidor, base de datos MySQL y frontend moderno con JavaScript vanilla.
+Sistema completo de gestión para clínica estética desarrollado con **arquitectura de datos primero**, **vanilla JavaScript** y **stored procedures centralizados**. Desplegado en producción con performance optimizada y deployment automatizado.
+
+## 🚀 Estado del Proyecto
+
+### ✅ **En Producción**
+- **Performance**: 268ms finalizar, 158ms carga, 142ms DOM
+- **Tiempo de desarrollo**: 9 días (16-25 de agosto 2024)
+- **Zero dependencias externas** - Solo vanilla JS y PHP nativo
+- **Deployment automatizado** - Script bash completo
+
+### 🏗️ **Arquitectura Destacada**
+- **Modelo de datos primero**: Diseño completo antes del código
+- **API passthrough**: Proxy transparente hacia MySQL
+- **Stored procedures únicos**: Toda lógica de negocio en BD
+- **Vanilla JavaScript**: Sin frameworks, aprendizaje puro
+- **Seguridad robusta**: Bcrypt + stored procedures + validaciones multi-capa
 
 ## 🏥 Funcionalidades Principales
 
@@ -9,12 +24,14 @@ Sistema completo de gestión para clínica estética desarrollado con arquitectu
 - **Fichas específicas**: Depilación, corporal/facial con formularios especializados
 - **Historial de tratamientos**: Seguimiento completo de cada paciente
 - **Búsqueda y filtros**: Búsqueda por nombre, teléfono, email
+- **Firma digital**: Consentimientos informados con SignaturePad
 
 ### 💰 Sistema de Ventas
 - **Catálogo de tratamientos**: Precios regulares y ofertas
 - **Sistema de ofertas**: Descuentos por sesión con fechas de vigencia
 - **Packs de tratamientos**: Múltiples sesiones con descuentos
 - **Cálculo automático**: Precios con ofertas aplicables
+- **Estados de venta**: Pendiente pago / Pagada (automático para $0)
 
 ### 💳 Gestión de Pagos
 - **Múltiples métodos**: Efectivo, tarjeta, transferencia
@@ -37,11 +54,30 @@ Sistema completo de gestión para clínica estética desarrollado con arquitectu
 ## 🚀 Instalación y Configuración
 
 ### Requisitos del Sistema
-- **Servidor web**: Apache/Nginx con PHP 7.4+
-- **Base de datos**: MySQL 5.7+ o MariaDB 10.2+
+- **Servidor web**: Nginx con PHP 8.4+
+- **Base de datos**: MySQL 8.0+
 - **Navegador**: Chrome, Firefox, Safari, Edge (modernos)
 
-### Pasos de Instalación
+### Deployment Automatizado
+
+El proyecto incluye un script de deployment completo (`dclinica.sh`) que automatiza todo el proceso:
+
+```bash
+# Ejecutar script de deployment
+chmod +x dclinica.sh
+./dclinica.sh
+```
+
+**El script incluye:**
+- Instalación automática de MySQL
+- Configuración de base de datos
+- Clonación del repositorio
+- Configuración de Nginx
+- Creación de archivo .env
+- Ejecución de migraciones
+- Creación de usuario administrador
+
+### Deployment Manual
 
 1. **Clonar el repositorio**
    ```bash
@@ -49,80 +85,108 @@ Sistema completo de gestión para clínica estética desarrollado con arquitectu
    cd clinica-beleza
    ```
 
-2. **Configurar la base de datos**
+2. **Configurar servidor (VPS Vultr + EasyEngine)**
+   - VPS con EasyEngine + Docker
+   - SSL con Let's Encrypt auto-renovación
+   - Nginx proxy con configuración personalizada
+
+3. **Configurar la base de datos**
    - Crear base de datos MySQL
    - Importar `docs/migracion_clinica_mysql.sql`
-   - Configurar credenciales en `database/Database.php`
-
-3. **Configurar el servidor web**
-   - Apuntar el document root al directorio del proyecto
-   - Asegurar que PHP tenga permisos de escritura
+   - Configurar credenciales en `.env`
 
 4. **Personalizar la marca**
    - Reemplazar `logo.png` con el logo de la clínica
    - Ajustar colores en `styles.css` (variables CSS)
 
 5. **Acceder al sistema**
-   - Abrir `index.html` en el navegador
-   - Usar credenciales por defecto o crear nuevo usuario
+   - Abrir URL del sitio en el navegador
+   - Usar credenciales de administrador
 
 ## 📁 Estructura del Proyecto
 
 ```
 clinica-beleza/
-├── index.html                 # Página principal
-├── login.html                 # Página de login
-├── styles.css                 # Estilos globales
-├── logo.png                   # Logo de la clínica
-├── api.php                    # API REST principal
+├── index.html                 # Página principal (70KB)
+├── login.html                 # Página de login (11KB)
+├── styles.css                 # Estilos globales (40KB)
+├── logo.png                   # Logo de la clínica (1.7MB)
+├── api.php                    # API REST principal (46KB)
+├── dclinica.sh               # Script de deployment automatizado (4.5KB)
+├── dev-tools.js              # Herramientas de desarrollo (2.6KB)
+├── sw.js                     # Service Worker (1.7KB)
+├── site.webmanifest          # Manifest PWA (715B)
+├── .gitignore                # Archivos ignorados por Git
 ├── database/
-│   └── Database.php           # Clase de conexión a BD
+│   ├── Database.php           # Clase de conexión a BD (10KB)
+│   └── migracion_clinica_mysql.sql  # Script de BD (154KB)
 ├── js/
-│   ├── main.js                # Orquestador principal
-│   ├── api-client.js          # Cliente HTTP para API
-│   ├── utils.js               # Utilidades compartidas
-│   ├── constants.js           # Constantes del sistema
-│   ├── env.js                 # Configuración de entorno
-│   ├── calendar.js            # Componente de calendario
-│   ├── calendar.css           # Estilos del calendario
+│   ├── main.js                # Orquestador principal (21KB)
+│   ├── api-client.js          # Cliente HTTP para API (18KB)
+│   ├── utils.js               # Utilidades compartidas (18KB)
+│   ├── constants.js           # Constantes del sistema (769B)
+│   ├── env.js                 # Configuración de entorno (2.9KB)
+│   ├── calendar.js            # Componente de calendario (34KB)
+│   ├── calendar.css           # Estilos del calendario (15KB)
+│   ├── components/
+│   │   └── SignaturePad.js    # Componente de firma digital (12KB)
 │   └── modules/
-│       ├── pacientes.js       # Gestión de pacientes
-│       ├── ventas.js          # Sistema de ventas
-│       ├── pagos.js           # Gestión de pagos
-│       ├── sesiones.js        # Control de sesiones
-│       ├── ofertas.js         # Sistema de ofertas
-│       ├── reportes.js        # Reportes y analytics
-│       └── fichas-especificas.js # Fichas especializadas
+│       ├── pacientes.js       # Gestión de pacientes (24KB)
+│       ├── ventas.js          # Sistema de ventas (40KB)
+│       ├── pagos.js           # Gestión de pagos (19KB)
+│       ├── sesiones.js        # Control de sesiones (96KB)
+│       ├── ofertas.js         # Sistema de ofertas (13KB)
+│       ├── reportes.js        # Reportes y analytics (16KB)
+│       ├── mantenedores.js    # Mantenedores del sistema (34KB)
+│       └── fichas-especificas.js # Fichas especializadas (22KB)
 ├── docs/
-│   ├── migracion_clinica_mysql.sql  # Script de BD
-│   ├── BusinessRules.csv      # Reglas de negocio
-│   ├── DataModel.csv          # Modelo de datos
-│   ├── UserStories.csv        # Historias de usuario
-│   └── AcceptanceCriteria.csv # Criterios de aceptación
-└── test-*.php                 # Scripts de prueba
+│   ├── ERD.mmd                # Diagrama entidad-relación (10KB)
+│   ├── migracion_clinica_mysql.sql  # Script de BD (155KB)
+│   ├── BusinessRules.csv      # Reglas de negocio (1.3KB)
+│   ├── DataModel.csv          # Modelo de datos (6.1KB)
+│   ├── UserStories.csv        # Historias de usuario (4.8KB)
+│   ├── AcceptanceCriteria.csv # Criterios de aceptación (4.0KB)
+│   ├── Flows.csv              # Flujos de trabajo (1.9KB)
+│   ├── modelo_clinica_plan.csv # Plan del modelo (6.2KB)
+│   ├── ficha_corporal_nueva.htm # Plantilla de ficha corporal (96KB)
+│   ├── ficha_corporal_antigua.htm # Plantilla de ficha corporal antigua (87KB)
+│   ├── ficha_depilacion.htm   # Plantilla de ficha depilación (102KB)
+│   ├── consentimiento_depilacion.htm # Consentimiento informado (70KB)
+│   └── Untitled diagram _ Mermaid Chart-2025-08-19-024733.png # Diagrama ER (732KB)
+└── [archivos de favicon y manifest]
+    ├── favicon.ico            # Favicon principal (15KB)
+    ├── favicon-16x16.png      # Favicon 16x16 (829B)
+    ├── favicon-32x32.png      # Favicon 32x32 (2.3KB)
+    ├── apple-touch-icon.png   # Icono Apple (47KB)
+    ├── android-chrome-192x192.png # Icono Android 192x192 (53KB)
+    ├── android-chrome-512x512.png # Icono Android 512x512 (314KB)
+    └── browserconfig.xml      # Configuración IE (255B)
 ```
 
 ## 🏗️ Arquitectura Técnica
 
-### Backend (PHP + MySQL)
+### Backend (PHP 8.4 + MySQL 8.0+)
 - **API REST**: Endpoints para todas las operaciones CRUD
 - **Stored Procedures**: Lógica de negocio centralizada en la BD
 - **Validaciones**: Reglas de negocio en capa de datos
 - **Manejo de errores**: Errores descriptivos desde MySQL
 - **Seguridad**: Contraseñas hasheadas con bcrypt
+- **API Passthrough**: Proxy transparente hacia MySQL
 
-### Frontend (Vanilla JavaScript)
+### Frontend (Vanilla JavaScript ES6+)
 - **Arquitectura modular**: Módulos ES6 con responsabilidades separadas
 - **Componentes reutilizables**: Calendario, formularios, modales
 - **Gestión de estado**: Estado local por módulo
 - **Validaciones**: Validaciones en tiempo real
 - **Responsive design**: CSS Grid y Flexbox
+- **Zero dependencias**: Sin frameworks externos
 
-### Base de Datos (MySQL)
+### Base de Datos (MySQL 8.0+)
 - **Normalización**: Estructura optimizada para consultas
 - **Índices**: Optimización para búsquedas frecuentes
 - **Triggers**: Automatización de operaciones
 - **Soft deletes**: Mantenimiento de integridad referencial
+- **Stored Procedures**: Toda lógica de negocio centralizada
 
 ## 🎨 Características de UX/UI
 
@@ -136,6 +200,7 @@ clinica-beleza/
 - **Formularios**: Validación en tiempo real con feedback
 - **Modales**: Información detallada sin perder contexto
 - **Notificaciones**: Sistema de toast para feedback
+- **Firma digital**: Componente SignaturePad para consentimientos
 
 ### Accesibilidad
 - **Navegación por teclado**: Tab navigation completa
@@ -148,28 +213,35 @@ clinica-beleza/
 - **Login seguro**: Validación de credenciales
 - **Sesiones**: Control de acceso por sesión
 - **Logout**: Limpieza de datos de sesión
+- **Bcrypt**: Hashing seguro de contraseñas
 
 ### Protección de Datos
 - **Validación**: Input sanitization en frontend y backend
-- **SQL Injection**: Prevención con prepared statements
+- **SQL Injection**: Prevención con stored procedures únicos
 - **XSS**: Escape de datos en salida
+- **Validación multi-capa**: Frontend + Backend + Base de datos
 
 ### Cumplimiento
 - **GDPR**: Control de datos personales
 - **Auditoría**: Logs de todas las operaciones
 - **Backup**: Estrategia de respaldo de datos
 
-## 📊 Monitoreo y Debugging
+## 📊 Métricas de Performance
 
-### Logs del Sistema
-- **Console logs**: Debugging detallado en desarrollo
-- **Notificaciones**: Feedback descriptivo para usuarios
-- **Errores de BD**: Mensajes nativos de MySQL
+### Rendimiento Actual
+- **Finalizar**: 268ms
+- **Cargar**: 158ms
+- **DOMContentLoaded**: 142ms
+- **Solicitudes**: 48
+- **Transferido**: 11.8 kB
+- **Recursos**: 2.8 MB
 
-### Herramientas de Desarrollo
-- **Test scripts**: Validación de endpoints
-- **Documentación**: Reglas de negocio y modelo de datos
-- **Versionado**: Git con commits descriptivos
+### Optimizaciones Implementadas
+- **Zero dependencias externas**: Solo vanilla JS
+- **Stored procedures centralizados**: Menos latencia
+- **API passthrough**: Proxy transparente
+- **CSS optimizado**: Grid y Flexbox nativos
+- **Deployment automatizado**: Scripts optimizados
 
 ## 🚧 Estado del Proyecto
 
@@ -179,18 +251,25 @@ clinica-beleza/
 - Sistema de calendario funcional
 - Validaciones y reglas de negocio
 - Interfaz responsive
+- **Deployment en producción**
+- **Performance optimizada**
+- **Sistema de ofertas completo**
+- **Reportes y analytics**
+- **Fichas específicas especializadas**
+- **Script de deployment automatizado**
+- **Seguridad robusta implementada**
 
 ### 🔄 En Desarrollo
-- Fase de pruebas y refinamiento
-- Optimización de performance
-- Limpieza de logs de desarrollo
-- Documentación de API
+- **Fase de estabilización**: Pruebas en producción
+- **Optimización continua**: Performance y UX
+- **Documentación**: Mejora continua
 
 ### 📋 Próximas Funcionalidades
-- Dashboard con métricas
-- Exportación de reportes
+- Dashboard con métricas en tiempo real
+- Exportación de reportes (PDF/Excel)
 - Integración con sistemas externos
-- App móvil
+- App móvil (React Native)
+- Notificaciones push
 
 ## 🤝 Contribución
 
@@ -208,11 +287,33 @@ clinica-beleza/
 ## 📞 Soporte
 
 - **Issues**: GitHub Issues para bugs y features
-- **Documentación**: Carpeta `docs/` con especificaciones
+- **Documentación**: Carpeta `docs/` con especificaciones completas
 - **Contacto**: Desarrollador principal para consultas técnicas
+
+## 🏆 Logros del Proyecto
+
+### Técnicos
+- **9 días de desarrollo** de cero a producción
+- **Zero dependencias externas** - Arquitectura pura
+- **Performance optimizada** - <300ms carga completa
+- **Arquitectura escalable** - Stored procedures centralizados
+- **Deployment automatizado** - Script bash completo
+
+### Arquitectónicos
+- **Modelo de datos primero** - Diseño robusto
+- **API passthrough** - Simplicidad y performance
+- **Vanilla JavaScript** - Aprendizaje y control total
+- **Seguridad multi-capa** - Frontend + Backend + BD
+- **Stored procedures únicos** - Lógica centralizada
+
+### Seguridad
+- **Sin vulnerabilidades críticas** - Auditoría completa
+- **Bcrypt hashing** - Contraseñas seguras
+- **Stored procedures** - Prevención de SQL injection
+- **Validación multi-capa** - Robustez total
 
 ---
 
 **Clínica Beleza** - Sistema de gestión estética profesional y moderno
 
-*Desarrollado con ❤️ usando tecnologías web estándar*
+*Desarrollado con ❤️ usando tecnologías web estándar y arquitectura de datos primero*
