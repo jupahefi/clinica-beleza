@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("CALL sp_obtener_usuario_por_username(?)");
             $stmt->execute([$username]);
             $user = $stmt->fetch();
+            $stmt->closeCursor();
             
             if ($user && password_verify($password, $user['password_hash'])) {
                 // Login exitoso
@@ -69,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Actualizar último login
                 $stmt = $pdo->prepare("CALL sp_actualizar_ultimo_login(?)");
                 $stmt->execute([$user_id]);
+                $stmt->closeCursor();
                 
                 // Generar token de sesión
                 $login_time = time();
