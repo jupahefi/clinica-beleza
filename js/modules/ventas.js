@@ -834,7 +834,7 @@ class VentasModule {
 
     async loadPacientes() {
         try {
-                        mostrarNotificacion('Selector de pacientes listo para búsqueda.', 'info');
+            //no intenta cargar pacientes
         } catch (error) {
             console.error('[VENTAS] Error configurando Select2:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido configurando Select2';
