@@ -11,6 +11,20 @@ ini_set('session.cookie_samesite', 'Strict');
  * Toda la lógica está en la base de datos
  */
 
+ $env_file = __DIR__ . '/.env';
+ if (file_exists($env_file)) {
+     $env_content = file_get_contents($env_file);
+     $env_lines = explode("\n", $env_content);
+     foreach ($env_lines as $line) {
+         $line = trim($line);
+         if (!empty($line) && strpos($line, '=') !== false && !str_starts_with($line, '#')) {
+             list($key, $value) = explode('=', $line, 2);
+             $_ENV[$key] = $value;
+             putenv("$key=$value");
+         }
+     }
+ }
+
  $allowed_origin = getenv('API_URL');
  
  // Si no se puede leer la variable de entorno, fallar de forma segura
