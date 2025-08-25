@@ -148,7 +148,7 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
 /**
  * Función genérica para peticiones GET
  */
-async function get(endpoint, params = {}) {
+export async function get(endpoint, params = {}) {
     let url;
     
     if (API_CONFIG.baseUrl) {
@@ -173,7 +173,7 @@ async function get(endpoint, params = {}) {
 /**
  * Función genérica para peticiones POST
  */
-async function post(endpoint, data = {}) {
+export async function post(endpoint, data = {}) {
     const url = API_CONFIG.baseUrl ? 
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
@@ -190,7 +190,7 @@ async function post(endpoint, data = {}) {
 /**
  * Función genérica para peticiones PUT
  */
-async function put(endpoint, data = {}) {
+export async function put(endpoint, data = {}) {
     const url = API_CONFIG.baseUrl ? 
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
@@ -207,7 +207,7 @@ async function put(endpoint, data = {}) {
 /**
  * Función genérica para peticiones DELETE
  */
-async function del(endpoint) {
+export async function del(endpoint) {
     const url = API_CONFIG.baseUrl ? 
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
