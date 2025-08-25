@@ -13,22 +13,30 @@
  
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
- if (!empty($origin) && parse_url($origin, PHP_URL_HOST) !== $allowed_host) {
-     http_response_code(403);
-     echo json_encode(['error' => 'Acceso denegado']);
-     exit();
+ if (!empty($origin)) {
+     $origin_host = parse_url($origin, PHP_URL_HOST);
+     if ($origin_host !== $allowed_host) {
+         http_response_code(403);
+         echo json_encode(['error' => 'Acceso denegado - Origin']);
+         exit();
+     }
  }
  
- if (!empty($referer) && parse_url($referer, PHP_URL_HOST) !== $allowed_host) {
-     http_response_code(403);
-     echo json_encode(['error' => 'Acceso denegado']);
-     exit();
+ if (!empty($referer)) {
+     $referer_host = parse_url($referer, PHP_URL_HOST);
+     if ($referer_host !== $allowed_host) {
+         http_response_code(403);
+         echo json_encode(['error' => 'Acceso denegado - Referer']);
+         exit();
+     }
  }
  
- if (empty($origin) && empty($referer) && $host !== $allowed_host) {
-     http_response_code(403);
-     echo json_encode(['error' => 'Acceso denegado']);
-     exit();
+ if (empty($origin) && empty($referer)) {
+     if ($host !== $allowed_host) {
+         http_response_code(403);
+         echo json_encode(['error' => 'Acceso denegado - Host']);
+         exit();
+     }
  }
 
  header('Content-Type: application/json; charset=UTF-8');
