@@ -3681,6 +3681,7 @@ BEGIN
 END$$
 DELIMITER ;
 
+DELIMITER $$
 CREATE PROCEDURE sp_auth_login(IN p_data JSON)
 BEGIN
     DECLARE v_usuario_id INT;
