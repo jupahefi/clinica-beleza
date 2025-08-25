@@ -250,11 +250,8 @@ clinica-beleza/
 - **Documentación**: Mejora continua
 
 ### 📋 Próximas Funcionalidades
-- Dashboard con métricas en tiempo real
-- Exportación de reportes (PDF/Excel)
+- Dashboard con métricas en tiempo real (energizado con el ecosistema DataWizard)
 - Integración con sistemas externos
-- App móvil (React Native)
-- Notificaciones push
 
 ## 🤝 Contribución
 
