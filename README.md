@@ -8,7 +8,7 @@ Sistema completo de gestión para clínica estética desarrollado con **arquitec
 - **Performance**: 268ms finalizar, 158ms carga, 142ms DOM
 - **Tiempo de desarrollo**: 9 días (16-25 de agosto 2024)
 - **Zero dependencias externas** - Solo vanilla JS y PHP nativo
-- **Deployment automatizado** - Script bash completo
+- **Deployment automatizado** - Scripts de producción
 
 ### 🏗️ **Arquitectura Destacada**
 - **Modelo de datos primero**: Diseño completo antes del código
@@ -60,22 +60,7 @@ Sistema completo de gestión para clínica estética desarrollado con **arquitec
 
 ### Deployment Automatizado
 
-El proyecto incluye un script de deployment completo (`dclinica.sh`) que automatiza todo el proceso:
-
-```bash
-# Ejecutar script de deployment
-chmod +x dclinica.sh
-./dclinica.sh
-```
-
-**El script incluye:**
-- Instalación automática de MySQL
-- Configuración de base de datos
-- Clonación del repositorio
-- Configuración de Nginx
-- Creación de archivo .env
-- Ejecución de migraciones
-- Creación de usuario administrador
+El proyecto incluye scripts de deployment que automatizan todo el proceso de instalación y configuración del sistema en producción.
 
 ### Deployment Manual
 
@@ -93,7 +78,7 @@ chmod +x dclinica.sh
 3. **Configurar la base de datos**
    - Crear base de datos MySQL
    - Importar `docs/migracion_clinica_mysql.sql`
-   - Configurar credenciales en `.env`
+   - Configurar credenciales de conexión
 
 4. **Personalizar la marca**
    - Reemplazar `logo.png` con el logo de la clínica
@@ -112,7 +97,7 @@ clinica-beleza/
 ├── styles.css                 # Estilos globales (40KB)
 ├── logo.png                   # Logo de la clínica (1.7MB)
 ├── api.php                    # API REST principal (46KB)
-├── dclinica.sh               # Script de deployment automatizado (4.5KB)
+
 ├── dev-tools.js              # Herramientas de desarrollo (2.6KB)
 ├── sw.js                     # Service Worker (1.7KB)
 ├── site.webmanifest          # Manifest PWA (715B)
@@ -241,7 +226,7 @@ clinica-beleza/
 - **Stored procedures centralizados**: Menos latencia
 - **API passthrough**: Proxy transparente
 - **CSS optimizado**: Grid y Flexbox nativos
-- **Deployment automatizado**: Scripts optimizados
+- **Deployment automatizado**: Proceso optimizado
 
 ## 🚧 Estado del Proyecto
 
@@ -256,7 +241,7 @@ clinica-beleza/
 - **Sistema de ofertas completo**
 - **Reportes y analytics**
 - **Fichas específicas especializadas**
-- **Script de deployment automatizado**
+- **Scripts de deployment automatizados**
 - **Seguridad robusta implementada**
 
 ### 🔄 En Desarrollo
@@ -297,7 +282,7 @@ clinica-beleza/
 - **Zero dependencias externas** - Arquitectura pura
 - **Performance optimizada** - <300ms carga completa
 - **Arquitectura escalable** - Stored procedures centralizados
-- **Deployment automatizado** - Script bash completo
+- **Deployment automatizado** - Scripts de producción
 
 ### Arquitectónicos
 - **Modelo de datos primero** - Diseño robusto
