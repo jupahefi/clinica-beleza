@@ -2527,6 +2527,30 @@ BEGIN
 END$$
 DELIMITER ;
 
+-- Obtener usuario por username
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_usuario_por_username(
+    IN p_username VARCHAR(50)
+)
+BEGIN
+    SELECT id, username, password_hash, email, rol, activo, fecha_creacion, ultimo_login
+    FROM usuario 
+    WHERE username = p_username AND activo = TRUE;
+END$$
+DELIMITER ;
+
+-- Actualizar último login
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_ultimo_login(
+    IN p_usuario_id BIGINT
+)
+BEGIN
+    UPDATE usuario 
+    SET ultimo_login = NOW() 
+    WHERE id = p_usuario_id;
+END$$
+DELIMITER ;
+
 -- Crear profesional completo
 DELIMITER $$
 CREATE PROCEDURE sp_crear_profesional_completo(
