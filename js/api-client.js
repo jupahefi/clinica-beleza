@@ -48,6 +48,15 @@ function handleApiError(result) {
             fullResponse: result
         });
         
+        // Manejar redirección por sesión inválida
+        if (result.redirect && result.error && result.error.includes('Sesión no válida')) {
+            console.warn('🔄 Redirigiendo al login por sesión inválida');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            window.location.href = result.redirect;
+            return;
+        }
+        
         // Crear un error más descriptivo con toda la información del servidor
         const error = new Error(result.error || 'Error en la petición');
         error.apiError = {
@@ -69,12 +78,25 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
     
+    // Obtener token de autenticación
+    const authToken = localStorage.getItem('authToken');
+    
+    // Preparar headers base
+    const baseHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
+    
+    // Agregar token de autenticación si existe
+    if (authToken) {
+        baseHeaders['X-Auth-Token'] = authToken;
+    }
+    
     try {
         const response = await fetch(url, {
             ...options,
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                ...baseHeaders,
                 ...(options.headers || {})
             },
             signal: controller.signal
@@ -98,6 +120,16 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
             // Intentar parsear el JSON para obtener el error específico de la DB
             try {
                 const errorData = JSON.parse(errorBody);
+                
+                // Manejar redirección por sesión inválida
+                if (errorData.redirect && errorData.error && errorData.error.includes('Sesión no válida')) {
+                    console.warn('🔄 Redirigiendo al login por sesión inválida');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userData');
+                    window.location.href = errorData.redirect;
+                    return;
+                }
+                
                 // Mostrar el JSON completo del error
                 throw new Error(errorBody);
             } catch (parseError) {
@@ -154,9 +186,29 @@ async function post(endpoint, data = {}) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
+    // Obtener token CSRF para requests modificadores
+    let csrfToken = null;
+    if (endpoint !== 'auth' && endpoint !== 'tokens') {
+        try {
+            const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
+            const tokensData = await tokensResponse.json();
+            if (tokensData.success) {
+                csrfToken = tokensData.data.csrf_token;
+            }
+        } catch (error) {
+            console.warn('⚠️ No se pudo obtener token CSRF:', error);
+        }
+    }
+    
+    const headers = {};
+    if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+    }
+    
     const response = await fetchWithRetry(url, {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        headers
     });
     
     const result = await response.json();
@@ -171,9 +223,27 @@ async function put(endpoint, data = {}) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
+    // Obtener token CSRF para requests modificadores
+    let csrfToken = null;
+    try {
+        const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
+        const tokensData = await tokensResponse.json();
+        if (tokensData.success) {
+            csrfToken = tokensData.data.csrf_token;
+        }
+    } catch (error) {
+        console.warn('⚠️ No se pudo obtener token CSRF:', error);
+    }
+    
+    const headers = {};
+    if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+    }
+    
     const response = await fetchWithRetry(url, {
         method: 'PUT',
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        headers
     });
     
     const result = await response.json();
@@ -188,8 +258,26 @@ async function del(endpoint) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
+    // Obtener token CSRF para requests modificadores
+    let csrfToken = null;
+    try {
+        const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
+        const tokensData = await tokensResponse.json();
+        if (tokensData.success) {
+            csrfToken = tokensData.data.csrf_token;
+        }
+    } catch (error) {
+        console.warn('⚠️ No se pudo obtener token CSRF:', error);
+    }
+    
+    const headers = {};
+    if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+    }
+    
     const response = await fetchWithRetry(url, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
     });
     
     const result = await response.json();
