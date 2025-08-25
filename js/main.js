@@ -90,7 +90,7 @@ class ClinicaBelezaApp {
             
             // Guardar datos del usuario en la aplicación
             this.currentUser = user;
-            this.currentUser.profesional = JSON.parse(localStorage.getItem('profesionalData') || 'null');
+            // No necesitamos profesionalData por ahora, ya que no lo estamos guardando
             
             console.log('✅ Autenticación exitosa');
             return true;
