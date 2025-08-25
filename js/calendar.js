@@ -9,9 +9,9 @@ class Calendar {
         this.options = {
             initialView: 'week',
             initialDate: new Date(),
-            slotDuration: 30,
-            slotMinTime: '08:00:00',
-            slotMaxTime: '20:00:00',
+            slotDuration: 60,
+            slotMinTime: '09:00:00', // Horario de la clínica: 9 AM
+            slotMaxTime: '20:00:00', // Horario de la clínica: 8 PM
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -107,10 +107,10 @@ class Calendar {
     renderDayView(container) {
         const date = this.currentDate;
         const dayStart = new Date(date);
-        dayStart.setHours(8, 0, 0, 0);
+        dayStart.setHours(9, 0, 0, 0); // Horario de la clínica: 9 AM
         
         const dayEnd = new Date(date);
-        dayEnd.setHours(20, 0, 0, 0);
+        dayEnd.setHours(20, 0, 0, 0); // Horario de la clínica: 8 PM
         
         const timeSlots = this.generateTimeSlots(dayStart, dayEnd, 60);
         const dayEvents = this.getEventsForDate(date);
@@ -201,10 +201,10 @@ class Calendar {
     generateTimeSlots(start = null, end = null, duration = 60) {
         const slots = [];
         const startTime = new Date();
-        startTime.setHours(8, 0, 0, 0);
+        startTime.setHours(9, 0, 0, 0); // Horario de la clínica: 9 AM
         
         const endTime = new Date();
-        endTime.setHours(20, 0, 0, 0);
+        endTime.setHours(20, 0, 0, 0); // Horario de la clínica: 8 PM
         
         const current = new Date(startTime);
         
@@ -301,20 +301,22 @@ class Calendar {
         const minutes = startTime.getHours() * 60 + startTime.getMinutes();
         console.log('🔍 calculateEventPosition - minutes:', minutes);
         
-        const position = (minutes - 8 * 60) * (60 / 30); // 60px por hora, 30 minutos por slot
+        // 1 px por minuto, empezando desde las 9:00 (540 minutos)
+        const position = minutes - 540; // 9:00 = 540 minutos
         console.log('🔍 calculateEventPosition - position:', position);
         
-        return position;
+        return Math.max(0, position); // No permitir posiciones negativas
     }
     
     calculateEventHeight(event) {
         console.log('🔍 calculateEventHeight - event:', event);
         console.log('🔍 calculateEventHeight - duracion_sesion_min:', event.duracion_sesion_min);
         
-        const duracion = event.duracion_sesion_min || 30; // duración en minutos
+        const duracion = event.duracion_sesion_min || 60; // duración en minutos
         console.log('🔍 calculateEventHeight - duracion:', duracion);
         
-        const height = duracion * (60 / 30); // 60px por hora, 30 minutos por slot
+        // 1 px por minuto
+        const height = duracion;
         console.log('🔍 calculateEventHeight - height:', height);
         
         return height;
@@ -912,7 +914,8 @@ class Calendar {
     formatTime(date) {
         return date.toLocaleTimeString('es-ES', { 
             hour: '2-digit', 
-            minute: '2-digit' 
+            minute: '2-digit',
+            hour12: false
         });
     }
     
