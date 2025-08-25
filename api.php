@@ -37,18 +37,20 @@
  $access_allowed = false;
  $valid_referers = ['/login.html', '/index.html', '/'];
  
+ // Verificar origin si está presente
  if (!empty($origin)) {
      $origin_host = parse_url($origin, PHP_URL_HOST);
      if ($origin_host === $allowed_host) {
-         if (!empty($referer)) {
-             $referer_host = parse_url($referer, PHP_URL_HOST);
-             $referer_path = parse_url($referer, PHP_URL_PATH);
-             if ($referer_host === $allowed_host && in_array($referer_path, $valid_referers)) {
-                 $access_allowed = true;
-             }
-         } else {
-             $access_allowed = true;
-         }
+         $access_allowed = true;
+     }
+ }
+ 
+ // Si no se permitió por origin, verificar referer
+ if (!$access_allowed && !empty($referer)) {
+     $referer_host = parse_url($referer, PHP_URL_HOST);
+     $referer_path = parse_url($referer, PHP_URL_PATH);
+     if ($referer_host === $allowed_host && in_array($referer_path, $valid_referers)) {
+         $access_allowed = true;
      }
  }
  
