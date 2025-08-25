@@ -127,7 +127,7 @@ class Calendar {
                         <div class="calendar-day-event-slot slot-cell" 
                              data-date="${this.formatDate(date)}" 
                              data-time="${slot}"
-                             data-datetime="${date.toISOString().split('T')[0]}T${slot}">
+                             data-datetime="${this.formatDate(date)}T${slot}">
                             ${this.renderEventsInSlot(dayEvents, slot)}
                         </div>
                     `).join('')}
@@ -160,7 +160,7 @@ class Calendar {
                         <div class="calendar-time-slot slot-cell" 
                              data-date="${this.formatDate(day)}" 
                              data-time="${time}"
-                             data-datetime="${day.toISOString().split('T')[0]}T${time}">
+                             data-datetime="${this.formatDate(day)}T${time}">
                             ${this.renderEventsInSlot(weekEvents, time, day)}
                         </div>
                     `).join('')}
@@ -187,7 +187,7 @@ class Calendar {
                     <div class="calendar-month-day slot-cell ${this.isToday(day) ? 'today' : ''} ${this.isOtherMonth(day) ? 'other-month' : ''}"
                          data-date="${this.formatDate(day)}" 
                          data-time="09:00"
-                         data-datetime="${day.toISOString().split('T')[0]}T09:00">
+                         data-datetime="${this.formatDate(day)}T09:00">
                         <div class="calendar-month-day-number">${day.getDate()}</div>
                         <div class="calendar-month-events">
                             ${this.renderMonthEvents(monthEvents, day)}
@@ -230,46 +230,64 @@ class Calendar {
     
     renderEventsInSlot(events, time, date = null) {
         const slotEvents = events.filter(event => {
-            const eventTime = this.formatTime(new Date(event.fecha_inicio));
-            const eventDate = date ? this.formatDate(new Date(event.fecha_inicio)) : this.formatDate(new Date(event.fecha_inicio));
+            // Usar fecha_planificada en lugar de fecha_inicio
+            const eventTime = this.formatTime(new Date(event.fecha_planificada));
+            const eventDate = date ? this.formatDate(new Date(event.fecha_planificada)) : this.formatDate(new Date(event.fecha_planificada));
             
             return eventTime === time && (!date || eventDate === this.formatDate(date));
         });
         
-        return slotEvents.map(event => `
-            <div class="calendar-event ${event.estado}" 
-                 data-event-id="${event.id}"
-                 style="top: ${this.calculateEventPosition(event)}px; height: ${this.calculateEventHeight(event)}px;">
-                <div class="calendar-event-title">${event.titulo}</div>
-                <div class="calendar-event-time">${this.formatTime(new Date(event.fecha_inicio))} - ${this.formatTime(new Date(event.fecha_fin))}</div>
-            </div>
-        `).join('');
+        return slotEvents.map(event => {
+            // Crear título usando nombres y apellidos del paciente
+            const pacienteNombre = event.nombres && event.apellidos 
+                ? `${event.nombres} ${event.apellidos}`
+                : 'Paciente';
+            
+            // Calcular hora de fin usando duración
+            const startTime = new Date(event.fecha_planificada);
+            const duracion = event.duracion_sesion_min || 30; // duración en minutos
+            const endTime = new Date(startTime.getTime() + (duracion * 60000));
+            
+            return `
+                <div class="calendar-event ${event.estado}" 
+                     data-event-id="${event.id}"
+                     style="top: ${this.calculateEventPosition(event)}px; height: ${this.calculateEventHeight(event)}px;">
+                    <div class="calendar-event-title">${pacienteNombre}</div>
+                    <div class="calendar-event-time">${this.formatTime(startTime)} - ${this.formatTime(endTime)}</div>
+                </div>
+            `;
+        }).join('');
     }
     
     renderMonthEvents(events, day) {
         const dayEvents = events.filter(event => {
-            const eventDate = new Date(event.fecha_inicio);
+            const eventDate = new Date(event.fecha_planificada);
             return this.isSameDay(eventDate, day);
         });
         
-        return dayEvents.slice(0, 3).map(event => `
-            <div class="calendar-month-event ${event.estado}" data-event-id="${event.id}">
-                ${event.titulo}
-            </div>
-        `).join('');
+        return dayEvents.slice(0, 3).map(event => {
+            const pacienteNombre = event.nombres && event.apellidos 
+                ? `${event.nombres} ${event.apellidos}`
+                : 'Paciente';
+            
+            return `
+                <div class="calendar-month-event ${event.estado}" data-event-id="${event.id}">
+                    ${pacienteNombre}
+                </div>
+            `;
+        }).join('');
     }
     
     calculateEventPosition(event) {
-        const startTime = new Date(event.fecha_inicio);
+        const startTime = new Date(event.fecha_planificada);
         const minutes = startTime.getHours() * 60 + startTime.getMinutes();
         return (minutes - 8 * 60) * (60 / 30); // 60px por hora, 30 minutos por slot
     }
     
     calculateEventHeight(event) {
-        const startTime = new Date(event.fecha_inicio);
-        const endTime = new Date(event.fecha_fin);
-        const duration = (endTime - startTime) / (1000 * 60); // duración en minutos
-        return duration * (60 / 30); // 60px por hora, 30 minutos por slot
+        const startTime = new Date(event.fecha_planificada);
+        const duracion = event.duracion_sesion_min || 30; // duración en minutos
+        return duracion * (60 / 30); // 60px por hora, 30 minutos por slot
     }
     
     updateTitle() {
