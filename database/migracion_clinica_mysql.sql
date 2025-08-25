@@ -85,6 +85,54 @@ DROP PROCEDURE IF EXISTS sp_crear_pack;
 DROP PROCEDURE IF EXISTS sp_crear_sucursal;
 DROP PROCEDURE IF EXISTS sp_crear_box;
 DROP PROCEDURE IF EXISTS sp_agregar_pack_oferta_combo;
+DROP PROCEDURE IF EXISTS sp_obtener_usuario_por_username;
+DROP PROCEDURE IF EXISTS sp_crear_usuario;
+DROP PROCEDURE IF EXISTS sp_crear_profesional_completo;
+DROP PROCEDURE IF EXISTS sp_crear_zona_cuerpo;
+DROP PROCEDURE IF EXISTS sp_usuarios_get;
+DROP PROCEDURE IF EXISTS sp_usuarios_create;
+DROP PROCEDURE IF EXISTS sp_usuarios_update;
+DROP PROCEDURE IF EXISTS sp_usuarios_delete;
+DROP PROCEDURE IF EXISTS sp_sucursales_get;
+DROP PROCEDURE IF EXISTS sp_sucursales_create;
+DROP PROCEDURE IF EXISTS sp_sucursales_update;
+DROP PROCEDURE IF EXISTS sp_sucursales_delete;
+DROP PROCEDURE IF EXISTS sp_tratamientos_get;
+DROP PROCEDURE IF EXISTS sp_tratamientos_create;
+DROP PROCEDURE IF EXISTS sp_tratamientos_update;
+DROP PROCEDURE IF EXISTS sp_tratamientos_delete;
+DROP PROCEDURE IF EXISTS sp_packs_get;
+DROP PROCEDURE IF EXISTS sp_packs_create;
+DROP PROCEDURE IF EXISTS sp_packs_update;
+DROP PROCEDURE IF EXISTS sp_packs_delete;
+DROP PROCEDURE IF EXISTS sp_ofertas_get;
+DROP PROCEDURE IF EXISTS sp_ofertas_create;
+DROP PROCEDURE IF EXISTS sp_ofertas_update;
+DROP PROCEDURE IF EXISTS sp_ofertas_delete;
+DROP PROCEDURE IF EXISTS sp_ventas_get;
+DROP PROCEDURE IF EXISTS sp_ventas_create;
+DROP PROCEDURE IF EXISTS sp_ventas_update;
+DROP PROCEDURE IF EXISTS sp_ventas_delete;
+DROP PROCEDURE IF EXISTS sp_sesiones_get;
+DROP PROCEDURE IF EXISTS sp_sesiones_create;
+DROP PROCEDURE IF EXISTS sp_sesiones_update;
+DROP PROCEDURE IF EXISTS sp_sesiones_delete;
+DROP PROCEDURE IF EXISTS sp_pacientes_get;
+DROP PROCEDURE IF EXISTS sp_pacientes_create;
+DROP PROCEDURE IF EXISTS sp_pacientes_update;
+DROP PROCEDURE IF EXISTS sp_pacientes_delete;
+DROP PROCEDURE IF EXISTS sp_profesionales_get;
+DROP PROCEDURE IF EXISTS sp_profesionales_create;
+DROP PROCEDURE IF EXISTS sp_profesionales_update;
+DROP PROCEDURE IF EXISTS sp_profesionales_delete;
+DROP PROCEDURE IF EXISTS sp_boxes_get;
+DROP PROCEDURE IF EXISTS sp_boxes_create;
+DROP PROCEDURE IF EXISTS sp_boxes_update;
+DROP PROCEDURE IF EXISTS sp_boxes_delete;
+DROP PROCEDURE IF EXISTS sp_zonas_get;
+DROP PROCEDURE IF EXISTS sp_zonas_create;
+DROP PROCEDURE IF EXISTS sp_zonas_update;
+DROP PROCEDURE IF EXISTS sp_zonas_delete;
 
 DELIMITER $$
 
@@ -2548,6 +2596,23 @@ BEGIN
     UPDATE usuario 
     SET ultimo_login = NOW() 
     WHERE id = p_usuario_id;
+END$$
+DELIMITER ;
+
+-- Crear usuario
+DELIMITER $$
+CREATE PROCEDURE sp_crear_usuario(
+    IN p_username VARCHAR(50),
+    IN p_password_hash VARCHAR(255),
+    IN p_email VARCHAR(120),
+    IN p_rol VARCHAR(20),
+    IN p_activo BOOLEAN,
+    OUT p_usuario_id BIGINT
+)
+BEGIN
+    INSERT INTO usuario (username, password_hash, email, rol, activo)
+    VALUES (p_username, p_password_hash, p_email, p_rol, p_activo);
+    SET p_usuario_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
 
