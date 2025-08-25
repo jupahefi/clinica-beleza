@@ -24,7 +24,7 @@ if (file_exists($env_file)) {
 
 // Verificar si ya está logueado
 if (isset($_SESSION['user_id']) && isset($_SESSION['auth_token'])) {
-    header('Location: /index.html');
+    header('Location: /index.php');
     exit();
 }
 
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 
                 // Redirigir al dashboard
-                header('Location: /index.html');
+                header('Location: /index.php');
                 exit();
                 
             } else {

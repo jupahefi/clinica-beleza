@@ -58,9 +58,16 @@ class ClinicaBelezaApp {
     
     async loadUserInfo() {
         try {
-            const { get } = await import('./api-client.js');
-            const userData = await get('user');
-            this.currentUser = userData;
+            // Usar los datos del usuario que vienen desde PHP
+            if (window.userData && window.userData.id) {
+                this.currentUser = window.userData;
+                console.log('✅ Usuario cargado desde sesión PHP:', this.currentUser);
+            } else {
+                // Fallback: intentar obtener desde API si no están disponibles los datos de PHP
+                const { get } = await import('./api-client.js');
+                const userData = await get('user');
+                this.currentUser = userData;
+            }
         } catch (error) {
             console.error('Error cargando información del usuario:', error);
             // Si no se puede cargar la información del usuario, redirigir al login

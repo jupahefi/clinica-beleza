@@ -1,0 +1,1193 @@
+<?php
+// Configurar cookies de sesión seguras
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.cookie_samesite', 'Strict');
+
+session_start();
+
+// Cargar variables de entorno
+$env_file = __DIR__ . '/.env';
+if (file_exists($env_file)) {
+    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value, '"\'');
+            putenv("$key=$value");
+            $_ENV[$key] = $value;
+        }
+    }
+}
+
+// Verificar si el usuario está logueado
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['auth_token'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Verificar que el token de sesión sea válido
+$expected_token = hash('sha256', $_SESSION['user_id'] . 'clinica-beleza-session-secret-2025' . $_SESSION['login_time']);
+if ($_SESSION['auth_token'] !== $expected_token) {
+    // Token inválido, destruir sesión y redirigir
+    session_destroy();
+    header('Location: /login.php');
+    exit();
+}
+
+// Verificar que la sesión no haya expirado (24 horas)
+$session_timeout = 24 * 60 * 60; // 24 horas en segundos
+if (time() - $_SESSION['login_time'] > $session_timeout) {
+    session_destroy();
+    header('Location: /login.php');
+    exit();
+}
+
+// Obtener datos del usuario para usar en el frontend
+$user_data = $_SESSION['user_data'] ?? [];
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Beleza - Sistema de Gestión</title>
+    
+    <!-- Meta tags para SEO y redes sociales -->
+    <meta name="description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta name="keywords" content="clínica belleza, sistema gestión, administración, pacientes, ventas, medicina estética">
+    <meta name="author" content="Clínica Beleza">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://clinicabeleza.cl/">
+    <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="og:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="og:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name" content="Clínica Beleza">
+    <meta property="og:locale" content="es_CL">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://clinicabeleza.cl/">
+    <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="twitter:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="twitter:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    
+    <!-- WhatsApp -->
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Clínica Beleza - Logo">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#7FB3D3">
+    <meta name="msapplication-TileColor" content="#7FB3D3">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Stylesheets -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Nuestros estilos al final para sobrescribir Bootstrap -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="js/calendar.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="logo">
+                    <img src="logo.png" alt="Clínica Beleza" class="logo-img">
+                    <span class="logo-text">Clínica Beleza</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#fichas" class="nav-link" data-view="fichas">Fichas</a></li>
+                    <li><a href="#ventas" class="nav-link" data-view="ventas">Ventas</a></li>
+                    <li><a href="#pagos" class="nav-link" data-view="pagos">Pagos</a></li>
+                    <li><a href="#sesiones" class="nav-link" data-view="sesiones">Sesiones</a></li>
+    
+                    <li><a href="#ofertas" class="nav-link" data-view="ofertas">Ofertas</a></li>
+                    <li><a href="#mantenedores" class="nav-link" data-view="mantenedores">Mantenedores</a></li>
+                    <li><a href="#historial" class="nav-link" data-view="historial">Historial</a></li>
+                    <li class="user-menu">
+                        <span id="userInfo" class="user-info"></span>
+                        <button id="logoutBtn" class="logout-btn" title="Cerrar sesión">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </li>
+                </ul>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Fichas Section -->
+        <section id="fichas" class="view-section active">
+            <div class="container">
+                <h2 class="section-title">Gestión de Pacientes</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Ficha de Paciente</h3>
+                        <form id="pacienteForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nombresPaciente">Nombres</label>
+                                    <input type="text" id="nombresPaciente" placeholder="Ej: Juan Pablo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="apellidosPaciente">Apellidos</label>
+                                    <input type="text" id="apellidosPaciente" placeholder="Ej: Herrera González" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="rutPaciente">RUT</label>
+                                    <input type="text" id="rutPaciente" placeholder="Ej: 12345678-9" maxlength="12" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="telefonoPaciente">Teléfono</label>
+                                    <input type="tel" id="telefonoPaciente" placeholder="Ej: 9 2847 8472" maxlength="15">
+                                </div>
+                                <div class="form-group">
+                                    <label for="emailPaciente">Email</label>
+                                    <input type="email" id="emailPaciente">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                                    <input type="date" id="fechaNacimiento">
+                                </div>
+                                <div class="form-group">
+                                    <label for="direccionPaciente">Dirección</label>
+                                    <input type="text" id="direccionPaciente">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesPaciente">Observaciones</label>
+                                <textarea id="observacionesPaciente" rows="3"></textarea>
+                            </div>
+                            
+
+                            
+                            <!-- Fichas Específicas (solo para visualización/edición) -->
+                            <div id="fichasEspecificasContainer" class="fichas-especificas-section" style="display: none;">
+                                <h3>Fichas Específicas</h3>
+                                
+                                <!-- Ficha de Depilación -->
+                                <div id="fichaDepilacionCard" class="ficha-especifica-container">
+                                    <h4>Ficha de Depilación</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="zonasDepilacion">Zonas tratadas</label>
+                                            <textarea id="zonasDepilacion" rows="2" readonly></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="observacionesMedicas">Observaciones médicas</label>
+                                            <textarea id="observacionesMedicas" rows="2" readonly></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Ficha Corporal/Facial -->
+                                <div id="fichaCorporalCard" class="ficha-especifica-container">
+                                    <h4>Ficha Corporal/Facial</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="tratamientosPrevios">Tratamientos previos</label>
+                                            <textarea id="tratamientosPrevios" rows="2" readonly></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="objetivoEstetico">Objetivo estético</label>
+                                            <textarea id="objetivoEstetico" rows="2" readonly></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Paciente
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioPaciente()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Pacientes Registrados</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarPaciente" placeholder="Buscar paciente...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="tablaPacientes" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
+                                        <th>Fecha Nac.</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaPacientes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ventas Section -->
+        <section id="ventas" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Venta de Tratamientos</h2>
+                <div class="section-content">
+                    <!-- Cliente -->
+                    <div class="form-container">
+                        <h3>Ficha del Cliente</h3>
+                        <div class="form-group">
+                            <label for="cliente">Seleccionar cliente</label>
+                            <select id="cliente" name="cliente" class="select2-ajax" data-placeholder="-- Selecciona cliente --">
+                                <option value="">-- Selecciona cliente --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <fieldset>
+                                <legend>Género para tratamiento (indicado por profesional):</legend>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="genero" id="generoM" value="M" required>
+                                    <label class="form-check-label" for="generoM">
+                                        Masculino
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="genero" id="generoF" value="F" required>
+                                    <label class="form-check-label" for="generoF">
+                                        Femenino
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">El profesional indica el género según las necesidades del tratamiento</small>
+                            </fieldset>
+                        </div>
+                    </div>
+
+                    <!-- Venta -->
+                    <div class="form-container">
+                        <h3>Venta</h3>
+                        <div class="form-group">
+                            <label for="tratamiento">Tratamiento</label>
+                            <select id="tratamiento">
+                                <option value="">-- Selecciona tratamiento --</option>
+                            </select>
+                        </div>
+
+                        <div id="packsDiv" style="display:none;">
+                            <div class="form-group">
+                                <label for="pack">Pack disponible</label>
+                                <select id="pack">
+                                    <option value="">-- Selecciona pack --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="tratamientoIndividualDiv" style="display:none;">
+                            <div class="form-group">
+                                <label for="tratamientoIndividual">Tratamiento individual (sin pack)</label>
+                                <input type="text" id="tratamientoIndividual" readonly>
+                            </div>
+                        </div>
+                        
+                        <div id="sugerenciasOfertas" style="display:none;"></div>
+
+                        <div id="sesionesDiv">
+                            <div class="form-group">
+                                <label for="cantidadSesiones">Cantidad de sesiones (solo aplica en modalidad sesión)</label>
+                                <input type="number" id="cantidadSesiones" min="1" value="1">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ofertaVenta">Oferta adicional en la venta (%)</label>
+                            <input type="number" id="ofertaVenta" min="0" max="100" value="0">
+                        </div>
+
+                        <div class="resultado" id="resultado">
+                            Selecciona tratamiento y modalidad para calcular el precio.
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-primary" onclick="confirmarVenta()">
+                                <i class="fas fa-cash-register"></i> Confirmar Venta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Historial -->
+                    <div class="data-container">
+                        <h3>Historial de Compras</h3>
+                        <div id="historialLista">Sin compras registradas.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pagos Section -->
+        <section id="pagos" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Pagos</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nuevo Pago</h3>
+                        <form id="pagoForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pacientePago">Paciente</label>
+                                    <select id="pacientePago" name="pacientePago" required data-placeholder="Seleccionar paciente...">
+                                        <option value="">Seleccionar paciente...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ventaPago">Venta</label>
+                                    <select id="ventaPago" required>
+                                        <option value="">Seleccionar venta...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="montoPago">Monto</label>
+                                    <input type="number" id="montoPago" min="0" step="1000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="metodoPago">Método de Pago</label>
+                                    <select id="metodoPago" required>
+                                        <option value="">Seleccionar método...</option>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta</option>
+                                        <option value="transferencia">Transferencia</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaPago">Fecha</label>
+                                    <input type="date" id="fechaPago" required>
+                                </div>
+                            </div>
+                            <div id="detallesVentaPago" style="display: none;"></div>
+                            <div class="form-group">
+                                <label for="observacionesPago">Observaciones</label>
+                                <textarea id="observacionesPago" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-credit-card"></i> Registrar Pago
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioPago()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Pagos Registrados</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarPago" placeholder="Buscar pago...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaPagos" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaPagos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sesiones Section -->
+        <section id="sesiones" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Sesiones</h2>
+                
+                <!-- Calendario -->
+                <div id="calendar-wrapper"></div>
+                
+                <!-- Formulario de Nueva Sesión -->
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Sesión</h3>
+                        <form id="sesionForm" class="form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pacienteSesion">Paciente</label>
+                                    <select id="pacienteSesion" name="pacienteSesion" required data-placeholder="Seleccionar paciente...">
+                                        <option value="">Seleccionar paciente...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ventaSesion">Venta Asociada</label>
+                                    <select id="ventaSesion" required>
+                                        <option value="">Seleccionar venta...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="boxSesion">Box</label>
+                                    <select id="boxSesion" required>
+                                        <option value="">Seleccionar box...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profesionalSesion">Profesional</label>
+                                    <select id="profesionalSesion" name="profesionalSesion" required data-placeholder="Seleccionar profesional...">
+                                        <option value="">Seleccionar profesional...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="duracionSesion">Duración (minutos)</label>
+                                    <input type="number" id="duracionSesion" min="15" max="240" value="60" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaSesion">Fecha</label>
+                                    <input type="date" id="fechaSesion" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="horaSesion">Hora</label>
+                                    <input type="time" id="horaSesion" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="observacionesSesion">Observaciones</label>
+                                <textarea id="observacionesSesion" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calendar-plus"></i> Agendar Sesión
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioSesion()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Sesiones Programadas</h3>
+                            <div class="search-box">
+                                <input type="text" id="buscarSesion" placeholder="Buscar sesión...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaSesiones" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Venta</th>
+                                        <th>Box</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Duración</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaSesiones"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- Ofertas Section -->
+        <section id="ofertas" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Gestión de Ofertas</h2>
+                <div class="section-content">
+                    <div class="form-container">
+                        <h3>Nueva Oferta</h3>
+                        <form id="ofertaForm" class="form">
+                            <input type="hidden" name="ofertaId" id="ofertaId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nombreOferta">Nombre</label>
+                                    <input type="text" name="nombreOferta" id="nombreOferta" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="tipoOferta">Tipo</label>
+                                    <select name="tipoOferta" id="tipoOferta" required>
+                                        <option value="">-- Selecciona tipo --</option>
+                                        <option value="tratamiento">Tratamiento</option>
+                                        <option value="pack">Pack</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos para oferta tipo tratamiento -->
+                            <div id="tratamientoOfertaDiv" style="display:none;">
+                                <div class="form-group">
+                                    <label for="tratamientoOferta">Tratamiento</label>
+                                    <select name="tratamientoOferta" id="tratamientoOferta">
+                                        <option value="">-- Selecciona tratamiento --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos para oferta tipo pack -->
+                            <div id="packOfertaDiv" style="display:none;">
+                                <div class="form-group">
+                                    <label for="packOferta">Pack</label>
+                                    <select name="packOferta" id="packOferta">
+                                        <option value="">-- Selecciona pack --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="porcentajeOferta">Descuento (%)</label>
+                                    <input type="number" name="porcentajeOferta" id="porcentajeOferta" min="0" max="100" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sesionesMinimas">Sesiones Mínimas</label>
+                                    <input type="number" name="sesionesMinimas" id="sesionesMinimas" min="1" value="1" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fechaInicioOferta">Fecha Inicio</label>
+                                    <input type="date" name="fechaInicioOferta" id="fechaInicioOferta">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fechaFinOferta">Fecha Fin</label>
+                                    <input type="date" name="fechaFinOferta" id="fechaFinOferta">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="combinableOferta">Combinable</label>
+                                    <select name="combinableOferta" id="combinableOferta" required>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prioridadOferta">Prioridad</label>
+                                    <input type="number" name="prioridadOferta" id="prioridadOferta" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcionOferta">Descripción</label>
+                                <textarea name="descripcionOferta" id="descripcionOferta" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-tag"></i> Crear Oferta
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioOferta()">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Ofertas Activas</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaOfertas" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
+                                        <th>Descuento</th>
+                                        <th>Sesiones Mínimas</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaOfertas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mantenedores Section -->
+        <section id="mantenedores" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Mantenedores del Sistema</h2>
+                <div class="section-content">
+                    <!-- Tabs para diferentes mantenedores -->
+                    <ul class="nav nav-tabs" id="mantenedoresTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="boxes-tab" type="button" role="tab" aria-controls="boxes-tab-pane" aria-selected="true">
+                                <i class="fas fa-cube"></i> Boxes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="sucursales-tab" type="button" role="tab" aria-controls="sucursales-tab-pane" aria-selected="false">
+                                <i class="fas fa-building"></i> Sucursales
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tratamientos-tab" type="button" role="tab" aria-controls="tratamientos-tab-pane" aria-selected="false">
+                                <i class="fas fa-stethoscope"></i> Tratamientos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="packs-tab" type="button" role="tab" aria-controls="packs-tab-pane" aria-selected="false">
+                                <i class="fas fa-box"></i> Packs
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="profesionales-tab" type="button" role="tab" aria-controls="profesionales-tab-pane" aria-selected="false">
+                                <i class="fas fa-user-md"></i> Profesionales
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="mantenedoresTabsContent">
+                        <!-- Tab Boxes -->
+                        <div class="tab-pane fade show active" id="boxes-tab-pane" role="tabpanel" aria-labelledby="boxes-tab" tabindex="0">
+                            <div class="mantenedor-content">
+                                <div class="form-container">
+                                    <h3>Gestión de Boxes</h3>
+                                    <form id="mantenedorBoxForm" class="form">
+                                        <input type="hidden" name="boxId" id="mantenedorBoxId">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorNombreBox">Nombre del Box</label>
+                                                <input type="text" name="nombreBox" id="mantenedorNombreBox" placeholder="Ej: Box 1, Box Principal, etc." required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorSucursalBox">Sucursal</label>
+                                                <select name="sucursalBox" id="mantenedorSucursalBox" required>
+                                                    <option value="">-- Seleccionar sucursal --</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorCapacidadBox">Capacidad (opcional)</label>
+                                                <input type="number" name="capacidadBox" id="mantenedorCapacidadBox" min="1" placeholder="Número de personas">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorEstadoBox">Estado</label>
+                                                <select name="estadoBox" id="mantenedorEstadoBox" required>
+                                                    <option value="">Seleccionar estado...</option>
+                                                    <option value="activo">Activo</option>
+                                                    <option value="inactivo">Inactivo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mantenedorDescripcionBox">Descripción</label>
+                                            <textarea name="descripcionBox" id="mantenedorDescripcionBox" rows="3" placeholder="Descripción del box, equipamiento, etc."></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Guardar Box
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="mantenedoresModule.limpiarFormularioBox()">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="data-container">
+                                    <div class="data-header">
+                                        <h3>Boxes Registrados</h3>
+                                        <div class="search-box">
+                                            <input type="text" id="buscarBoxMantenedor" placeholder="Buscar box...">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="tablaBoxesMantenedor" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Sucursal</th>
+                                                    <th>Descripción</th>
+                                                    <th>Capacidad</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuerpoTablaBoxesMantenedor"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Sucursales -->
+                        <div class="tab-pane fade" id="sucursales-tab-pane" role="tabpanel" aria-labelledby="sucursales-tab" tabindex="0">
+                            <div class="mantenedor-content">
+                                <div class="form-container">
+                                    <h3>Gestión de Sucursales</h3>
+                                    <form id="mantenedorSucursalForm" class="form">
+                                        <input type="hidden" name="sucursalId" id="mantenedorSucursalId">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorNombreSucursal">Nombre</label>
+                                                <input type="text" name="nombreSucursal" id="mantenedorNombreSucursal" placeholder="Nombre de la sucursal" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorTelefonoSucursal">Teléfono</label>
+                                                <input type="tel" name="telefonoSucursal" id="mantenedorTelefonoSucursal" placeholder="Teléfono de contacto" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorEmailSucursal">Email</label>
+                                                <input type="email" name="emailSucursal" id="mantenedorEmailSucursal" placeholder="Email de contacto" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorEstadoSucursal">Estado</label>
+                                                <select name="estadoSucursal" id="mantenedorEstadoSucursal" required>
+                                                    <option value="">Seleccionar estado...</option>
+                                                    <option value="activo">Activa</option>
+                                                    <option value="inactivo">Inactiva</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mantenedorDireccionSucursal">Dirección</label>
+                                            <textarea name="direccionSucursal" id="mantenedorDireccionSucursal" rows="3" placeholder="Dirección completa de la sucursal" required></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Guardar Sucursal
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="mantenedoresModule.limpiarFormularioSucursal()">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="data-container">
+                                    <div class="data-header">
+                                        <h3>Sucursales Registradas</h3>
+                                        <div class="search-box">
+                                            <input type="text" id="buscarSucursalMantenedor" placeholder="Buscar sucursal...">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="tablaSucursalesMantenedor" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Dirección</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuerpoTablaSucursalesMantenedor"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Tratamientos -->
+                        <div class="tab-pane fade" id="tratamientos-tab-pane" role="tabpanel" aria-labelledby="tratamientos-tab" tabindex="0">
+                            <div class="mantenedor-content">
+                                <div class="form-container">
+                                    <h3>Gestión de Tratamientos</h3>
+                                    <form id="mantenedorTratamientoForm" class="form">
+                                        <input type="hidden" name="tratamientoId" id="mantenedorTratamientoId">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorNombreTratamiento">Nombre</label>
+                                                <input type="text" name="nombreTratamiento" id="mantenedorNombreTratamiento" placeholder="Nombre del tratamiento" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorDuracionTratamiento">Duración (minutos)</label>
+                                                <input type="number" name="duracionTratamiento" id="mantenedorDuracionTratamiento" min="15" max="240" placeholder="Duración en minutos" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorFrecuenciaTratamiento">Frecuencia (días)</label>
+                                                <input type="number" name="frecuenciaTratamiento" id="mantenedorFrecuenciaTratamiento" min="1" placeholder="Frecuencia recomendada en días" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorEstadoTratamiento">Estado</label>
+                                                <select name="estadoTratamiento" id="mantenedorEstadoTratamiento" required>
+                                                    <option value="">Seleccionar estado...</option>
+                                                    <option value="activo">Activo</option>
+                                                    <option value="inactivo">Inactivo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mantenedorDescripcionTratamiento">Descripción</label>
+                                            <textarea name="descripcionTratamiento" id="mantenedorDescripcionTratamiento" rows="3" placeholder="Descripción del tratamiento" required></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Guardar Tratamiento
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="mantenedoresModule.limpiarFormularioTratamiento()">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="data-container">
+                                    <div class="data-header">
+                                        <h3>Tratamientos Registrados</h3>
+                                        <div class="search-box">
+                                            <input type="text" id="buscarTratamientoMantenedor" placeholder="Buscar tratamiento...">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="tablaTratamientosMantenedor" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Descripción</th>
+                                                    <th>Duración</th>
+                                                    <th>Frecuencia</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuerpoTablaTratamientosMantenedor"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Packs -->
+                        <div class="tab-pane fade" id="packs-tab-pane" role="tabpanel" aria-labelledby="packs-tab" tabindex="0">
+                            <div class="mantenedor-content">
+                                <div class="form-container">
+                                    <h3>Gestión de Packs</h3>
+                                    <form id="mantenedorPackForm" class="form">
+                                        <input type="hidden" name="packId" id="mantenedorPackId">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorTratamientoPack">Tratamiento</label>
+                                                <select name="tratamientoPack" id="mantenedorTratamientoPack" required>
+                                                    <option value="">-- Seleccionar tratamiento --</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorNombrePack">Nombre del Pack</label>
+                                                <input type="text" name="nombrePack" id="mantenedorNombrePack" placeholder="Nombre del pack" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorSesionesPack">Sesiones Incluidas</label>
+                                                <input type="number" name="sesionesPack" id="mantenedorSesionesPack" min="1" placeholder="Número de sesiones" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorPrecioPack">Precio Total</label>
+                                                <input type="number" name="precioPack" id="mantenedorPrecioPack" min="0" step="1000" placeholder="Precio total del pack" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorGeneroPack">Género</label>
+                                                <select name="generoPack" id="mantenedorGeneroPack" required>
+                                                    <option value="">Seleccionar género...</option>
+                                                    <option value="M">Masculino</option>
+                                                    <option value="F">Femenino</option>
+                                                    <option value="U">Universal</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorEstadoPack">Estado</label>
+                                                <select name="estadoPack" id="mantenedorEstadoPack" required>
+                                                    <option value="">Seleccionar estado...</option>
+                                                    <option value="activo">Activo</option>
+                                                    <option value="inactivo">Inactivo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mantenedorDescripcionPack">Descripción</label>
+                                            <textarea name="descripcionPack" id="mantenedorDescripcionPack" rows="3" placeholder="Descripción del pack" required></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Guardar Pack
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="mantenedoresModule.limpiarFormularioPack()">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="data-container">
+                                    <div class="data-header">
+                                        <h3>Packs Registrados</h3>
+                                        <div class="search-box">
+                                            <input type="text" id="buscarPackMantenedor" placeholder="Buscar pack...">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="tablaPacksMantenedor" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Tratamiento</th>
+                                                    <th>Sesiones</th>
+                                                    <th>Precio</th>
+                                                    <th>Género</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuerpoTablaPacksMantenedor"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Profesionales -->
+                        <div class="tab-pane fade" id="profesionales-tab-pane" role="tabpanel" aria-labelledby="profesionales-tab" tabindex="0">
+                            <div class="mantenedor-content">
+                                <div class="form-container">
+                                    <h3>Gestión de Profesionales</h3>
+                                    <form id="mantenedorProfesionalForm" class="form">
+                                        <input type="hidden" name="profesionalId" id="mantenedorProfesionalId">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorNombreProfesional">Nombre</label>
+                                                <input type="text" name="nombreProfesional" id="mantenedorNombreProfesional" placeholder="Nombre del profesional" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorApellidosProfesional">Apellidos</label>
+                                                <input type="text" name="apellidosProfesional" id="mantenedorApellidosProfesional" placeholder="Apellidos del profesional" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorRutProfesional">RUT</label>
+                                                <input type="text" name="rutProfesional" id="mantenedorRutProfesional" placeholder="RUT del profesional" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorTelefonoProfesional">Teléfono</label>
+                                                <input type="tel" name="telefonoProfesional" id="mantenedorTelefonoProfesional" placeholder="Teléfono de contacto" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="mantenedorEmailProfesional">Email</label>
+                                                <input type="email" name="emailProfesional" id="mantenedorEmailProfesional" placeholder="Email de contacto" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mantenedorTipoProfesional">Tipo de Profesional</label>
+                                                <select name="tipoProfesional" id="mantenedorTipoProfesional" required>
+                                                    <option value="">Seleccionar tipo...</option>
+                                                    <option value="Médico">Médico</option>
+                                                    <option value="Enfermero">Enfermero</option>
+                                                    <option value="Técnico">Técnico</option>
+                                                    <option value="Esteticista">Esteticista</option>
+                                                    <option value="Administrador">Administrador</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mantenedorEspecialidadProfesional">Especialidad</label>
+                                            <input type="text" name="especialidadProfesional" id="mantenedorEspecialidadProfesional" placeholder="Especialidad del profesional" required>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Guardar Profesional
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="mantenedoresModule.limpiarFormularioProfesional()">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="data-container">
+                                    <div class="data-header">
+                                        <h3>Profesionales Registrados</h3>
+                                        <div class="search-box">
+                                            <input type="text" id="buscarProfesionalMantenedor" placeholder="Buscar profesional...">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="tablaProfesionalesMantenedor" class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Apellidos</th>
+                                                    <th>RUT</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Tipo</th>
+                                                    <th>Especialidad</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuerpoTablaProfesionalesMantenedor"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historial Section -->
+        <section id="historial" class="view-section">
+            <div class="container">
+                <h2 class="section-title">Historial de Actividad</h2>
+                <div class="section-content">
+                    <div class="data-container">
+                        <div class="data-header">
+                            <h3>Actividad Reciente</h3>
+                            <div class="filter-container">
+                                <select id="filtroHistorial">
+                                    <option value="todos">Todos</option>
+                                    <option value="pacientes">Pacientes</option>
+                                    <option value="ventas">Ventas</option>
+                                    <option value="pagos">Pagos</option>
+                                    <option value="sesiones">Sesiones</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaHistorial" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Acción</th>
+                                        <th>Detalle</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaHistorial"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="logo.png" alt="Clínica Beleza" class="footer-logo-img">
+                    <span>Sistema de Gestión</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#fichas">Fichas</a>
+                    <a href="#ventas">Ventas</a>
+                    <a href="#pagos">Pagos</a>
+                    <a href="#sesiones">Sesiones</a>
+                    
+                    <a href="#ofertas">Ofertas</a>
+                    <a href="#mantenedores">Mantenedores</a>
+                    <a href="#historial">Historial</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Clínica Beleza. Sistema de Gestión Integral.</p>
+            </div>
+        </div>
+    </footer>
+
+                               <!-- Scripts -->
+            <script type="module" src="js/calendar.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+            <script type="module" src="js/main.js"></script>
+            <script>
+                // Datos del usuario logueado (desde PHP)
+                window.userData = <?php echo json_encode($user_data); ?>;
+                
+                // Función global para confirmar venta
+                window.confirmarVenta = function() {
+                    // Esta función será llamada desde el HTML
+                    // El módulo de ventas se encarga de la lógica
+                };
+                
+                // Función global para limpiar formulario de ofertas
+                window.limpiarFormularioOferta = function() {
+                    // Esta función será llamada desde el HTML
+                    // El módulo de ofertas se encarga de la lógica
+                };
+            </script>
+</body>
+</html>
