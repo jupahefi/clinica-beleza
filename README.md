@@ -299,3 +299,7 @@ clinica-beleza/
 **Clínica Beleza** - Sistema de gestión estética profesional y moderno
 
 *Desarrollado con ❤️ usando tecnologías web estándar y arquitectura de datos primero*
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.md) para detalles.
