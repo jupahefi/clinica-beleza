@@ -2587,18 +2587,6 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Actualizar último login
-DELIMITER $$
-CREATE PROCEDURE sp_actualizar_ultimo_login(
-    IN p_usuario_id BIGINT
-)
-BEGIN
-    UPDATE usuario 
-    SET ultimo_login = NOW() 
-    WHERE id = p_usuario_id;
-END$$
-DELIMITER ;
-
 -- Crear usuario
 DELIMITER $$
 CREATE PROCEDURE sp_crear_usuario(
