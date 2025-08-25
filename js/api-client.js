@@ -24,7 +24,7 @@ const API_CACHE = {
 export function initializeApiClient() {
     // Usar la URL actual como base si no hay configuración específica
     API_CONFIG.baseUrl = window.location.origin;
-    }
+}
 
 /**
  * Obtiene variable de entorno
@@ -596,7 +596,7 @@ export const reportesAPI = {
  */
 export function mostrarNotificacion(mensaje, tipo = 'info') {
     // Importar desde utils.js para usar la implementación real
-    import('../utils.js').then(utils => {
+    import('./utils.js').then(utils => {
         utils.mostrarNotificacion(mensaje, tipo);
     });
 }
@@ -628,6 +628,3 @@ export async function getConfig() {
         return null;
     }
 }
-
-
-
