@@ -28,8 +28,8 @@ $allowed_origin = getAllowedOrigin();
  
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
- $access_allowed = false;
- $valid_referers = ['/login.php', '/index.html', '/'];
+   $access_allowed = false;
+  $valid_referers = ['/login.php', '/index.html', '/index.php', '/'];
  
  // Verificar origin si está presente
  if (!empty($origin)) {
