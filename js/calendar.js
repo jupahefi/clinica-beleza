@@ -229,9 +229,7 @@ class Calendar {
     }
     
     renderEventsInSlot(events, time, date = null) {
-        console.log('🔍 renderEventsInSlot - eventos totales:', events.length);
-        console.log('🔍 renderEventsInSlot - time:', time, 'date:', date);
-        
+
         const slotEvents = events.filter(event => {
             // Usar fecha_planificada en lugar de fecha_inicio
             const eventTime = this.formatTime(new Date(event.fecha_planificada));
@@ -247,9 +245,7 @@ class Calendar {
             
             return eventTime === time && (!date || eventDate === this.formatDate(date));
         });
-        
-        console.log('🔍 slotEvents filtrados:', slotEvents.length);
-        
+
         return slotEvents.map(event => {
             // Crear título usando nombres y apellidos del paciente
             const pacienteNombre = event.nombres && event.apellidos 
@@ -822,11 +818,8 @@ class Calendar {
     }
     
     getEventsForWeek(start) {
-        console.log('🔍 getEventsForWeek - start:', start);
-        console.log('🔍 getEventsForWeek - this.events:', this.events);
-        
+
         if (!this.events || !Array.isArray(this.events)) {
-            console.log('🔍 getEventsForWeek - no hay eventos');
             return [];
         }
         
@@ -853,7 +846,6 @@ class Calendar {
             return isInRange;
         });
         
-        console.log('🔍 getEventsForWeek - eventos filtrados:', filteredEvents.length);
         return filteredEvents;
     }
     
