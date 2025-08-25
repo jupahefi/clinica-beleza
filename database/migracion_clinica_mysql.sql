@@ -2587,23 +2587,6 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Crear usuario
-DELIMITER $$
-CREATE PROCEDURE sp_crear_usuario(
-    IN p_username VARCHAR(50),
-    IN p_password_hash VARCHAR(255),
-    IN p_email VARCHAR(120),
-    IN p_rol VARCHAR(20),
-    IN p_activo BOOLEAN,
-    OUT p_usuario_id BIGINT
-)
-BEGIN
-    INSERT INTO usuario (username, password_hash, email, rol, activo)
-    VALUES (p_username, p_password_hash, p_email, p_rol, p_activo);
-    SET p_usuario_id = LAST_INSERT_ID();
-END$$
-DELIMITER ;
-
 -- Crear profesional completo
 DELIMITER $$
 CREATE PROCEDURE sp_crear_profesional_completo(
