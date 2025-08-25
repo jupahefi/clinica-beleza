@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['login_time'] = $login_time;
                 $_SESSION['user_data'] = [
                     'id' => $user['id'],
-                    'nombre' => $user['nombre'],
+                    'username' => $user['username'],
                     'email' => $user['email'],
                     'rol' => $user['rol']
                 ];
