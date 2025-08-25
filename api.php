@@ -53,30 +53,6 @@
      ]);
      exit();
  }
- 
- if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'DELETE') {
-     $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-     $session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? '';
-     
-     if (empty($csrf_token) || empty($session_token)) {
-         http_response_code(403);
-         echo json_encode([
-             'error' => 'Acceso denegado - Tokens de seguridad requeridos'
-         ]);
-         exit();
-     }
-     
-     $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
-     $expected_session = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
-     
-     if ($csrf_token !== $expected_csrf || $session_token !== $expected_session) {
-         http_response_code(403);
-         echo json_encode([
-             'error' => 'Acceso denegado - Tokens de seguridad inválidos'
-         ]);
-         exit();
-     }
- }
 
  header('Content-Type: application/json; charset=UTF-8');
  header('Access-Control-Allow-Origin: ' . getenv('API_URL'));
@@ -150,8 +126,32 @@ try {
     // Debug: Log de la URL parsing
     error_log("DEBUG URL PARSING: request=$request, path=$path, segments=" . json_encode($pathSegments) . ", apiIndex=$apiIndex, endpoint='$endpoint', id='$id'");
 
-    $method = $_SERVER['REQUEST_METHOD'];
-    $data = json_decode(file_get_contents('php://input'), true);
+         $method = $_SERVER['REQUEST_METHOD'];
+     $data = json_decode(file_get_contents('php://input'), true);
+     
+     if ($endpoint !== 'tokens' && ($method === 'POST' || $method === 'PUT' || $method === 'DELETE')) {
+         $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+         $session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? '';
+         
+         if (empty($csrf_token) || empty($session_token)) {
+             http_response_code(403);
+             echo json_encode([
+                 'error' => 'Acceso denegado - Tokens de seguridad requeridos'
+             ]);
+             exit();
+         }
+         
+         $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+         $expected_session = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
+         
+         if ($csrf_token !== $expected_csrf || $session_token !== $expected_session) {
+             http_response_code(403);
+             echo json_encode([
+                 'error' => 'Acceso denegado - Tokens de seguridad inválidos'
+             ]);
+             exit();
+         }
+     }
 
     // =============================================================================
     // DETECCIÓN DE SQL INJECTION EN TODOS LOS DATOS RECIBIDOS
