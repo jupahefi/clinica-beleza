@@ -62,12 +62,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="es">
-<head>
+    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Clínica Beleza</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Clínica Beleza - Sistema de Gestión</title>
+    
+    <!-- Meta tags para SEO y redes sociales -->
+    <meta name="description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta name="keywords" content="clínica belleza, sistema gestión, administración, pacientes, ventas, medicina estética">
+    <meta name="author" content="Clínica Beleza">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://clinicabeleza.cl/">
+    <meta property="og:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="og:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="og:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name" content="Clínica Beleza">
+    <meta property="og:locale" content="es_CL">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://clinicabeleza.cl/">
+    <meta property="twitter:title" content="Clínica Beleza - Sistema de Gestión">
+    <meta property="twitter:description" content="Sistema de gestión integral para Clínica Beleza. Administración de pacientes, ventas, pagos, sesiones y más.">
+    <meta property="twitter:image" content="https://clinicabeleza.cl/android-chrome-512x512.png">
+    
+    <!-- WhatsApp -->
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Clínica Beleza - Logo">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#7FB3D3">
+    <meta name="msapplication-TileColor" content="#7FB3D3">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+
     <style>
         * {
             margin: 0;
@@ -217,6 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="logo">
