@@ -240,13 +240,13 @@ function handleConfig($db) {
     echo json_encode([
         'success' => true,
         'config' => [
-            'API_URL' => getenv('API_URL') ?: 'https://clinica-beleza.equalitech.xyz',
-            'API_TIMEOUT' => getenv('API_TIMEOUT') ?: 10000,
-            'API_RETRIES' => getenv('API_RETRIES') ?: 3,
-            'APP_NAME' => getenv('APP_NAME') ?: 'Clínica Beleza',
-            'APP_VERSION' => getenv('APP_VERSION') ?: '2.0.0',
-            'CACHE_TTL' => getenv('CACHE_TTL') ?: 300,
-            'CACHE_ENABLED' => getenv('CACHE_ENABLED') ?: true
+            'API_URL' => getenv('API_URL'),
+            'API_TIMEOUT' => getenv('API_TIMEOUT'),
+            'API_RETRIES' => getenv('API_RETRIES'),
+            'APP_NAME' => getenv('APP_NAME'),
+            'APP_VERSION' => getenv('APP_VERSION'),
+            'CACHE_TTL' => getenv('CACHE_TTL'),
+            'CACHE_ENABLED' => getenv('CACHE_ENABLED')
         ]
     ]);
 }

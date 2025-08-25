@@ -5,14 +5,14 @@
 
 // Configuración por defecto
 const DEFAULT_CONFIG = {
-    API_URL: window.location.origin,
-    API_TIMEOUT: 10000,
-    API_RETRIES: 3,
-    APP_NAME: 'Clínica Beleza',
-    APP_VERSION: '2.0.0',
-    APP_ENV: 'development',
-    CACHE_TTL: 300,
-    CACHE_ENABLED: true
+    API_URL: '',
+    API_TIMEOUT: '',
+    API_RETRIES: '',
+    APP_NAME: '',
+    APP_VERSION: '',
+    APP_ENV: '',
+    CACHE_TTL: '',
+    CACHE_ENABLED: ''
 };
 
 // Variable global para almacenar la configuración
