@@ -1,52 +1,11 @@
 <?php
-// Configurar cookies de sesión seguras
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 1);
-ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_samesite', 'Strict');
-
-session_start();
-
-// Cargar variables de entorno
-$env_file = __DIR__ . '/.env';
-if (file_exists($env_file)) {
-    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
-            list($key, $value) = explode('=', $line, 2);
-            $key = trim($key);
-            $value = trim($value, '"\'');
-            putenv("$key=$value");
-            $_ENV[$key] = $value;
-        }
-    }
-}
+require_once 'init.php';
 
 // Verificar si el usuario está logueado
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['auth_token'])) {
-    header('Location: /login.php');
-    exit();
-}
-
-// Verificar que el token de sesión sea válido
-$expected_token = hash('sha256', $_SESSION['user_id'] . 'clinica-beleza-session-secret-2025' . $_SESSION['login_time']);
-if ($_SESSION['auth_token'] !== $expected_token) {
-    // Token inválido, destruir sesión y redirigir
-    session_destroy();
-    header('Location: /login.php');
-    exit();
-}
-
-// Verificar que la sesión no haya expirado (24 horas)
-$session_timeout = 24 * 60 * 60; // 24 horas en segundos
-if (time() - $_SESSION['login_time'] > $session_timeout) {
-    session_destroy();
-    header('Location: /login.php');
-    exit();
-}
+requireAuth();
 
 // Obtener datos del usuario para usar en el frontend
-$user_data = $_SESSION['user_data'] ?? [];
+$user_data = getCurrentUserData();
 ?>
 <!DOCTYPE html>
 <html lang="es">

@@ -1,32 +1,8 @@
 <?php
-// Configurar cookies de sesión seguras
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 1);
-ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_samesite', 'Strict');
-
-session_start();
-
-// Cargar variables de entorno
-$env_file = __DIR__ . '/.env';
-if (file_exists($env_file)) {
-    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
-            list($key, $value) = explode('=', $line, 2);
-            $key = trim($key);
-            $value = trim($value, '"\'');
-            putenv("$key=$value");
-            $_ENV[$key] = $value;
-        }
-    }
-}
+require_once 'init.php';
 
 // Verificar si ya está logueado
-if (isset($_SESSION['user_id']) && isset($_SESSION['auth_token'])) {
-    header('Location: /index.php');
-    exit();
-}
+requireGuest();
 
 $error = '';
 $success = '';
@@ -41,21 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             // Conectar a la base de datos
-            $db_host = getenv('DB_HOST') ?: 'localhost';
-            $db_name = getenv('DB_NAME') ?: 'clinica_beleza';
-            $db_user = getenv('DB_USER') ?: 'root';
-            $db_pass = getenv('DB_PASS') ?: '';
-            
-            $pdo = new PDO(
-                "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4",
-                $db_user,
-                $db_pass,
-                [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
-                ]
-            );
+            $pdo = createDatabaseConnection();
             
             // Buscar usuario
             $stmt = $pdo->prepare("CALL sp_obtener_usuario_por_username(?)");
@@ -72,20 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$user_id]);
                 $stmt->closeCursor();
                 
-                // Generar token de sesión
-                $login_time = time();
-                $session_token = hash('sha256', $user_id . 'clinica-beleza-session-secret-2025' . $login_time);
-                
-                // Guardar en sesión
-                $_SESSION['user_id'] = $user_id;
-                $_SESSION['auth_token'] = $session_token;
-                $_SESSION['login_time'] = $login_time;
-                $_SESSION['user_data'] = [
+                // Crear sesión de usuario
+                createUserSession([
                     'id' => $user['id'],
                     'username' => $user['username'],
                     'email' => $user['email'],
                     'rol' => $user['rol']
-                ];
+                ]);
                 
                 // Redirigir al dashboard
                 header('Location: /index.php');

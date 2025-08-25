@@ -11,21 +11,9 @@ ini_set('session.cookie_samesite', 'Strict');
  * Toda la lógica está en la base de datos
  */
 
- $env_file = __DIR__ . '/.env';
- if (file_exists($env_file)) {
-     $env_content = file_get_contents($env_file);
-     $env_lines = explode("\n", $env_content);
-     foreach ($env_lines as $line) {
-         $line = trim($line);
-         if (!empty($line) && strpos($line, '=') !== false && !str_starts_with($line, '#')) {
-             list($key, $value) = explode('=', $line, 2);
-             $_ENV[$key] = $value;
-             putenv("$key=$value");
-         }
-     }
- }
+ require_once 'init.php';
 
- $allowed_origin = getenv('API_URL');
+$allowed_origin = getAllowedOrigin();
  
  // Si no se puede leer la variable de entorno, fallar de forma segura
  if (!$allowed_origin) {
@@ -140,46 +128,9 @@ function detectSQLInjection($data) {
 // FUNCIÓN DE VERIFICACIÓN DE SESIÓN
 // =============================================================================
 
-function verificarSesion($db, $endpoint) {
-         // Endpoints que no requieren sesión
-     $endpoints_publicos = ['auth', 'tokens', 'health', 'config', 'root', 'user'];
-    
-    if (in_array($endpoint, $endpoints_publicos)) {
-        return true;
-    }
-    
-    // Iniciar sesión PHP si no está iniciada
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    // Verificar si hay sesión activa
-    if (!isset($_SESSION['user_id']) || !isset($_SESSION['auth_token'])) {
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Sesión no válida - Debe iniciar sesión',
-            'redirect' => '/login.php'
-        ]);
-        exit();
-    }
-    
-    // Verificar que el token de sesión sea válido
-    $expected_token = hash('sha256', $_SESSION['user_id'] . 'clinica-beleza-session-secret-2025' . $_SESSION['login_time']);
-    
-    if ($_SESSION['auth_token'] !== $expected_token) {
-        // Token inválido, destruir sesión
-        session_destroy();
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Sesión expirada - Debe iniciar sesión nuevamente',
-            'redirect' => '/login.php'
-        ]);
-        exit();
-    }
-    
-    return true;
+function verificarSesionAPI($db, $endpoint) {
+    // Usar la función centralizada de init.php
+    return verificarSesionAPI($db, $endpoint);
 }
 
 try {
@@ -245,7 +196,7 @@ try {
      }
      
      // Verificar sesión para endpoints protegidos
-     verificarSesion($db, $endpoint);
+     verificarSesionAPI($db, $endpoint);
 
     // Router principal - SOLO PASSTHROUGH
     switch ($endpoint) {
