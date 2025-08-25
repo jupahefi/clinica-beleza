@@ -7,7 +7,9 @@
  */
 
  $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
- if (!isset($_SERVER['HTTP_ORIGIN']) || $_SERVER['HTTP_ORIGIN'] !== $allowed_origin) {
+ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+ 
+ if ($origin !== $allowed_origin) {
      http_response_code(403);
      echo json_encode(['error' => 'Acceso denegado']);
      exit();
