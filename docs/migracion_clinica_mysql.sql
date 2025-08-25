@@ -3630,21 +3630,6 @@ END$$
 
 -- ---------- AUTH ----------
 
--- Función para verificar bcrypt (simplificada para MySQL)
-DELIMITER $$
-CREATE FUNCTION fn_verify_bcrypt(p_password VARCHAR(255), p_hash VARCHAR(255)) 
-RETURNS BOOLEAN
-DETERMINISTIC
-BEGIN
-    -- Verificación temporal para la contraseña "141214"
-    -- En producción, esto debería usar una función más robusta
-    IF p_password = '141214' AND p_hash = '$2y$10$kttBK9rvbrWShhtMFXmcnOEfB.YLcymk6h9ZMsv3KsnQhSipCciWC' THEN
-        RETURN TRUE;
-    ELSE
-        RETURN FALSE;
-    END IF;
-END$$
-DELIMITER ;
 
 -- Stored procedure para health check
 DELIMITER $$
@@ -3697,17 +3682,17 @@ BEGIN
     WHERE (username = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.username')) OR email = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')))
     AND activo = TRUE;
     
-    -- Verificar contraseña usando la función bcrypt
-    IF v_usuario_id IS NOT NULL AND fn_verify_bcrypt(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.password')), v_password_hash) THEN
-        CALL sp_actualizar_ultimo_login(v_usuario_id);
+    -- Retornar datos del usuario (la verificación de contraseña se hace en PHP)
+    IF v_usuario_id IS NOT NULL THEN
         SELECT 
             v_usuario_id as id,
             v_username as nombre,
             v_email as email,
             v_rol as rol,
-            'Login exitoso' as mensaje;
+            v_password_hash as password_hash,
+            'Usuario encontrado' as mensaje;
     ELSE
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Credenciales inválidas';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Usuario no encontrado';
     END IF;
 END$$
 

@@ -620,8 +620,33 @@ function handleAuth($db, $method, $id, $data) {
     try {
         switch ($method) {
             case 'POST':
-                $result = $db->selectOne("CALL sp_auth_login(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                // Obtener datos del usuario desde la DB
+                $user = $db->selectOne("CALL sp_auth_login(?)", [json_encode($data)]);
+                
+                if (!$user) {
+                    http_response_code(401);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Credenciales inválidas'
+                    ]);
+                    return;
+                }
+                
+                // Verificar contraseña con bcrypt usando PHP
+                if (password_verify($data['password'], $user['password_hash'])) {
+                    // Login exitoso - actualizar último login
+                    $db->selectOne("CALL sp_actualizar_ultimo_login(?)", [$user['id']]);
+                    
+                    // Devolver datos del usuario (sin password_hash)
+                    unset($user['password_hash']);
+                    echo json_encode(['success' => true, 'data' => $user]);
+                } else {
+                    http_response_code(401);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Credenciales inválidas'
+                    ]);
+                }
                 break;
             default:
                 http_response_code(405);
