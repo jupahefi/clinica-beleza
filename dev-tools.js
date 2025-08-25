@@ -40,8 +40,7 @@ window.DevTools = {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
         registration.update();
-        console.log('Cache actualizado');
-      });
+              });
     }
   },
   
@@ -51,13 +50,11 @@ window.DevTools = {
   async showCacheInfo() {
     if ('caches' in window) {
       const cacheNames = await caches.keys();
-      console.log('Caches disponibles:', cacheNames);
-      
+            
       for (const name of cacheNames) {
         const cache = await caches.open(name);
         const keys = await cache.keys();
-        console.log(`Cache ${name}:`, keys.map(req => req.url));
-      }
+              }
     }
   },
   
@@ -102,6 +99,5 @@ Uso: Abre consola (F12) y escribe DevTools.comandoDeseado()
 
 // Auto-mostrar ayuda al cargar
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  console.log('🚀 Modo desarrollo detectado');
-  DevTools.help();
+    DevTools.help();
 }

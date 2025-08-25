@@ -288,33 +288,24 @@ class Calendar {
     }
     
     calculateEventPosition(event) {
-        console.log('🔍 calculateEventPosition - event:', event);
-        console.log('🔍 calculateEventPosition - fecha_planificada:', event.fecha_planificada);
-        
+                        
         const startTime = new Date(event.fecha_planificada);
-        console.log('🔍 calculateEventPosition - startTime:', startTime);
-        
+                
         const minutes = startTime.getHours() * 60 + startTime.getMinutes();
-        console.log('🔍 calculateEventPosition - minutes:', minutes);
-        
+                
         // 1 px por minuto, empezando desde las 9:00 (540 minutos)
         const position = minutes - 540; // 9:00 = 540 minutos
-        console.log('🔍 calculateEventPosition - position:', position);
-        
+                
         return Math.max(0, position); // No permitir posiciones negativas
     }
     
     calculateEventHeight(event) {
-        console.log('🔍 calculateEventHeight - event:', event);
-        console.log('🔍 calculateEventHeight - duracion_sesion_min:', event.duracion_sesion_min);
-        
+                        
         const duracion = event.duracion_sesion_min || 60; // duración en minutos
-        console.log('🔍 calculateEventHeight - duracion:', duracion);
-        
+                
         // 1 px por minuto
         const height = duracion;
-        console.log('🔍 calculateEventHeight - height:', height);
-        
+                
         return height;
     }
     
@@ -367,15 +358,12 @@ class Calendar {
         
         // Eventos del calendario
         this.container.addEventListener('click', (e) => {
-            console.log('🎯 Click detectado en calendario:', e.target.className);
-            
+                        
             if (e.target.closest('.calendar-event')) {
-                console.log('📅 Evento clickeado');
-                const eventId = e.target.closest('.calendar-event').dataset.eventId;
+                                const eventId = e.target.closest('.calendar-event').dataset.eventId;
                 this.showEventModal(eventId);
             } else if (e.target.closest('.slot-cell')) {
-                console.log('⏰ Slot clickeado');
-                const slot = e.target.closest('.slot-cell');
+                                const slot = e.target.closest('.slot-cell');
                 const date = slot.dataset.date;
                 const time = slot.dataset.time;
                 const datetime = slot.dataset.datetime;
@@ -418,20 +406,17 @@ class Calendar {
     
     filterByBox(boxId) {
         // Implementar filtro por box
-        console.log('Filtrar por box:', boxId);
-        this.renderCalendar();
+                this.renderCalendar();
     }
     
     filterByStatus(status) {
         // Implementar filtro por estado
-        console.log('Filtrar por estado:', status);
-        this.renderCalendar();
+                this.renderCalendar();
     }
     
     async loadEvents() {
         try {
-            console.log('🔄 Cargando eventos del calendario...');
-            const response = await fetch('/api.php/sesiones');
+                        const response = await fetch('/api.php/sesiones');
             const data = await response.json();
             
             if (data.success) {
@@ -528,8 +513,7 @@ class Calendar {
                 sessionForm.style.boxShadow = '';
             }, 2000);
             
-            console.log('✅ Scroll realizado al formulario de sesión');
-        } else {
+                    } else {
             console.error('❌ No se encontró el formulario de sesión');
         }
     }
@@ -617,8 +601,7 @@ class Calendar {
     
     // Versión para disparar evento custom (no la asíncrona)
     openSession(sessionId) {
-        console.log('🔄 Abriendo sesión (evento custom):', sessionId);
-        
+                
         // Disparar un evento personalizado para que el módulo de sesiones lo maneje
         const event = new CustomEvent('openSession', { 
             detail: { sessionId: sessionId } 
@@ -634,8 +617,7 @@ class Calendar {
     
     // Versión para disparar evento custom (no la asíncrona)
     closeSession(sessionId) {
-        console.log('🔄 Cerrando sesión (evento custom):', sessionId);
-        
+                
         // Disparar un evento personalizado para que el módulo de sesiones lo maneje
         const event = new CustomEvent('closeSession', { 
             detail: { sessionId: sessionId } 
@@ -670,8 +652,7 @@ class Calendar {
     // Versión asíncrona para abrir sesión con feedback descriptivo
     async openSessionAsync(sessionId) {
         try {
-            console.log(`🔄 Solicitando apertura de sesión ID ${sessionId}...`);
-            const response = await fetch(`./api.php/sesiones/${sessionId}/abrir`, {
+                        const response = await fetch(`./api.php/sesiones/${sessionId}/abrir`, {
                 method: 'POST'
             });
             const data = await response.json().catch(() => ({}));
@@ -688,8 +669,7 @@ class Calendar {
             await this.loadEvents();
             this.renderCalendar();
             
-            console.log('✅ Sesión abierta exitosamente');
-            mostrarNotificacion('Sesión abierta exitosamente', 'success');
+                        mostrarNotificacion('Sesión abierta exitosamente', 'success');
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error abriendo sesión';
@@ -701,8 +681,7 @@ class Calendar {
     // Versión asíncrona para cerrar sesión con feedback descriptivo
     async closeSessionAsync(sessionId) {
         try {
-            console.log(`🔄 Solicitando cierre de sesión ID ${sessionId}...`);
-            const response = await fetch(`./api.php/sesiones/${sessionId}/cerrar`, {
+                        const response = await fetch(`./api.php/sesiones/${sessionId}/cerrar`, {
                 method: 'POST'
             });
             const data = await response.json().catch(() => ({}));
@@ -719,8 +698,7 @@ class Calendar {
             await this.loadEvents();
             this.renderCalendar();
             
-            console.log('✅ Sesión cerrada exitosamente');
-            mostrarNotificacion('Sesión cerrada exitosamente', 'success');
+                        mostrarNotificacion('Sesión cerrada exitosamente', 'success');
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error cerrando sesión';
@@ -749,8 +727,7 @@ class Calendar {
     }
     
     updateEvents(newEvents) {
-        console.log('🔄 Actualizando eventos del calendario:', newEvents.length);
-        this.events = newEvents || [];
+                this.events = newEvents || [];
         this.renderCalendar();
     }
     
@@ -780,12 +757,9 @@ class Calendar {
     }
     
     getEventsForDate(date) {
-        console.log('🔍 getEventsForDate - date:', date);
-        console.log('🔍 getEventsForDate - this.events:', this.events);
-        
+                        
         if (!this.events || !Array.isArray(this.events)) {
-            console.log('🔍 getEventsForDate - no hay eventos');
-            return [];
+                        return [];
         }
         
         const filteredEvents = this.events.filter(event => {
@@ -803,8 +777,7 @@ class Calendar {
             return isSameDay;
         });
         
-        console.log('🔍 getEventsForDate - eventos filtrados:', filteredEvents.length);
-        return filteredEvents;
+                return filteredEvents;
     }
     
     getEventsForWeek(start) {
@@ -840,12 +813,9 @@ class Calendar {
     }
     
     getEventsForMonth(date) {
-        console.log('🔍 getEventsForMonth - date:', date);
-        console.log('🔍 getEventsForMonth - this.events:', this.events);
-        
+                        
         if (!this.events || !Array.isArray(this.events)) {
-            console.log('🔍 getEventsForMonth - no hay eventos');
-            return [];
+                        return [];
         }
         
         const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -867,8 +837,7 @@ class Calendar {
             return isInRange;
         });
         
-        console.log('🔍 getEventsForMonth - eventos filtrados:', filteredEvents.length);
-        return filteredEvents;
+                return filteredEvents;
     }
     
     isSameDay(date1, date2) {
@@ -930,18 +899,15 @@ class Calendar {
     // Métodos para acciones de eventos
     editEvent(eventId) {
         // Implementar edición de evento
-        console.log('Editar evento:', eventId);
-    }
+            }
     
     rescheduleEvent(eventId) {
         // Implementar reagendamiento
-        console.log('Reagendar evento:', eventId);
-    }
+            }
     
     cancelEvent(eventId) {
         // Implementar cancelación
-        console.log('Cancelar evento:', eventId);
-    }
+            }
 }
 
 // Exportar para uso global

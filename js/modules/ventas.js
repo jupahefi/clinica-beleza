@@ -165,8 +165,7 @@ class VentasModule {
         try {
             // Recargar tratamientos con el género específico
             this.tratamientos = await tratamientosAPI.getAll(this.generoSeleccionado);
-            console.log(`[VENTAS] Tratamientos recargados para género ${this.generoSeleccionado}:`, this.tratamientos);
-            
+                        
             // Recargar el selector de tratamientos
             this.cargarTratamientosEnSelect();
         } catch (error) {
@@ -183,14 +182,12 @@ class VentasModule {
             for (const tratamiento of this.tratamientos) {
                 try {
                     tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
-                    console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre} (${this.generoSeleccionado}):`, tratamiento.packs);
-                } catch (packError) {
+                                    } catch (packError) {
                     console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, packError);
                     tratamiento.packs = [];
                 }
             }
-            console.log(`[VENTAS] Packs cargados para género ${this.generoSeleccionado}`);
-        } catch (error) {
+                    } catch (error) {
             console.error('[VENTAS] Error cargando packs por género:', error);
             mostrarNotificacion('Error cargando packs por género', 'error');
         }
@@ -210,8 +207,7 @@ class VentasModule {
         try {
             // Cargar packs específicos para este tratamiento
             tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
-            console.log(`[VENTAS] Packs cargados para ${tratamiento.nombre} (${this.generoSeleccionado}):`, tratamiento.packs);
-        } catch (error) {
+                    } catch (error) {
             console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, error);
             tratamiento.packs = [];
         }
@@ -222,8 +218,7 @@ class VentasModule {
         const inputSesiones = document.getElementById('cantidadSesiones');
         
         if (!selectPack || !inputSesiones || !selectPack.value) {
-            console.log('[VENTAS] No hay pack seleccionado o elementos no encontrados');
-            return;
+                        return;
         }
 
         const selectTratamiento = document.getElementById('tratamiento');
@@ -233,16 +228,14 @@ class VentasModule {
         const tratamiento = this.tratamientos.find(t => t.id === tratamientoId);
         
         if (!tratamiento || !tratamiento.packs) {
-            console.log('[VENTAS] No se encontró el tratamiento o sus packs');
-            return;
+                        return;
         }
 
         const packId = parseInt(selectPack.value);
         const pack = tratamiento.packs.find(p => p.id === packId);
         
         if (!pack) {
-            console.log('[VENTAS] No se encontró el pack seleccionado');
-            return;
+                        return;
         }
 
         // Ajustar automáticamente el número de sesiones al valor del pack
@@ -254,8 +247,7 @@ class VentasModule {
         const sesionesPack = pack.sesiones_incluidas;
         inputSesiones.value = sesionesPack;
         
-        console.log(`[VENTAS] Sesiones ajustadas automáticamente a ${sesionesPack} según el pack "${pack.nombre}"`);
-        mostrarNotificacion(`Sesiones ajustadas automáticamente a ${sesionesPack} según el pack seleccionado`, 'info');
+                mostrarNotificacion(`Sesiones ajustadas automáticamente a ${sesionesPack} según el pack seleccionado`, 'info');
     }
 
     cargarTratamientosEnSelect() {
@@ -270,8 +262,7 @@ class VentasModule {
             selectTratamiento.appendChild(option);
         });
         
-        console.log(`[VENTAS] Tratamientos cargados en selector: ${this.tratamientos.length}`);
-    }
+            }
 
     mostrarOpciones() {
         const selectTratamiento = document.getElementById('tratamiento');
@@ -316,8 +307,7 @@ class VentasModule {
                 option.textContent = `${pack.nombre}${sesionesInfo} - $${precioPorSesion.toLocaleString()}/sesión`;
                 packSelect.appendChild(option);
             });
-            console.log(`[VENTAS] Packs cargados para tratamiento: ${tratamiento.nombre} (${tratamiento.packs.length} packs)`);
-        } else {
+                    } else {
             // Tratamiento individual sin packs
             packsDiv.style.display = 'none';
             tratamientoIndividualDiv.style.display = 'block';
@@ -327,8 +317,7 @@ class VentasModule {
                 return;
             }
             tratamientoIndividualInput.value = `${tratamiento.nombre} - $${tratamiento.precio_por_sesion.toLocaleString()}/sesión`;
-            console.log(`[VENTAS] Tratamiento individual: ${tratamiento?.nombre || 'Desconocido'}`);
-        }
+                    }
         
         // Siempre mostrar la sección de sesiones
         sesionesDiv.style.display = "block";
@@ -382,8 +371,7 @@ class VentasModule {
             });
         });
         
-        console.log(`[VENTAS] Sugerencias de ofertas mostradas para ${tratamiento.nombre}`);
-    }
+            }
 
     tomarOferta(packIndex, sesiones) {
         const packSelect = document.getElementById('pack');
@@ -402,8 +390,7 @@ class VentasModule {
             // Mostrar notificación
             mostrarNotificacion(`Oferta aplicada: ${sesiones} sesiones seleccionadas`, 'success');
             
-            console.log(`[VENTAS] Oferta tomada: pack ${packIndex}, ${sesiones} sesiones`);
-        }
+                    }
     }
 
     calcularPrecio() {
@@ -499,8 +486,7 @@ class VentasModule {
                     detalle += `<br>Precio por sesión: $${precioPorSesion.toLocaleString()} x ${sesiones} sesiones = $${precio.toLocaleString()}`;
                 }
             
-            console.log(`[VENTAS] Precio calculado para tratamiento individual: ${tratamiento.nombre}, ${sesiones} sesiones, precio: $${precio}`);
-        }
+                    }
 
         if (ofertaVenta > 0) {
             const descuento = (precio * ofertaVenta) / 100;
@@ -524,14 +510,11 @@ class VentasModule {
             <em>${detalle}</em>
         `;
 
-        console.log(`[VENTAS] Precio calculado para ${tratamiento.nombre}: $${precio} (${sesionesFinales} sesiones), descuento manual: ${ofertaVenta}%`);
-        return { tratamiento: tratamiento.nombre, sesiones: sesionesFinales, precio, detalle, descuento_manual_pct: ofertaVenta };
+                return { tratamiento: tratamiento.nombre, sesiones: sesionesFinales, precio, detalle, descuento_manual_pct: ofertaVenta };
     }
 
     async confirmarVenta() {
-        console.log('[VENTAS] Iniciando confirmarVenta');
-        console.log('[VENTAS] this.clienteSeleccionado:', this.clienteSeleccionado);
-        
+                        
         if (!this.clienteSeleccionado) {
             mostrarNotificacion('[VENTAS] Debes seleccionar un cliente antes de confirmar la venta.', 'warning');
             return;
@@ -570,8 +553,7 @@ class VentasModule {
                 // Recargar historial desde la base de datos en lugar de agregar localmente
                 await this.cargarHistorialCliente();
                 this.limpiarFormulario();
-                console.log(`[VENTAS] Venta de evaluación registrada para cliente ${this.clienteSeleccionado?.text || 'Cliente no seleccionado'}`);
-                mostrarNotificacion('Venta de evaluación registrada exitosamente. Agenda la sesión para completar el proceso.', 'success');
+                                mostrarNotificacion('Venta de evaluación registrada exitosamente. Agenda la sesión para completar el proceso.', 'success');
             } else {
                 const evaluacion = await evaluacionesAPI.create({
                     ficha_id: this.clienteSeleccionado.id,
@@ -665,8 +647,7 @@ class VentasModule {
                 // Recargar historial desde la base de datos en lugar de agregar localmente
                 await this.cargarHistorialCliente();
                 this.limpiarFormulario();
-                console.log(`[VENTAS] Venta registrada para cliente ${this.clienteSeleccionado.text} (${venta.tratamiento})`);
-                mostrarNotificacion('Venta registrada exitosamente.', 'success');
+                                mostrarNotificacion('Venta registrada exitosamente.', 'success');
             }
         } catch (error) {
             console.error('[VENTAS] Error confirmando venta:', error);
@@ -700,11 +681,9 @@ class VentasModule {
         if (!this.clienteSeleccionado) return;
         try {
             const ventasCliente = await ventasAPI.getByFichaId(this.clienteSeleccionado.id);
-            console.log('[VENTAS] Datos raw de la API:', ventasCliente);
-            
+                        
             this.historial = ventasCliente.map(venta => {
-                console.log('[VENTAS] Procesando venta:', venta);
-                // Crear nombre descriptivo del tratamiento
+                                // Crear nombre descriptivo del tratamiento
                 let tratamientoNombre = venta.tratamiento_nombre || 'Tratamiento no especificado';
                 if (venta.pack_nombre) {
                     tratamientoNombre = `${tratamientoNombre} - ${venta.pack_nombre}`;
@@ -729,8 +708,7 @@ class VentasModule {
                 };
             });
             this.renderHistorial();
-            console.log(`[VENTAS] Historial de ventas cargado para cliente ${this.clienteSeleccionado.text} (${this.historial.length} ventas)`);
-            mostrarNotificacion(`Historial de ventas cargado para ${this.clienteSeleccionado.text}`, 'success');
+                        mostrarNotificacion(`Historial de ventas cargado para ${this.clienteSeleccionado.text}`, 'success');
         } catch (error) {
             console.error('[VENTAS] Error cargando historial del cliente:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando historial';
@@ -810,8 +788,7 @@ class VentasModule {
 
         this.clienteSeleccionado = null;
         this.generoSeleccionado = null;
-        console.log('[VENTAS] Formulario de venta limpiado');
-        mostrarNotificacion('Formulario de venta limpiado', 'info');
+                mostrarNotificacion('Formulario de venta limpiado', 'info');
     }
 
     getVentas() {
@@ -821,8 +798,7 @@ class VentasModule {
     async loadVentas() {
         try {
             this.ventas = await ventasAPI.getAll();
-            console.log(`[VENTAS] Ventas cargadas: ${this.ventas.length}`);
-            
+                        
             // Convertir las ventas de la base de datos al formato del historial
             this.historial = this.ventas.map(venta => {
                 // Crear nombre descriptivo del tratamiento
@@ -858,8 +834,7 @@ class VentasModule {
 
     async loadPacientes() {
         try {
-            console.log('[VENTAS] Select2 configurado para cargar pacientes automáticamente');
-            mostrarNotificacion('Selector de pacientes listo para búsqueda.', 'info');
+                        mostrarNotificacion('Selector de pacientes listo para búsqueda.', 'info');
         } catch (error) {
             console.error('[VENTAS] Error configurando Select2:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido configurando Select2';
@@ -876,8 +851,7 @@ class VentasModule {
             venta.tratamiento?.toLowerCase().includes(termino.toLowerCase()) ||
             venta.cliente?.toLowerCase().includes(termino.toLowerCase())
         );
-        console.log(`[VENTAS] Búsqueda de ventas: "${termino}" (${ventasFiltradas.length} resultados)`);
-        this.renderVentasFiltradas(ventasFiltradas);
+                this.renderVentasFiltradas(ventasFiltradas);
         mostrarNotificacion(`Búsqueda de ventas: "${termino}" (${ventasFiltradas.length} resultados)`, 'info');
     }
 

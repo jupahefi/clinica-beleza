@@ -44,8 +44,7 @@ export class ReportesModule {
     async cargarReportesDisponibles() {
         try {
             // Aquí se podrían cargar reportes predefinidos o configuraciones
-                    console.log('[Reportes] Reportes disponibles cargados correctamente');
-        } catch (error) {
+                            } catch (error) {
             console.error('[Reportes] Error cargando reportes disponibles:', error);
             // Mostrar el error de la DB directamente si existe
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando reportes disponibles';
@@ -55,11 +54,9 @@ export class ReportesModule {
 
     async generarReporteProgresoVentas() {
         try {
-            console.log('[Reportes] Solicitando reporte de progreso de ventas...');
-            mostrarNotificacion('Generando reporte de progreso de ventas...', 'info');
+                        mostrarNotificacion('Generando reporte de progreso de ventas...', 'info');
             const reporte = await reportesAPI.progresoVentas();
-            console.log('[Reportes] Reporte de progreso de ventas recibido:', reporte);
-            mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
+                        mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
             this.mostrarReporteProgresoVentas(reporte);
         } catch (error) {
             console.error('[Reportes] Error generando reporte de progreso de ventas:', error);
@@ -71,11 +68,9 @@ export class ReportesModule {
 
     async generarReportePlanVsEjecucion() {
         try {
-            console.log('[Reportes] Solicitando reporte Plan vs Ejecución...');
-            mostrarNotificacion('Generando reporte Plan vs Ejecución...', 'info');
+                        mostrarNotificacion('Generando reporte Plan vs Ejecución...', 'info');
             const reporte = await reportesAPI.planVsEjecucion();
-            console.log('[Reportes] Reporte Plan vs Ejecución recibido:', reporte);
-            mostrarNotificacion('Reporte Plan vs Ejecución generado correctamente', 'success');
+                        mostrarNotificacion('Reporte Plan vs Ejecución generado correctamente', 'success');
             this.mostrarReportePlanVsEjecucion(reporte);
         } catch (error) {
             console.error('[Reportes] Error generando reporte Plan vs Ejecución:', error);
@@ -86,11 +81,9 @@ export class ReportesModule {
 
     async generarReporteDisponibilidadProfesionales() {
         try {
-            console.log('[Reportes] Solicitando reporte de disponibilidad de profesionales...');
-            mostrarNotificacion('Generando reporte de disponibilidad de profesionales...', 'info');
+                        mostrarNotificacion('Generando reporte de disponibilidad de profesionales...', 'info');
             const reporte = await reportesAPI.disponibilidad();
-            console.log('[Reportes] Reporte de disponibilidad de profesionales recibido:', reporte);
-            mostrarNotificacion('Reporte de disponibilidad de profesionales generado correctamente', 'success');
+                        mostrarNotificacion('Reporte de disponibilidad de profesionales generado correctamente', 'success');
             this.mostrarReporteDisponibilidadProfesionales(reporte);
         } catch (error) {
             console.error('[Reportes] Error generando reporte de disponibilidad de profesionales:', error);
@@ -101,11 +94,9 @@ export class ReportesModule {
 
     async generarReporteOfertasAplicadas() {
         try {
-            console.log('[Reportes] Solicitando reporte de ofertas aplicadas...');
-            mostrarNotificacion('Generando reporte de ofertas aplicadas...', 'info');
+                        mostrarNotificacion('Generando reporte de ofertas aplicadas...', 'info');
             const reporte = await reportesAPI.ofertasAplicadas();
-            console.log('[Reportes] Reporte de ofertas aplicadas recibido:', reporte);
-            mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
+                        mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
             this.mostrarReporteOfertasAplicadas(reporte);
         } catch (error) {
             console.error('[Reportes] Error generando reporte de ofertas aplicadas:', error);
@@ -342,8 +333,7 @@ export class ReportesModule {
 
     async exportarReporte(tipoReporte, formato = 'csv') {
         try {
-            console.log(`[Reportes] Exportando reporte tipo "${tipoReporte}" en formato "${formato}"...`);
-            mostrarNotificacion(`Exportando reporte (${tipoReporte}) en formato ${formato}...`, 'info');
+                        mostrarNotificacion(`Exportando reporte (${tipoReporte}) en formato ${formato}...`, 'info');
             const reporte = await reportesAPI.progresoVentas(); // Usar el método correcto según el tipo
             this.exportarDatos(reporte, tipoReporte, formato);
             mostrarNotificacion('Reporte exportado correctamente', 'success');
@@ -364,14 +354,12 @@ export class ReportesModule {
 
     exportarCSV(datos, nombreArchivo) {
         // Implementar exportación a CSV
-        console.log('[Reportes] Exportando a CSV:', datos);
-        mostrarNotificacion('Funcionalidad de exportación CSV en desarrollo', 'info');
+                mostrarNotificacion('Funcionalidad de exportación CSV en desarrollo', 'info');
     }
 
     exportarJSON(datos, nombreArchivo) {
         // Implementar exportación a JSON
-        console.log('[Reportes] Exportando a JSON:', datos);
-        const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+                const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -395,8 +383,7 @@ export class ReportesModule {
     }
 
     filtrarHistorial(tipo) {
-        console.log('[Reportes] Filtrando historial por:', tipo);
-        mostrarNotificacion(`Filtro de historial: ${tipo} - Funcionalidad en desarrollo`, 'info');
+                mostrarNotificacion(`Filtro de historial: ${tipo} - Funcionalidad en desarrollo`, 'info');
     }
 }
 

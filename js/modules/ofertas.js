@@ -16,14 +16,12 @@ export class OfertasModule {
     }
     
     async init() {
-        console.log('[OFERTAS] Inicializando módulo de ofertas...');
-        try {
+                try {
             await this.cargarOfertas();
             await this.cargarTratamientos();
             await this.cargarPacks();
             this.configurarEventosOfertas();
-            console.log('[OFERTAS] Módulo inicializado correctamente');
-        } catch (error) {
+                    } catch (error) {
             console.error('[OFERTAS] Error en inicialización:', error);
         }
     }
@@ -212,12 +210,10 @@ export class OfertasModule {
             if (ofertaId) {
                 // Actualizar oferta existente
                 resultado = await ofertasAPI.update(parseInt(ofertaId), ofertaData);
-                console.log(`Oferta actualizada (ID: ${ofertaId}):`, ofertaData);
-            } else {
+                            } else {
                 // Crear nueva oferta
                 resultado = await ofertasAPI.create(ofertaData);
-                console.log('Oferta creada:', ofertaData);
-            }
+                            }
             
             if (resultado) {
                 mostrarNotificacion(ofertaId ? 'Oferta actualizada correctamente' : 'Oferta creada correctamente', 'success');
@@ -270,8 +266,7 @@ export class OfertasModule {
         if (submitBtn) {
             submitBtn.textContent = 'Actualizar Oferta';
         }
-        console.log(`Oferta cargada para edición (ID: ${ofertaId})`, oferta);
-        mostrarNotificacion('Oferta cargada para edición', 'info');
+                mostrarNotificacion('Oferta cargada para edición', 'info');
     }
     
     async eliminarOferta(ofertaId) {
@@ -287,8 +282,7 @@ export class OfertasModule {
                 const resultado = await ofertasAPI.delete(ofertaId);
                 
                 if (resultado) {
-                    console.log(`Oferta eliminada correctamente (ID: ${ofertaId})`);
-                    mostrarNotificacion('Oferta eliminada correctamente', 'success');
+                                        mostrarNotificacion('Oferta eliminada correctamente', 'success');
                     await this.cargarOfertas();
                 } else {
                     mostrarNotificacion('Error al eliminar oferta', 'error');
@@ -318,8 +312,7 @@ export class OfertasModule {
             if (submitBtn) {
                 submitBtn.textContent = 'Crear Oferta';
             }
-            console.log('[OFERTAS] Formulario limpiado');
-            mostrarNotificacion('Formulario de oferta limpiado', 'info');
+                        mostrarNotificacion('Formulario de oferta limpiado', 'info');
         }
     }
 }

@@ -24,8 +24,7 @@ const API_CACHE = {
 export function initializeApiClient() {
     // Usar la URL actual como base si no hay configuración específica
     API_CONFIG.baseUrl = window.location.origin;
-    console.log('🌐 Cliente API inicializado (passthrough):', API_CONFIG.baseUrl);
-}
+    }
 
 /**
  * Obtiene variable de entorno

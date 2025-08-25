@@ -117,8 +117,7 @@ export class PagosModule {
                 montoInput.max = pendiente;
                 montoInput.placeholder = `Máximo: ${formatearPrecio(pendiente)}`;
             }
-            console.log(`✅ Venta seleccionada para pago: ID ${ventaId}`);
-        } catch (error) {
+                    } catch (error) {
             console.error('❌ Error cargando venta:', error);
             mostrarNotificacion(error.message || 'Error cargando venta', 'error');
         }
@@ -142,8 +141,7 @@ export class PagosModule {
         `;
         
         detallesContainer.style.display = 'block';
-        console.log('✅ Detalles de venta mostrados en el formulario de pago');
-    }
+            }
     
     limpiarFormularioPago() {
         const campos = ['montoPago', 'metodoPago', 'observacionesPago'];
@@ -165,8 +163,7 @@ export class PagosModule {
         
         // Resetear venta seleccionada
         this.ventaSeleccionadaPago = null;
-        console.log('ℹ️ Formulario de pago limpiado');
-    }
+            }
     
     async registrarPago() {
         if (!this.ventaSeleccionadaPago) {
@@ -212,8 +209,7 @@ export class PagosModule {
             
             if (pagoGuardado) {
                 mostrarNotificacion('Pago registrado correctamente', 'success');
-                console.log(`✅ Pago registrado para venta ID ${pago.venta_id} por ${formatearPrecio(monto)} (${metodo})`);
-                
+                                
                 // Actualizar venta
                 await this.actualizarVentaDespuesPago(monto);
                 
@@ -246,8 +242,7 @@ export class PagosModule {
         };
         try {
             await ventasAPI.update(this.ventaSeleccionadaPago.id, nuevaVenta);
-            console.log(`✅ Venta actualizada después del pago. Venta ID: ${this.ventaSeleccionadaPago.id}`);
-        } catch (error) {
+                    } catch (error) {
             console.error('❌ Error actualizando venta después del pago:', error);
             mostrarNotificacion(error.message || 'Error actualizando venta después del pago', 'error');
         }
@@ -262,8 +257,7 @@ export class PagosModule {
             
             if (pagos.length === 0) {
                 container.innerHTML = '<p class="text-center">No hay pagos registrados</p>';
-                console.log('ℹ️ No hay pagos registrados para mostrar');
-                return;
+                                return;
             }
             
             let html = `
@@ -305,8 +299,7 @@ export class PagosModule {
             `;
             
             container.innerHTML = html;
-            console.log(`✅ Historial de pagos renderizado (${pagos.length} pagos)`);
-        } catch (error) {
+                    } catch (error) {
             console.error('❌ Error cargando historial de pagos:', error);
             container.innerHTML = '<p class="text-center text-danger">Error cargando historial de pagos</p>';
             mostrarNotificacion(error.message || 'Error cargando historial de pagos', 'error');
@@ -428,8 +421,7 @@ export class PagosModule {
             if (!pacienteId) {
                 select.innerHTML = '<option value="">-- Seleccionar venta --</option>';
                 this.limpiarFormularioPago();
-                console.log('ℹ️ Paciente no seleccionado, ventas limpiadas');
-                return;
+                                return;
             }
             
             const ventasPendientes = await ventasAPI.search('estado:pendiente');
@@ -456,10 +448,8 @@ export class PagosModule {
                 option.textContent = 'No hay ventas pendientes de pago';
                 option.disabled = true;
                 select.appendChild(option);
-                console.log('ℹ️ No hay ventas pendientes de pago para el paciente seleccionado');
-            } else {
-                console.log(`✅ Ventas pendientes cargadas para paciente ID ${pacienteId}: ${ventasAgregadas}`);
-            }
+                            } else {
+                            }
         } catch (error) {
             console.error('❌ Error cargando ventas por paciente:', error);
             mostrarNotificacion(error.message || 'Error cargando ventas por paciente', 'error');

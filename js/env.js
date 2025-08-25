@@ -29,8 +29,7 @@ export async function loadEnvironment() {
             const config = await response.json();
             if (config.success && config.data) {
                 window.ENV_CONFIG = { ...DEFAULT_CONFIG, ...config.data };
-                console.log('✅ Variables de entorno cargadas desde servidor');
-                return true;
+                                return true;
             }
         }
     } catch (error) {
@@ -39,8 +38,7 @@ export async function loadEnvironment() {
     
     // Usar configuración por defecto
     window.ENV_CONFIG = { ...DEFAULT_CONFIG };
-    console.log('ℹ️ Usando configuración por defecto');
-    return false;
+        return false;
 }
 
 /**
@@ -82,16 +80,14 @@ export function setEnv(key, value) {
     }
     
     window.ENV_CONFIG[key] = value;
-    console.log(`🔧 Variable de entorno actualizada: ${key} = ${value}`);
-}
+    }
 
 /**
  * Reinicia la configuración a los valores por defecto
  */
 export function resetConfig() {
     window.ENV_CONFIG = { ...DEFAULT_CONFIG };
-    console.log('🔄 Configuración reiniciada a valores por defecto');
-}
+    }
 
 /**
  * Valida la configuración requerida
@@ -111,8 +107,7 @@ export function validateConfig() {
         return false;
     }
     
-    console.log('✅ Configuración validada correctamente');
-    return true;
+        return true;
 }
 
 /**
@@ -120,7 +115,6 @@ export function validateConfig() {
  */
 export function showConfig() {
     const config = getConfig();
-    console.log('📋 Configuración actual:', config);
-    return config;
+        return config;
 }
 

@@ -25,8 +25,7 @@ export class FichasEspecificasModule {
             // Importar zonasAPI dinámicamente
             const { zonasAPI } = await import('../api-client.js');
             this.zonas = await zonasAPI.getAll();
-            console.log('✅ Zonas cargadas:', this.zonas.length);
-        } catch (error) {
+                    } catch (error) {
             console.error('❌ Error cargando zonas:', error);
             mostrarNotificacion('Error cargando zonas: ' + (error?.message || 'Error desconocido'), 'error');
             this.zonas = [];
@@ -232,13 +231,11 @@ Fecha: ${new Date().toLocaleDateString()}
         this.consentimientoModal.show(
             this.consentimientoText,
             async (signatureBlob) => {
-                console.log('Consentimiento aceptado con firma BLOB:', signatureBlob);
-                mostrarNotificacion('Consentimiento aceptado y firmado correctamente.', 'success');
+                                mostrarNotificacion('Consentimiento aceptado y firmado correctamente.', 'success');
                 if (onAccept) await onAccept(signatureBlob);
             },
             () => {
-                console.log('Consentimiento rechazado');
-                mostrarNotificacion('Consentimiento rechazado por el paciente.', 'warning');
+                                mostrarNotificacion('Consentimiento rechazado por el paciente.', 'warning');
                 if (onReject) onReject();
             }
         );
@@ -257,8 +254,7 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.saveConsentimientoFirma(formData);
             
             if (response.success) {
-                console.log('✅ Firma digital guardada correctamente para ficha:', fichaId);
-                mostrarNotificacion('Firma digital guardada correctamente.', 'success');
+                                mostrarNotificacion('Firma digital guardada correctamente.', 'success');
                 return response.data;
             } else {
                 // Mostrar el error de la db si viene
@@ -281,8 +277,7 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.getConsentimientoFirma(fichaId, tipoConsentimiento);
             
             if (response.success) {
-                console.log('✅ Consentimiento firmado verificado para ficha:', fichaId);
-                return response.data;
+                                return response.data;
             } else {
                 const dbError = response?.error || 'No se encontró consentimiento firmado';
                 console.warn('⚠️ No se encontró consentimiento firmado:', dbError);
@@ -342,8 +337,7 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
-                console.log('✅ Ficha de depilación guardada correctamente. ID:', response.data?.id || '(sin id)');
-                mostrarNotificacion('Ficha de depilación guardada correctamente.', 'success');
+                                mostrarNotificacion('Ficha de depilación guardada correctamente.', 'success');
                 return response.data;
             } else {
                 // Mostrar el error de la db si viene
@@ -440,8 +434,7 @@ Fecha: ${new Date().toLocaleDateString()}
             const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
-                console.log('✅ Ficha corporal/facial guardada correctamente. ID:', response.data?.id || '(sin id)');
-                mostrarNotificacion('Ficha corporal/facial guardada correctamente.', 'success');
+                                mostrarNotificacion('Ficha corporal/facial guardada correctamente.', 'success');
                 return response.data;
             } else {
                 // Mostrar el error de la db si viene
@@ -462,8 +455,7 @@ Fecha: ${new Date().toLocaleDateString()}
     getZonasFromPack(packId) {
         // TODO: Obtener desde la base de datos usando packsAPI
         // Por ahora retornamos array vacío - se implementará cuando se conecte con packs
-        console.log('⚠️ getZonasFromPack: Implementar con packsAPI');
-        mostrarNotificacion('Funcionalidad de obtener zonas de un pack aún no implementada.', 'info');
+                mostrarNotificacion('Funcionalidad de obtener zonas de un pack aún no implementada.', 'info');
         return [];
     }
     
@@ -475,8 +467,7 @@ Fecha: ${new Date().toLocaleDateString()}
             return total + (zonaData ? zonaData.precio_base : 0);
         }, 0);
         if (zonasExtra.length > 0) {
-            console.log(`💸 Precio adicional por zonas extra (${zonasExtra.join(', ')}): ${formatCurrency(total)}`);
-        }
+                    }
         return total;
     }
     
@@ -488,8 +479,7 @@ Fecha: ${new Date().toLocaleDateString()}
             return total + (zonaData ? zonaData.precio_base : 0);
         }, 0);
         if (zonasRemovidas.length > 0) {
-            console.log(`💸 Descuento por zonas removidas (${zonasRemovidas.join(', ')}): ${formatCurrency(total)}`);
-        }
+                    }
         return total;
     }
 }

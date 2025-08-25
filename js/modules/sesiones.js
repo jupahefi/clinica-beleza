@@ -114,8 +114,7 @@ export class SesionesModule {
             });
             
             this.calendar = new Calendar(calendarContainer, { events });
-            console.log('✅ Calendario inicializado correctamente con', events.length, 'eventos');
-        } else {
+                    } else {
             console.error('❌ No se pudo inicializar el calendario');
             console.error('Contenedor:', calendarContainer);
             console.error('Calendar disponible:', typeof Calendar !== 'undefined');
@@ -137,20 +136,14 @@ export class SesionesModule {
     }
     
     setupSesionForm() {
-        console.log('🔧 Configurando formulario de sesión...');
-        const form = document.getElementById('sesionForm');
-        console.log('📋 Formulario encontrado:', form);
-        
+                const form = document.getElementById('sesionForm');
+                
         if (form) {
-            console.log('✅ Agregando event listener al formulario');
-            form.addEventListener('submit', (e) => {
-                console.log('🎯 Evento submit del formulario detectado');
-                e.preventDefault();
-                console.log('✅ PreventDefault ejecutado, llamando crearSesion...');
-                this.crearSesion();
+                        form.addEventListener('submit', (e) => {
+                                e.preventDefault();
+                                this.crearSesion();
             });
-            console.log('✅ Event listener agregado al formulario');
-        } else {
+                    } else {
             console.error('❌ No se encontró el formulario de sesión');
         }
         
@@ -165,33 +158,26 @@ export class SesionesModule {
             return;
         }
         
-        console.log('🔧 Configurando eventos para select de pacientes...');
-        
+                
         // Para Select2, usar el evento de jQuery
         if (typeof $ !== 'undefined' && $.fn.select2) {
-            console.log('🔧 Usando eventos Select2');
-            
+                        
             // Remover eventos anteriores si existen
             $(pacienteSelect).off('select2:select select2:clear');
             
             $(pacienteSelect).on('select2:select', (e) => {
-                console.log('🔍 Paciente seleccionado (Select2):', e.params.data);
-                this.cargarVentasPorPaciente(e.params.data.id);
+                                this.cargarVentasPorPaciente(e.params.data.id);
             });
             
             $(pacienteSelect).on('select2:clear', () => {
-                console.log('🔍 Paciente deseleccionado (Select2)');
-                this.cargarVentasPorPaciente(null);
+                                this.cargarVentasPorPaciente(null);
             });
             
-            console.log('✅ Eventos Select2 configurados');
-        } else {
-            console.log('🔧 Usando eventos nativos');
-            // Fallback para select normal
+                    } else {
+                        // Fallback para select normal
             pacienteSelect.removeEventListener('change', this.handlePacienteChange);
             pacienteSelect.addEventListener('change', this.handlePacienteChange.bind(this));
-            console.log('✅ Eventos nativos configurados');
-        }
+                    }
         
         // Configurar eventos para el select de ventas
         this.configurarEventosVenta();
@@ -205,36 +191,30 @@ export class SesionesModule {
         }
         
         // El select de ventas es NATIVO, no Select2
-        console.log('🔧 Configurando eventos NATIVOS para select de ventas...');
-        
+                
         // Remover TODOS los event listeners anteriores
         const newVentaSelect = ventaSelect.cloneNode(true);
         ventaSelect.parentNode.replaceChild(newVentaSelect, ventaSelect);
         
         // Agregar el event listener al nuevo elemento
         newVentaSelect.addEventListener('change', this.handleVentaChangeNative.bind(this));
-        console.log('✅ Eventos nativos para ventas configurados (limpiados)');
-    }
+            }
     
     handleVentaChangeNative(e) {
-        console.log('🔍 Venta seleccionada (nativo):', e.target.value);
-        this.handleVentaChange(e.target.value);
+                this.handleVentaChange(e.target.value);
     }
     
     handleVentaChange(ventaId) {
         if (!ventaId) {
-            console.log('🔍 Venta deseleccionada, limpiando duración');
-            this.limpiarDuracionSesion();
+                        this.limpiarDuracionSesion();
             return;
         }
         
-        console.log('🔍 Venta seleccionada, cargando duración para venta ID:', ventaId);
-        this.cargarDuracionSesion(ventaId);
+                this.cargarDuracionSesion(ventaId);
     }
     
     handlePacienteChange(e) {
-        console.log('🔍 Paciente seleccionado (nativo):', e.target.value);
-        this.cargarVentasPorPaciente(e.target.value);
+                this.cargarVentasPorPaciente(e.target.value);
     }
     
     setupIntensidadesForm() {
@@ -386,10 +366,8 @@ export class SesionesModule {
     }
     
     async crearSesion() {
-        console.log('🚀 Iniciando creación de sesión...');
-        const formData = this.getSesionFormData();
-        console.log('📋 Datos del formulario:', formData);
-        
+                const formData = this.getSesionFormData();
+                
         if (!formData.venta_id || !formData.fecha_planificada || !formData.profesional_id) {
             console.error('❌ Campos obligatorios faltantes:', {
                 venta_id: formData.venta_id,
@@ -401,13 +379,10 @@ export class SesionesModule {
         }
         
         try {
-            console.log('📡 Enviando petición a la API...');
-            const response = await sesionesAPI.create(formData);
-            console.log('📥 Respuesta de la API:', response);
-            
+                        const response = await sesionesAPI.create(formData);
+                        
             // Si llegamos aquí, la petición fue exitosa
-            console.log('✅ Sesión creada exitosamente');
-            mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
+                        mostrarNotificacion('✅ Sesión creada exitosamente', 'success');
             this.limpiarFormularioSesion();
             await this.loadSesiones(); // Recargar sesiones y actualizar calendario
             
@@ -421,8 +396,7 @@ export class SesionesModule {
     }
     
     getSesionFormData() {
-        console.log('🔍 Obteniendo datos del formulario...');
-        
+                
         const ventaId = document.getElementById('ventaSesion').value;
         const fechaPlanificada = document.getElementById('fechaSesion').value;
         const horaPlanificada = document.getElementById('horaSesion').value;
@@ -446,8 +420,7 @@ export class SesionesModule {
             ? `${fechaPlanificada} ${horaPlanificada}:00` 
             : null;
         
-        console.log('📅 Fecha planificada completa:', fechaPlanificadaCompleta);
-        
+                
         // Obtener sucursal_id del box seleccionado
         const boxSelect = document.getElementById('boxSesion');
         const selectedBoxOption = boxSelect ? boxSelect.options[boxSelect.selectedIndex] : null;
@@ -469,14 +442,12 @@ export class SesionesModule {
             observaciones: observaciones || null // NULL si está vacío
         };
         
-        console.log('📤 Datos finales a enviar:', formData);
-        return formData;
+                return formData;
     }
     
     async abrirSesion(sesionId) {
         try {
-            console.log('🔓 Abriendo sesión ID:', sesionId);
-            
+                        
             // Obtener datos de la sesión
             const sesion = await sesionesAPI.getById(sesionId);
             if (!sesion) {
@@ -485,8 +456,7 @@ export class SesionesModule {
                 return;
             }
             
-            console.log('✅ Datos de sesión obtenidos:', sesion);
-            
+                        
             // Mostrar modal de apertura de sesión
             this.showAbrirSesionModal(sesion);
             
@@ -819,8 +789,7 @@ export class SesionesModule {
     }
     
     async confirmarAbrirSesion(sesionId) {
-        console.log('✅ Confirmando apertura de sesión ID:', sesionId);
-        
+                
         const observaciones = document.getElementById('sesion-observaciones').value;
         const intensidades = this.getIntensidadesFromForm('sesion-intensidades-grid');
         
@@ -854,17 +823,14 @@ export class SesionesModule {
                 return;
             }
             
-            console.log('📡 Abriendo sesión en la base de datos...');
-            // Primero abrir la sesión en la base de datos
+                        // Primero abrir la sesión en la base de datos
             const response = await sesionesAPI.abrirSesion(sesionId);
             
             if (response.success) {
-                console.log('✅ Sesión abierta en la base de datos');
-                
+                                
                 // Guardar intensidades si existen (para depilaciones)
                 if (Object.keys(intensidades).length > 0) {
-                    console.log('💾 Guardando intensidades...');
-                    await this.guardarIntensidades(sesionId, intensidades);
+                                        await this.guardarIntensidades(sesionId, intensidades);
                 }
                 
                 // Preparar datos específicos según el tipo de tratamiento
@@ -874,8 +840,7 @@ export class SesionesModule {
                         tipo_ficha: tipoFicha,
                         fecha_evaluacion: new Date().toISOString()
                     }));
-                    console.log('📋 Datos de evaluación almacenados para sesión:', sesionId);
-                    mostrarNotificacion('✅ Evaluación iniciada. Al cerrar la sesión se creará la ficha específica.', 'success');
+                                        mostrarNotificacion('✅ Evaluación iniciada. Al cerrar la sesión se creará la ficha específica.', 'success');
                     
                 } else if (productosFaciales) {
                     // Para faciales - almacenar productos utilizados
@@ -883,8 +848,7 @@ export class SesionesModule {
                         productos_utilizados: productosFaciales,
                         fecha_tratamiento: new Date().toISOString()
                     }));
-                    console.log('✨ Datos de facial almacenados para sesión:', sesionId);
-                    mostrarNotificacion('✅ Tratamiento facial iniciado', 'success');
+                                        mostrarNotificacion('✅ Tratamiento facial iniciado', 'success');
                     
                 } else if (estadoCueroCabelludo || tratamientosCapilares) {
                     // Para capilares - almacenar evaluación y tratamientos
@@ -893,17 +857,14 @@ export class SesionesModule {
                         tratamientos_aplicados: tratamientosCapilares,
                         fecha_tratamiento: new Date().toISOString()
                     }));
-                    console.log('💆 Datos de capilar almacenados para sesión:', sesionId);
-                    mostrarNotificacion('✅ Tratamiento capilar iniciado', 'success');
+                                        mostrarNotificacion('✅ Tratamiento capilar iniciado', 'success');
                     
                 } else if (consentimientoVerificado) {
                     // Para depilaciones
-                    console.log('⚡ Sesión de depilación iniciada');
-                    mostrarNotificacion('✅ Sesión de depilación iniciada', 'success');
+                                        mostrarNotificacion('✅ Sesión de depilación iniciada', 'success');
                 } else {
                     // Genérico
-                    console.log('🔓 Sesión genérica iniciada');
-                    mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
+                                        mostrarNotificacion('✅ Sesión abierta exitosamente', 'success');
                 }
                 
                 document.querySelector('.sesion-modal').remove();
@@ -920,8 +881,7 @@ export class SesionesModule {
     }
     
     async cerrarSesion(sesionId) {
-        console.log('🔒 Cerrando sesión ID:', sesionId);
-        
+                
         // Crear modal simple para observaciones
         const modalHtml = `
             <div class="modal fade" id="observacionesModal" tabindex="-1">
@@ -956,8 +916,7 @@ export class SesionesModule {
             const observaciones = document.getElementById('observacionesSesion').value;
             
             try {
-                console.log('📋 Procesando cierre de sesión con observaciones:', observaciones);
-                
+                                
                 // Verificar si hay datos específicos de tratamiento pendientes
                 const evaluacionData = sessionStorage.getItem(`evaluacion_${sesionId}`);
                 const facialData = sessionStorage.getItem(`facial_${sesionId}`);
@@ -968,11 +927,9 @@ export class SesionesModule {
                 
                 if (evaluacionData) {
                     const datos = JSON.parse(evaluacionData);
-                    console.log('🔍 Datos de evaluación encontrados:', datos);
-                    
+                                        
                     if (datos.tipo_ficha) {
-                        console.log('📋 Creando ficha específica de', datos.tipo_ficha);
-                        mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
+                                                mostrarNotificacion(`📋 Creando ficha específica de ${datos.tipo_ficha}...`, 'info');
                         
                         try {
                             // Crear ficha específica automáticamente
@@ -980,8 +937,7 @@ export class SesionesModule {
                             datosGuardados = true;
                             tipoTratamiento = 'evaluación';
                             sessionStorage.removeItem(`evaluacion_${sesionId}`);
-                            console.log('✅ Ficha específica creada exitosamente');
-                        } catch (error) {
+                                                    } catch (error) {
                             console.error('❌ Error creando ficha específica:', error);
                             const errorMessage = error.message || 'Error desconocido creando ficha específica';
                             mostrarNotificacion(`❌ Error creando ficha específica: ${errorMessage}`, 'error');
@@ -991,10 +947,8 @@ export class SesionesModule {
                     
                 } else if (facialData) {
                     const datos = JSON.parse(facialData);
-                    console.log('🔍 Datos de facial encontrados:', datos);
-                    
-                    console.log('✨ Guardando datos del tratamiento facial...');
-                    mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
+                                        
+                                        mostrarNotificacion('✨ Guardando datos del tratamiento facial...', 'info');
                     
                     try {
                         // Guardar productos utilizados en datos_sesion
@@ -1008,8 +962,7 @@ export class SesionesModule {
                         datosGuardados = true;
                         tipoTratamiento = 'facial';
                         sessionStorage.removeItem(`facial_${sesionId}`);
-                        console.log('✅ Datos de facial guardados exitosamente');
-                    } catch (error) {
+                                            } catch (error) {
                         console.error('❌ Error guardando datos de facial:', error);
                         const errorMessage = error.message || 'Error desconocido guardando datos del facial';
                         mostrarNotificacion(`❌ Error guardando datos del facial: ${errorMessage}`, 'error');
@@ -1018,10 +971,8 @@ export class SesionesModule {
                     
                 } else if (capilarData) {
                     const datos = JSON.parse(capilarData);
-                    console.log('🔍 Datos de capilar encontrados:', datos);
-                    
-                    console.log('💆 Guardando datos del tratamiento capilar...');
-                    mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
+                                        
+                                        mostrarNotificacion('💆 Guardando datos del tratamiento capilar...', 'info');
                     
                     try {
                         // Guardar evaluación y tratamientos en datos_sesion
@@ -1036,8 +987,7 @@ export class SesionesModule {
                         datosGuardados = true;
                         tipoTratamiento = 'capilar';
                         sessionStorage.removeItem(`capilar_${sesionId}`);
-                        console.log('✅ Datos de capilar guardados exitosamente');
-                    } catch (error) {
+                                            } catch (error) {
                         console.error('❌ Error guardando datos de capilar:', error);
                         const errorMessage = error.message || 'Error desconocido guardando datos del capilar';
                         mostrarNotificacion(`❌ Error guardando datos del capilar: ${errorMessage}`, 'error');
@@ -1045,13 +995,11 @@ export class SesionesModule {
                     }
                 }
                 
-                console.log('📡 Cerrando sesión en la base de datos...');
-                // Cerrar la sesión
+                                // Cerrar la sesión
                 const response = await sesionesAPI.cerrarSesion(sesionId, observaciones);
                 
                 if (response.success) {
-                    console.log('✅ Sesión cerrada exitosamente en la base de datos');
-                    
+                                        
                     if (datosGuardados) {
                         switch (tipoTratamiento) {
                             case 'evaluación':
@@ -1089,14 +1037,12 @@ export class SesionesModule {
     
     async guardarDatosSesion(sesionId, datosTratamiento) {
         try {
-            console.log('💾 Guardando datos de sesión para ID:', sesionId, datosTratamiento);
-            
+                        
             // Actualizar el campo datos_sesion usando la API de sesiones
             const response = await sesionesAPI.updateDatosSesion(sesionId, datosTratamiento);
             
             if (response.success) {
-                console.log('✅ Datos de sesión guardados exitosamente:', datosTratamiento);
-                return response.data;
+                                return response.data;
             } else {
                 console.error('❌ Error en respuesta de API:', response);
                 throw new Error(response.error || 'Error guardando datos de sesión');
@@ -1110,9 +1056,7 @@ export class SesionesModule {
     
     async crearFichaEspecificaDesdeEvaluacion(sesionId, datosEvaluacion) {
         try {
-            console.log('📋 Creando ficha específica desde evaluación para sesión:', sesionId);
-            console.log('📋 Datos de evaluación:', datosEvaluacion);
-            
+                                    
             // Obtener información de la sesión para extraer datos necesarios
             const sesion = await sesionesAPI.getById(sesionId);
             if (!sesion.success) {
@@ -1121,8 +1065,7 @@ export class SesionesModule {
             
             const sesionData = sesion.data;
             const ventaId = sesionData.venta_id;
-            console.log('📋 Venta ID obtenida:', ventaId);
-            
+                        
             // Obtener información de la venta para extraer evaluacion_id
             const venta = await ventasAPI.getById(ventaId);
             if (!venta.success) {
@@ -1131,8 +1074,7 @@ export class SesionesModule {
             
             const ventaData = venta.data;
             const evaluacionId = ventaData.evaluacion_id;
-            console.log('📋 Evaluación ID obtenida:', evaluacionId);
-            
+                        
             if (!evaluacionId) {
                 throw new Error('Esta venta no tiene una evaluación asociada');
             }
@@ -1140,8 +1082,7 @@ export class SesionesModule {
             // Obtener tipo de ficha específica por nombre
             const tipoFicha = datosEvaluacion.tipo_ficha.toUpperCase();
             const tipoFichaId = tipoFicha === 'DEPILACION' ? 1 : 2; // Por ahora hardcodeado, debería venir de la DB
-            console.log('📋 Tipo de ficha:', tipoFicha, 'ID:', tipoFichaId);
-            
+                        
             // Crear datos básicos de ficha específica
             const fichaData = {
                 evaluacion_id: evaluacionId,
@@ -1150,14 +1091,12 @@ export class SesionesModule {
                 observaciones: `Ficha creada automáticamente desde evaluación el ${new Date().toLocaleString()}`
             };
             
-            console.log('📋 Datos de ficha específica a crear:', fichaData);
-            
+                        
             // Crear la ficha específica
             const response = await fichasEspecificasAPI.create(fichaData);
             
             if (response.success) {
-                console.log('✅ Ficha específica creada automáticamente:', response.data);
-                mostrarNotificacion(`✅ Ficha específica de ${tipoFicha} creada exitosamente`, 'success');
+                                mostrarNotificacion(`✅ Ficha específica de ${tipoFicha} creada exitosamente`, 'success');
                 return response.data;
             } else {
                 console.error('❌ Error en respuesta de API:', response);
@@ -1268,14 +1207,12 @@ export class SesionesModule {
     }
     
     configurarEventosEvaluacion(sesion) {
-        console.log('🔧 Configurando eventos para sesión de evaluación');
-        // No necesita cargar intensidades, se enfoca en la evaluación
+                // No necesita cargar intensidades, se enfoca en la evaluación
         // Los eventos específicos de evaluación se manejan en confirmarAbrirSesion
     }
     
     configurarEventosDepilacion(sesion) {
-        console.log('🔧 Configurando eventos para sesión de depilación');
-        // Cargar grid de intensidades para depilación
+                // Cargar grid de intensidades para depilación
         this.cargarIntensidadesAnteriores(sesion.paciente_id, 'sesion-intensidades-grid');
         
         // Validar consentimiento antes de permitir continuar
@@ -1301,20 +1238,17 @@ export class SesionesModule {
     }
     
     configurarEventosFacial(sesion) {
-        console.log('🔧 Configurando eventos para sesión facial');
-        // Configuración específica para tratamientos faciales
+                // Configuración específica para tratamientos faciales
         // Los campos específicos de facial se manejan en confirmarAbrirSesion
     }
     
     configurarEventosCapilar(sesion) {
-        console.log('🔧 Configurando eventos para sesión capilar');
-        // Configuración específica para tratamientos capilares
+                // Configuración específica para tratamientos capilares
         // Los campos específicos de capilar se manejan en confirmarAbrirSesion
     }
     
     configurarEventosGenerico(sesion) {
-        console.log('🔧 Configurando eventos para sesión genérica');
-        // Configuración básica sin eventos específicos
+                // Configuración básica sin eventos específicos
     }
     
     async guardarIntensidades(pacienteId, intensidades) {
@@ -1401,15 +1335,11 @@ export class SesionesModule {
     }
     
     async loadSesiones() {
-        console.log('📋 Cargando sesiones...');
-        try {
+                try {
             this.sesiones = await sesionesAPI.getAll();
-            console.log('✅ Sesiones obtenidas:', this.sesiones.length);
-            this.renderSesiones();
-            console.log('✅ Sesiones renderizadas');
-            this.updateCalendarEvents(); // Actualizar calendario
-            console.log('✅ Calendario actualizado');
-        } catch (error) {
+                        this.renderSesiones();
+                        this.updateCalendarEvents(); // Actualizar calendario
+                    } catch (error) {
             console.error('❌ Error cargando sesiones:', error);
             const errorMessage = error.message || 'Error desconocido cargando sesiones';
             mostrarNotificacion(`Error cargando sesiones: ${errorMessage}`, 'error');
@@ -1418,10 +1348,8 @@ export class SesionesModule {
     
     async getSesion(sesionId) {
         try {
-            console.log('🔍 Obteniendo sesión ID:', sesionId);
-            const sesion = await sesionesAPI.getById(sesionId);
-            console.log('✅ Sesión obtenida:', sesion);
-            return sesion;
+                        const sesion = await sesionesAPI.getById(sesionId);
+                        return sesion;
         } catch (error) {
             console.error('❌ Error obteniendo sesión:', error);
             const errorMessage = error.message || 'Error desconocido obteniendo sesión';
@@ -1431,21 +1359,16 @@ export class SesionesModule {
     }
     
     renderSesiones() {
-        console.log('🎨 Renderizando sesiones...');
-    const tbody = document.getElementById('cuerpoTablaSesiones');
-        console.log('📋 Tbody encontrado:', tbody);
-        if (!tbody) {
+            const tbody = document.getElementById('cuerpoTablaSesiones');
+                if (!tbody) {
             console.error('❌ No se encontró el tbody para sesiones');
         return;
     }
     
         tbody.innerHTML = '';
-        console.log('📊 Renderizando', this.sesiones.length, 'sesiones');
-        
+                
         this.sesiones.forEach(sesion => {
-            console.log('🔍 Datos de sesión para renderizar:', sesion);
-            console.log('🔍 Campos disponibles:', Object.keys(sesion));
-            
+                                    
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Paciente">${sesion.nombres && sesion.apellidos ? `${sesion.nombres} ${sesion.apellidos}` : 'N/A'}</td>
@@ -1509,13 +1432,11 @@ export class SesionesModule {
     
     async confirmarPaciente(sesionId) {
         try {
-            console.log('✅ Confirmando paciente para sesión ID:', sesionId);
-            
+                        
             const response = await sesionesAPI.confirmarPaciente(sesionId);
             
             if (response.success) {
-                console.log('✅ Paciente confirmado exitosamente');
-                mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
+                                mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
                 await this.loadSesiones();
             } else {
                 console.error('❌ Error en respuesta de API:', response);
@@ -1529,8 +1450,7 @@ export class SesionesModule {
     }
     
     async reprogramarSesion(sesionId) {
-        console.log('🔄 Reprogramando sesión ID:', sesionId);
-        
+                
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
             console.error('❌ Bootstrap no está disponible');
@@ -1587,12 +1507,10 @@ export class SesionesModule {
                     }
                     
                     try {
-                        console.log('📡 Reprogramando sesión a:', nuevaFecha + ' ' + nuevaHora);
-                        const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
+                                                const response = await sesionesAPI.reprogramar(sesionId, nuevaFecha + ' ' + nuevaHora);
                         
                         if (response.success) {
-                            console.log('✅ Sesión reprogramada exitosamente');
-                            mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
+                                                        mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
                             console.error('❌ Error en respuesta de API:', response);
@@ -1613,8 +1531,7 @@ export class SesionesModule {
     }
     
     async cancelarSesion(sesionId) {
-        console.log('❌ Cancelando sesión ID:', sesionId);
-        
+                
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
             console.error('❌ Bootstrap no está disponible');
@@ -1656,12 +1573,10 @@ export class SesionesModule {
                 // Configurar evento de confirmación
                 document.getElementById('confirmarCancelar').onclick = async () => {
                     try {
-                        console.log('📡 Cancelando sesión en la base de datos...');
-                        const response = await sesionesAPI.delete(sesionId);
+                                                const response = await sesionesAPI.delete(sesionId);
                         
                         if (response.success) {
-                            console.log('✅ Sesión cancelada exitosamente');
-                            mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
+                                                        mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
                             console.error('❌ Error en respuesta de API:', response);
@@ -1730,8 +1645,7 @@ export class SesionesModule {
             }
         }
         
-        console.log('✅ Formulario de sesión limpiado');
-    }
+            }
 
     async loadPacientes() {
         // Este método se mantiene para compatibilidad con main.js
@@ -1741,8 +1655,7 @@ export class SesionesModule {
     
     async cargarPacientesSelect() {
         try {
-            console.log('👥 Cargando select de pacientes...');
-            const select = document.getElementById('pacienteSesion');
+                        const select = document.getElementById('pacienteSesion');
             if (!select) {
                 console.error('❌ No se encontró el select de pacientes');
                 return;
@@ -1750,8 +1663,7 @@ export class SesionesModule {
             
             // Configurar Select2 exactamente igual que en ventas
             if (typeof $ !== 'undefined' && $.fn.select2) {
-                console.log('🔧 Configurando Select2 para pacientes...');
-                $(select).select2({
+                                $(select).select2({
                     ajax: {
                         url: '/api.php/fichas',
                         dataType: 'json',
@@ -1796,10 +1708,8 @@ export class SesionesModule {
                 
                 // Configurar eventos después de inicializar Select2
                 this.configurarEventosPaciente();
-                console.log('✅ Select2 configurado para pacientes');
-            } else {
-                console.log('🔧 Usando select nativo para pacientes...');
-                // Fallback sin Select2
+                            } else {
+                                // Fallback sin Select2
                 const { fichasAPI } = await import('../api-client.js');
                 const pacientes = await fichasAPI.getAll();
                 
@@ -1913,8 +1823,7 @@ export class SesionesModule {
     
     async cargarVentasPorPaciente(pacienteId) {
         try {
-            console.log('🔍 Cargando ventas para paciente ID:', pacienteId);
-            const select = document.getElementById('ventaSesion');
+                        const select = document.getElementById('ventaSesion');
             if (!select) {
                 console.error('❌ No se encontró el select de ventas');
                 return;
@@ -1922,16 +1831,14 @@ export class SesionesModule {
             
             if (!pacienteId) {
                 select.innerHTML = '<option value="">Seleccionar venta...</option>';
-                console.log('✅ Select de ventas limpiado (sin paciente)');
-                return;
+                                return;
             }
             
             // Importar ventasAPI dinámicamente
             const { ventasAPI } = await import('../api-client.js');
              const ventasPaciente = await ventasAPI.getByFichaId(pacienteId);
              
-             console.log('📊 Ventas obtenidas para paciente:', ventasPaciente.length);
-             
+                          
              // Ordenar ventas del más reciente al más antiguo por fecha_creacion
              const ventasOrdenadas = ventasPaciente.sort((a, b) => {
                  const fechaA = new Date(a.fecha_creacion || 0);
@@ -1939,19 +1846,14 @@ export class SesionesModule {
                  return fechaB - fechaA; // Orden descendente (más reciente primero)
              });
              
-             console.log('🔍 Ventas ordenadas del más reciente al más antiguo:', ventasOrdenadas.length);
-             console.log('📋 Ventas del paciente:', ventasOrdenadas);
-             
+                                       
              // Log detallado de la primera venta para ver la estructura de datos
              if (ventasOrdenadas.length > 0) {
-                 console.log('🔍 Estructura de datos de la primera venta:', Object.keys(ventasOrdenadas[0]));
-                 console.log('📋 Datos completos de la primera venta:', ventasOrdenadas[0]);
-             }
+                                               }
             
             select.innerHTML = '<option value="">Seleccionar venta...</option>';
             
-             console.log('🔧 Configurando opciones del select de ventas...');
-             
+                          
              for (const venta of ventasOrdenadas) {
                 const option = document.createElement('option');
                 option.value = venta.id.toString();
@@ -1995,8 +1897,7 @@ export class SesionesModule {
                 select.appendChild(option);
             }
             
-             console.log('✅ Ventas del paciente cargadas exitosamente:', ventasOrdenadas.length);
-        } catch (error) {
+                     } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
             const errorMessage = error.message || 'Error desconocido cargando ventas del paciente';
             mostrarNotificacion(`Error cargando ventas del paciente: ${errorMessage}`, 'error');
@@ -2005,8 +1906,7 @@ export class SesionesModule {
     
     async cargarDuracionSesion(ventaId) {
         try {
-            console.log('🔍 Cargando duración para venta ID:', ventaId);
-            
+                        
             // Obtener la venta del select actual
             const ventaSelect = document.getElementById('ventaSesion');
             if (!ventaSelect) {
@@ -2023,8 +1923,7 @@ export class SesionesModule {
             
             // Obtener los datos de la venta del atributo data o del texto
             const ventaText = ventaOption.textContent;
-            console.log('📋 Texto de la venta:', ventaText);
-            
+                        
             // Importar ventasAPI para obtener los datos completos de la venta
             const { ventasAPI } = await import('../api-client.js');
             const venta = await ventasAPI.getById(ventaId);
@@ -2034,22 +1933,18 @@ export class SesionesModule {
                 return;
             }
             
-            console.log('📋 Datos completos de la venta:', venta);
-            
+                        
             // Obtener la duración del pack o tratamiento
             const duracion = venta.duracion_sesion_min;
             
             if (duracion && duracion > 0) {
-                console.log('⏱️ Duración encontrada:', duracion, 'minutos');
-                
+                                
                 // Actualizar el campo de duración en el formulario si existe
                 const duracionInput = document.getElementById('duracionSesion');
                 if (duracionInput) {
                     duracionInput.value = duracion;
-                    console.log('✅ Duración actualizada en el formulario:', duracion);
-                } else {
-                    console.log('ℹ️ Campo de duración no encontrado en el formulario');
-                }
+                                    } else {
+                                    }
                 
                 // Mostrar notificación informativa
                 mostrarNotificacion(`⏱️ Duración predeterminada: ${duracion} minutos`, 'info');
@@ -2066,13 +1961,11 @@ export class SesionesModule {
     }
     
     limpiarDuracionSesion() {
-        console.log('🧹 Limpiando duración de la sesión');
-        
+                
         const duracionInput = document.getElementById('duracionSesion');
         if (duracionInput) {
             duracionInput.value = '';
-            console.log('✅ Campo de duración limpiado');
-        }
+                    }
     }
     
     // Métodos auxiliares para el calendario
@@ -2189,8 +2082,7 @@ export class SesionesModule {
                 };
             });
             
-            console.log('📅 Eventos del calendario generados:', events.length);
-            this.calendar.updateEvents(events);
+                        this.calendar.updateEvents(events);
         }
     }
 }

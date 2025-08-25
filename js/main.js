@@ -388,8 +388,7 @@ class ClinicaBelezaApp {
                         } else {
                             await this.modules.pagos.loadPagos();
                         }
-                                console.log('✅ Pagos cargados correctamente');
-                    } catch (e) {
+                                                    } catch (e) {
                         if (e && e.dbError) {
                             console.error('⚠️ Error cargando pagos (DB):', e.dbError);
                             showMessage(e.dbError, 'error');
@@ -508,8 +507,7 @@ class ClinicaBelezaApp {
             }
             
             // Importar datos (implementar según necesidad)
-            console.log('Datos importados:', data);
-            showMessage('Datos importados correctamente', 'success');
+                        showMessage('Datos importados correctamente', 'success');
             
         } catch (error) {
             console.error('Error importando datos:', error);

@@ -321,8 +321,7 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        console.log('🎉 Login exitoso, datos recibidos:', data.data);
-                        
+                                                
                         // Guardar datos de sesión
                         localStorage.setItem('authToken', 'logged_in'); // Token simple para indicar que está logueado
                         localStorage.setItem('userData', JSON.stringify({
@@ -332,16 +331,12 @@
                             rol: data.data.rol
                         }));
                         
-                        console.log('💾 Datos guardados en localStorage:');
-                        console.log('Token:', localStorage.getItem('authToken'));
-                        console.log('UserData:', localStorage.getItem('userData'));
-                        
+                                                                                                
                         this.showAlert('¡Inicio de sesión exitoso! Redirigiendo...', 'success');
                         
                         // Redirigir al dashboard
                         setTimeout(() => {
-                            console.log('🔄 Redirigiendo a index.html...');
-                            window.location.href = '/index.html';
+                                                        window.location.href = '/index.html';
                         }, 1000);
                         
                     } else {
