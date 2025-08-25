@@ -39,14 +39,11 @@ class ClinicaBelezaApp {
     }
     
     async init() {
-        // Verificar autenticación primero
-        if (!this.checkAuthentication()) {
-            window.location.href = '/login.html';
-            return;
-        }
-
         // Inicializar cliente API primero
         initializeApiClient();
+        
+        // Obtener información del usuario desde el servidor
+        await this.loadUserInfo();
         
         await this.setupNavigation();
         this.setupMobileMenu();
@@ -59,36 +56,15 @@ class ClinicaBelezaApp {
         this.showWelcomeMessage();
     }
     
-    checkAuthentication() {
-        const token = localStorage.getItem('authToken');
-        const userData = localStorage.getItem('userData');
-        
-
-        
-        if (!token || !userData) {
-            return false;
-        }
-        
+    async loadUserInfo() {
         try {
-            const user = JSON.parse(userData);
-            
-            // Verificar que el usuario tenga un rol válido
-            if (!user.rol) {
-                return false;
-            }
-            
-            // Verificar que el usuario esté activo (si el campo existe)
-            if (user.hasOwnProperty('activo') && !user.activo) {
-                return false;
-            }
-            
-            // Guardar datos del usuario en la aplicación
-            this.currentUser = user;
-            // No necesitamos profesionalData por ahora, ya que no lo estamos guardando
-            
-            return true;
+            const { get } = await import('./api-client.js');
+            const userData = await get('user');
+            this.currentUser = userData;
         } catch (error) {
-            return false;
+            console.error('Error cargando información del usuario:', error);
+            // Si no se puede cargar la información del usuario, redirigir al login
+            window.location.href = '/login.php';
         }
     }
 
@@ -447,13 +423,8 @@ class ClinicaBelezaApp {
     }
     
     logout() {
-        // Limpiar datos de sesión
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        localStorage.removeItem('profesionalData');
-        
-        // Redirigir al login
-        window.location.href = '/login.html';
+        // Redirigir al logout PHP que maneja la sesión del servidor
+        window.location.href = '/logout.php';
     }
     
     showWelcomeMessage() {

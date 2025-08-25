@@ -1,4 +1,9 @@
 <?php
+// Configurar cookies de sesión seguras
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.cookie_samesite', 'Strict');
 
 /**
  * API REST para Clínica Beleza
@@ -6,20 +11,6 @@
  * Toda la lógica está en la base de datos
  */
 
- $env_file = __DIR__ . '/.env';
- if (file_exists($env_file)) {
-     $env_content = file_get_contents($env_file);
-     $env_lines = explode("\n", $env_content);
-     foreach ($env_lines as $line) {
-         $line = trim($line);
-         if (!empty($line) && strpos($line, '=') !== false && !str_starts_with($line, '#')) {
-             list($key, $value) = explode('=', $line, 2);
-             $_ENV[$key] = $value;
-             putenv("$key=$value");
-         }
-     }
- }
- 
  $allowed_origin = getenv('API_URL');
  
  // Si no se puede leer la variable de entorno, fallar de forma segura
@@ -42,7 +33,7 @@
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
  $access_allowed = false;
- $valid_referers = ['/login.html', '/index.html', '/'];
+ $valid_referers = ['/login.php', '/index.html', '/'];
  
  // Verificar origin si está presente
  if (!empty($origin)) {
@@ -132,35 +123,50 @@ function detectSQLInjection($data) {
  }
  
  // =============================================================================
- // FUNCIÓN DE VERIFICACIÓN DE SESIÓN
- // =============================================================================
- 
- function verificarSesion($db, $endpoint) {
-     // Endpoints que no requieren sesión
-     $endpoints_publicos = ['auth', 'tokens', 'health', 'config', 'root'];
-     
-     if (in_array($endpoint, $endpoints_publicos)) {
-         return true;
-     }
-     
-     // Verificar si hay sesión activa en localStorage (simulado)
-     // En producción, esto debería verificar contra la base de datos
-     $auth_token = $_SERVER['HTTP_X_AUTH_TOKEN'] ?? '';
-     
-     if (empty($auth_token)) {
-         http_response_code(401);
-         echo json_encode([
-             'success' => false,
-             'error' => 'Sesión no válida - Debe iniciar sesión',
-             'redirect' => '/login.html'
-         ]);
-         exit();
-     }
-     
-     // Aquí podrías verificar contra la base de datos si el token es válido
-     // Por ahora, solo verificamos que exista
-     return true;
- }
+// FUNCIÓN DE VERIFICACIÓN DE SESIÓN
+// =============================================================================
+
+function verificarSesion($db, $endpoint) {
+         // Endpoints que no requieren sesión
+     $endpoints_publicos = ['auth', 'tokens', 'health', 'config', 'root', 'user'];
+    
+    if (in_array($endpoint, $endpoints_publicos)) {
+        return true;
+    }
+    
+    // Iniciar sesión PHP si no está iniciada
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Verificar si hay sesión activa
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['auth_token'])) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Sesión no válida - Debe iniciar sesión',
+            'redirect' => '/login.php'
+        ]);
+        exit();
+    }
+    
+    // Verificar que el token de sesión sea válido
+    $expected_token = hash('sha256', $_SESSION['user_id'] . 'clinica-beleza-session-secret-2025' . $_SESSION['login_time']);
+    
+    if ($_SESSION['auth_token'] !== $expected_token) {
+        // Token inválido, destruir sesión
+        session_destroy();
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Sesión expirada - Debe iniciar sesión nuevamente',
+            'redirect' => '/login.php'
+        ]);
+        exit();
+    }
+    
+    return true;
+}
 
 try {
     $db = Database::getInstance();
@@ -185,27 +191,7 @@ try {
          $method = $_SERVER['REQUEST_METHOD'];
      $data = json_decode(file_get_contents('php://input'), true);
      
-           if ($endpoint !== 'tokens' && ($method === 'POST' || $method === 'PUT' || $method === 'DELETE')) {
-          $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-          
-          if (empty($csrf_token)) {
-              http_response_code(403);
-              echo json_encode([
-                  'error' => 'Acceso denegado - Token CSRF requerido'
-              ]);
-              exit();
-          }
-          
-          $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
-          
-          if ($csrf_token !== $expected_csrf) {
-              http_response_code(403);
-              echo json_encode([
-                  'error' => 'Acceso denegado - Token CSRF inválido'
-              ]);
-              exit();
-          }
-      }
+           // Verificación CSRF removida - ahora usamos sesiones de PHP
 
     // =============================================================================
     // DETECCIÓN DE SQL INJECTION EN TODOS LOS DATOS RECIBIDOS
@@ -324,6 +310,9 @@ try {
              break;
          case 'tokens':
              handleTokens($db, $method, $id, $data);
+             break;
+         case 'user':
+             handleUser($db, $method, $id, $data);
              break;
          default:
             http_response_code(404);
@@ -1396,5 +1385,54 @@ function handleProfesionales($db, $method, $id, $data) {
           ]);
       }
   }
+
+function handleUser($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                // Iniciar sesión PHP si no está iniciada
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                
+                // Verificar si hay sesión activa
+                if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_data'])) {
+                    http_response_code(401);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'No hay sesión activa',
+                        'redirect' => '/login.php'
+                    ]);
+                    return;
+                }
+                
+                // Devolver datos del usuario actual
+                echo json_encode([
+                    'success' => true,
+                    'data' => $_SESSION['user_data']
+                ]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'user',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'user',
+            'method' => $method
+        ]);
+    }
+}
 
 ?>

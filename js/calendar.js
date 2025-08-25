@@ -2,6 +2,7 @@
 // https://github.com/vkurko/calendar
 
 import { mostrarNotificacion } from './utils.js';
+import { get, post } from './api-client.js';
 
 class Calendar {
     constructor(container, options = {}) {
@@ -416,7 +417,7 @@ class Calendar {
     
     async loadEvents() {
         try {
-            const data = await window.apiClient.get('sesiones');
+            const data = await get('sesiones');
             
             if (data.success) {
                 this.events = data.data || [];
@@ -435,7 +436,7 @@ class Calendar {
     
     async loadBoxes() {
         try {
-            const data = await window.apiClient.get('boxes');
+            const data = await get('boxes');
             
             if (data.success) {
                 this.boxes = data.data || [];
@@ -650,7 +651,7 @@ class Calendar {
     // Versión asíncrona para abrir sesión con feedback descriptivo
     async openSessionAsync(sessionId) {
         try {
-            const data = await window.apiClient.post(`sesiones/${sessionId}/abrir`);
+            const data = await post(`sesiones/${sessionId}/abrir`);
             
             if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe
@@ -676,7 +677,7 @@ class Calendar {
     // Versión asíncrona para cerrar sesión con feedback descriptivo
     async closeSessionAsync(sessionId) {
         try {
-            const data = await window.apiClient.post(`sesiones/${sessionId}/cerrar`);
+            const data = await post(`sesiones/${sessionId}/cerrar`);
             
             if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe

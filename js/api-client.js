@@ -78,19 +78,11 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
     
-    // Obtener token de autenticación
-    const authToken = localStorage.getItem('authToken');
-    
     // Preparar headers base
     const baseHeaders = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     };
-    
-    // Agregar token de autenticación si existe
-    if (authToken) {
-        baseHeaders['X-Auth-Token'] = authToken;
-    }
     
     try {
         const response = await fetch(url, {
@@ -186,29 +178,9 @@ async function post(endpoint, data = {}) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
-    // Obtener token CSRF para requests modificadores
-    let csrfToken = null;
-    if (endpoint !== 'auth' && endpoint !== 'tokens') {
-        try {
-            const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
-            const tokensData = await tokensResponse.json();
-            if (tokensData.success) {
-                csrfToken = tokensData.data.csrf_token;
-            }
-        } catch (error) {
-            console.warn('⚠️ No se pudo obtener token CSRF:', error);
-        }
-    }
-    
-    const headers = {};
-    if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-    }
-    
     const response = await fetchWithRetry(url, {
         method: 'POST',
-        body: JSON.stringify(data),
-        headers
+        body: JSON.stringify(data)
     });
     
     const result = await response.json();
@@ -223,27 +195,9 @@ async function put(endpoint, data = {}) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
-    // Obtener token CSRF para requests modificadores
-    let csrfToken = null;
-    try {
-        const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
-        const tokensData = await tokensResponse.json();
-        if (tokensData.success) {
-            csrfToken = tokensData.data.csrf_token;
-        }
-    } catch (error) {
-        console.warn('⚠️ No se pudo obtener token CSRF:', error);
-    }
-    
-    const headers = {};
-    if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-    }
-    
     const response = await fetchWithRetry(url, {
         method: 'PUT',
-        body: JSON.stringify(data),
-        headers
+        body: JSON.stringify(data)
     });
     
     const result = await response.json();
@@ -258,26 +212,8 @@ async function del(endpoint) {
         `${API_CONFIG.baseUrl}/api.php/${endpoint}` : 
         `/api.php/${endpoint}`;
     
-    // Obtener token CSRF para requests modificadores
-    let csrfToken = null;
-    try {
-        const tokensResponse = await fetch(`${API_CONFIG.baseUrl || ''}/api.php/tokens`);
-        const tokensData = await tokensResponse.json();
-        if (tokensData.success) {
-            csrfToken = tokensData.data.csrf_token;
-        }
-    } catch (error) {
-        console.warn('⚠️ No se pudo obtener token CSRF:', error);
-    }
-    
-    const headers = {};
-    if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-    }
-    
     const response = await fetchWithRetry(url, {
-        method: 'DELETE',
-        headers
+        method: 'DELETE'
     });
     
     const result = await response.json();
@@ -693,32 +629,5 @@ export async function getConfig() {
     }
 }
 
-// ---------- EXPORTACIÓN GLOBAL ----------
 
-// Hacer disponible globalmente para compatibilidad con módulos no-ES6
-if (typeof window !== 'undefined') {
-    window.apiClient = {
-        get,
-        post,
-        put,
-        del,
-        fetchWithRetry,
-        handleApiError,
-        healthCheck,
-        getConfig
-    };
-    
-    // También exportar las APIs específicas
-    window.pacientesAPI = pacientesAPI;
-    window.ventasAPI = ventasAPI;
-    window.pagosAPI = pagosAPI;
-    window.sesionesAPI = sesionesAPI;
-    window.ofertasAPI = ofertasAPI;
-    window.boxesAPI = boxesAPI;
-    window.profesionalesAPI = profesionalesAPI;
-    window.reportesAPI = reportesAPI;
-    
-    // Inicializar el cliente API
-    initializeApiClient();
-}
 
