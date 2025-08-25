@@ -27,38 +27,37 @@
 
  $allowed_host = parse_url($allowed_origin, PHP_URL_HOST);
  
+ $access_allowed = false;
+ 
  if (!empty($origin)) {
      $origin_host = parse_url($origin, PHP_URL_HOST);
-     if ($origin_host !== $allowed_host) {
-         http_response_code(403);
-         echo json_encode([
-             'error' => 'Acceso denegado - Origin',
-             'debug' => [
-                 'origin' => $origin,
-                 'origin_host' => $origin_host,
-                 'allowed_origin' => $allowed_origin,
-                 'allowed_host' => $allowed_host
-             ]
-         ]);
-         exit();
+     if ($origin_host === $allowed_host) {
+         $access_allowed = true;
      }
  }
  
  if (!empty($referer)) {
      $referer_host = parse_url($referer, PHP_URL_HOST);
-     if ($referer_host !== $allowed_host) {
-         http_response_code(403);
-         echo json_encode(['error' => 'Acceso denegado - Referer']);
-         exit();
+     if ($referer_host === $allowed_host) {
+         $referer_path = parse_url($referer, PHP_URL_PATH);
+         if (strpos($referer_path, '/login.html') !== false || strpos($referer_path, '/index.html') !== false || $referer_path === '/') {
+             $access_allowed = true;
+         }
      }
  }
  
- if (empty($origin) && empty($referer)) {
-     if ($host !== $allowed_host) {
-         http_response_code(403);
-         echo json_encode(['error' => 'Acceso denegado - Host']);
-         exit();
-     }
+ if (!$access_allowed) {
+     http_response_code(403);
+     echo json_encode([
+         'error' => 'Acceso denegado - Solo permitido desde login.html o index.html',
+         'debug' => [
+             'origin' => $origin,
+             'referer' => $referer,
+             'allowed_origin' => $allowed_origin,
+             'allowed_host' => $allowed_host
+         ]
+     ]);
+     exit();
  }
 
  header('Content-Type: application/json; charset=UTF-8');
