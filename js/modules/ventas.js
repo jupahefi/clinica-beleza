@@ -51,7 +51,7 @@ class VentasModule {
             }
             
             console.log(`[VENTAS] Datos cargados: ${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas.`);
-            mostrarNotificacion(`Datos de ventas cargados correctamente (${this.tratamientos.length} tratamientos, ${this.ofertas.length} ofertas)`, 'success');
+    
         } catch (error) {
             console.error('[VENTAS] Error cargando datos:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando datos de ventas';
@@ -866,7 +866,7 @@ class VentasModule {
             // Renderizar el historial con los datos de la base de datos
             this.renderHistorial();
             
-            mostrarNotificacion(`Ventas cargadas correctamente (${this.ventas.length})`, 'success');
+    
         } catch (error) {
             console.error('[VENTAS] Error cargando ventas:', error);
             const errorMessage = error?.message || error?.error || 'Error desconocido cargando ventas';

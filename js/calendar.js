@@ -440,8 +440,7 @@ class Calendar {
             
             if (data.success) {
                 this.events = data.data || [];
-                console.log(`✅ Eventos cargados correctamente (${this.events.length} eventos)`);
-                mostrarNotificacion('Eventos cargados correctamente', 'success');
+                        console.log(`✅ Eventos cargados correctamente (${this.events.length} eventos)`);
                 this.renderCalendar();
             } else {
                 this.events = [];

@@ -59,7 +59,7 @@ export class MantenedoresModule {
                 profesionales: this.profesionales.length
             });
             
-            mostrarNotificacion('Mantenedores cargados correctamente', 'success');
+
         } catch (error) {
             console.error('Error cargando datos de mantenedores:', error);
             mostrarNotificacion(error.message || 'Error cargando mantenedores', 'error');

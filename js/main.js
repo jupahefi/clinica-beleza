@@ -421,8 +421,7 @@ class ClinicaBelezaApp {
                         } else {
                             await this.modules.pagos.loadPagos();
                         }
-                        console.log('✅ Pagos cargados correctamente');
-                        showMessage('Pagos cargados correctamente', 'success');
+                                console.log('✅ Pagos cargados correctamente');
                     } catch (e) {
                         if (e && e.dbError) {
                             console.error('⚠️ Error cargando pagos (DB):', e.dbError);

@@ -44,8 +44,7 @@ export class ReportesModule {
     async cargarReportesDisponibles() {
         try {
             // Aquí se podrían cargar reportes predefinidos o configuraciones
-            console.log('[Reportes] Reportes disponibles cargados correctamente');
-            mostrarNotificacion('Reportes disponibles cargados correctamente', 'success');
+                    console.log('[Reportes] Reportes disponibles cargados correctamente');
         } catch (error) {
             console.error('[Reportes] Error cargando reportes disponibles:', error);
             // Mostrar el error de la DB directamente si existe
