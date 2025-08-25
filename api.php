@@ -626,8 +626,45 @@ function handleAuth($db, $method, $id, $data) {
     try {
         switch ($method) {
             case 'POST':
-                $result = $db->selectOne("CALL sp_auth_login(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                // Obtener el usuario por username o email
+                $username = $data['username'] ?? null;
+                $email = $data['email'] ?? null;
+                $password = $data['password'] ?? null;
+                
+                if (!$password) {
+                    throw new Exception('Contraseña requerida');
+                }
+                
+                // Buscar usuario por username o email
+                $user = null;
+                if ($username) {
+                    $user = $db->selectOne("SELECT * FROM usuario WHERE username = ? AND activo = TRUE", [$username]);
+                } elseif ($email) {
+                    $user = $db->selectOne("SELECT * FROM usuario WHERE email = ? AND activo = TRUE", [$email]);
+                }
+                
+                if (!$user) {
+                    throw new Exception('Credenciales inválidas');
+                }
+                
+                // Verificar contraseña usando password_verify
+                if (!password_verify($password, $user['password_hash'])) {
+                    throw new Exception('Credenciales inválidas');
+                }
+                
+                // Actualizar último login
+                $db->execute("UPDATE usuario SET ultimo_login = NOW() WHERE id = ?", [$user['id']]);
+                
+                // Preparar respuesta
+                $response = [
+                    'id' => $user['id'],
+                    'nombre' => $user['username'],
+                    'email' => $user['email'],
+                    'rol' => $user['rol'],
+                    'mensaje' => 'Login exitoso'
+                ];
+                
+                echo json_encode(['success' => true, 'data' => $response]);
                 break;
             default:
                 http_response_code(405);

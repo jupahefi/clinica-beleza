@@ -3178,7 +3178,7 @@ CALL sp_crear_box(@sucursal_principal_id, 'Box 2', 'Box secundario para tratamie
 
 -- ---------- USUARIOS ----------
 -- Usando SP para crear usuarios con validaciones (solo Juan Herrera por ahora)
-CALL sp_crear_usuario('juan.herrera', '$2y$10$NgKGj0dk8VdWeuXclKEcH.7llW48dIGlNl5b2ScRFlA1RtkS.fLi.', 'juan.herrera@programadores.org', 'admin', TRUE, @usuario_juan_id);
+CALL sp_crear_usuario('juan.herrera', '$2y$10$kttBK9rvbrWShhtMFXmcnOEfB.YLcymk6h9ZMsv3KsnQhSipCciWC', 'juan.herrera@programadores.org', 'admin', TRUE, @usuario_juan_id);
 
 -- ---------- PROFESIONALES ----------
 -- Usando SP para crear profesionales con validaciones (solo Juan Herrera por ahora)
@@ -3639,7 +3639,7 @@ BEGIN
     SELECT id, username, email, rol 
     INTO v_usuario_id, v_username, v_email, v_rol
     FROM usuario 
-    WHERE email = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email'))
+    WHERE (username = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.username')) OR email = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.email')))
     AND password_hash = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.password'))
     AND activo = TRUE;
     
