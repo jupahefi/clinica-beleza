@@ -1462,14 +1462,17 @@ export class SesionesModule {
         console.log('📊 Renderizando', this.sesiones.length, 'sesiones');
         
         this.sesiones.forEach(sesion => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-                <td data-label="Paciente">${sesion.paciente_nombre || 'N/A'}</td>
+            console.log('🔍 Datos de sesión para renderizar:', sesion);
+            console.log('🔍 Campos disponibles:', Object.keys(sesion));
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td data-label="Paciente">${sesion.paciente_nombre || sesion.paciente_nombres || 'N/A'}</td>
                 <td data-label="Venta ID">${sesion.venta_id || 'N/A'}</td>
                 <td data-label="Box">${sesion.box_nombre || 'N/A'}</td>
                 <td data-label="Fecha">${formatDate(sesion.fecha_planificada)}</td>
-                <td data-label="Hora">${sesion.hora_planificada || 'N/A'}</td>
-                <td data-label="Duración">${sesion.duracion || 'N/A'} min</td>
+                <td data-label="Hora">${sesion.hora_planificada || this.extractHoraFromFecha(sesion.fecha_planificada) || 'N/A'}</td>
+                <td data-label="Duración">${sesion.duracion || sesion.duracion_sesion_min || 'N/A'} min</td>
                 <td data-label="Estado">
                     <span class="status-badge status-${sesion.estado}">
                         ${this.getEstadoLabel(sesion.estado)}
@@ -1961,8 +1964,8 @@ export class SesionesModule {
                 return;
             }
             
-                         // Importar ventasAPI dinámicamente
-             const { ventasAPI } = await import('../api-client.js');
+            // Importar ventasAPI dinámicamente
+            const { ventasAPI } = await import('../api-client.js');
              const ventasPaciente = await ventasAPI.getByFichaId(pacienteId);
              
              console.log('📊 Ventas obtenidas para paciente:', ventasPaciente.length);
@@ -1982,9 +1985,9 @@ export class SesionesModule {
                  console.log('🔍 Estructura de datos de la primera venta:', Object.keys(ventasOrdenadas[0]));
                  console.log('📋 Datos completos de la primera venta:', ventasOrdenadas[0]);
              }
-             
-             select.innerHTML = '<option value="">Seleccionar venta...</option>';
-             
+            
+            select.innerHTML = '<option value="">Seleccionar venta...</option>';
+            
              console.log('🔧 Configurando opciones del select de ventas...');
              
              for (const venta of ventasOrdenadas) {
@@ -2026,10 +2029,10 @@ export class SesionesModule {
                     ventaText += ` - ${fecha}`;
                 }
                 
-                                 option.textContent = ventaText;
-                 select.appendChild(option);
-             }
-             
+                option.textContent = ventaText;
+                select.appendChild(option);
+            }
+            
              console.log('✅ Ventas del paciente cargadas exitosamente:', ventasOrdenadas.length);
         } catch (error) {
             console.error('❌ Error cargando ventas del paciente:', error);
@@ -2149,6 +2152,18 @@ export class SesionesModule {
             console.error('❌ Error en calculateEndTime:', error, { fecha, hora, duracion });
             return null;
         }
+    }
+    
+    extractHoraFromFecha(fechaPlanificada) {
+        if (!fechaPlanificada) return null;
+        
+        // Si fecha_planificada contiene fecha y hora (formato: "2025-08-25 08:00:00")
+        if (typeof fechaPlanificada === 'string' && fechaPlanificada.includes(' ')) {
+            const [, horaPart] = fechaPlanificada.split(' ');
+            return horaPart.substring(0, 5); // Tomar solo HH:MM
+        }
+        
+        return null;
     }
     
     getEventColor(estado) {
