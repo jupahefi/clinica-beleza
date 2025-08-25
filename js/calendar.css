@@ -699,6 +699,14 @@
         padding: 0.15rem 0.3rem;
     }
     
+    .calendar-month-event {
+        font-size: 0.6rem;
+        padding: 0.1rem 0.2rem;
+        margin-bottom: 0.1rem;
+        max-height: 20px;
+        overflow: hidden;
+    }
+    
     .calendar-event-modal-content {
         margin: 1rem;
         padding: 1.5rem;

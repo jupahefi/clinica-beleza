@@ -829,18 +829,22 @@ class Calendar {
             return [];
         }
         
-        const end = new Date(start);
+        // Asegurar que start sea el inicio de la semana (domingo a las 00:00)
+        const weekStart = new Date(start);
+        weekStart.setHours(0, 0, 0, 0);
+        
+        const end = new Date(weekStart);
         end.setDate(end.getDate() + 7);
         
         const filteredEvents = this.events.filter(event => {
             const eventDate = new Date(event.fecha_planificada);
-            const isInRange = eventDate >= start && eventDate < end;
+            const isInRange = eventDate >= weekStart && eventDate < end;
             
             console.log('🔍 Evento:', {
                 id: event.id,
                 fecha_planificada: event.fecha_planificada,
                 eventDate: eventDate,
-                start: start,
+                weekStart: weekStart,
                 end: end,
                 isInRange: isInRange
             });

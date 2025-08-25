@@ -2147,7 +2147,8 @@ export class SesionesModule {
             }
             
             const end = new Date(start.getTime() + (duracion * 60000)); // duracion en minutos
-            return end.toISOString();
+            // Usar formato local en lugar de ISO para evitar problemas de zona horaria
+            return `${fechaFormateada}T${end.toTimeString().substring(0, 5)}`;
         } catch (error) {
             console.error('❌ Error en calculateEndTime:', error, { fecha, hora, duracion });
             return null;
