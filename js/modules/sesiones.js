@@ -1467,7 +1467,7 @@ export class SesionesModule {
             
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td data-label="Paciente">${sesion.paciente_nombre || sesion.paciente_nombres || 'N/A'}</td>
+                <td data-label="Paciente">${sesion.nombres && sesion.apellidos ? `${sesion.nombres} ${sesion.apellidos}` : 'N/A'}</td>
                 <td data-label="Venta ID">${sesion.venta_id || 'N/A'}</td>
                 <td data-label="Box">${sesion.box_nombre || 'N/A'}</td>
                 <td data-label="Fecha">${formatDate(sesion.fecha_planificada)}</td>
