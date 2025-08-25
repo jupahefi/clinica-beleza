@@ -3177,18 +3177,7 @@ CALL sp_crear_box(@sucursal_principal_id, 'Box 1', 'Box principal para tratamien
 CALL sp_crear_box(@sucursal_principal_id, 'Box 2', 'Box secundario para tratamientos especializados', TRUE, @box_2_id);
 
 -- ---------- USUARIOS ----------
--- Usando SP para crear usuarios con validaciones (solo Juan Herrera por ahora)
-CALL sp_crear_usuario('juan.herrera', '$2y$10$GwgTT/T/zLaLTw2EtnFuRu8r74C0Nrjb/DNmApbnPMmJmQXVbEJem', 'juan.herrera@programadores.org', 'admin', TRUE, @usuario_juan_id);
-
--- ---------- PROFESIONALES ----------
--- Usando SP para crear profesionales con validaciones (solo Juan Herrera por ahora)
-CALL sp_crear_profesional_completo(
-    @usuario_juan_id, 'Juan', 'Herrera', '11.111.111-1', '+56 9 9999 9999', 'juan.herrera@programadores.org', 'Administrador',
-    'Administrador del sistema y desarrollador principal. Especialista en gestion de clinicas esteticas y sistemas de informacion medica.',
-    '/assets/profesionales/juan-herrera.jpg', 'Administracion y Desarrollo', 'Ingeniero en Informatica', 'ADM-00001',
-    '1980-01-01', 'Av. Las Condes 1000, Las Condes, Santiago', 'Casado', 'Maria Herrera', '+56 9 8888 8888', TRUE,
-    @profesional_juan_id
-);
+-- EN DEPLOYMENT PARA MAYOR SEGURIDAD
 
 -- ---------- PACKS DE TRATAMIENTOS FACIAL (UNIVERSAL) ----------
 -- Usando SP para crear packs faciales con validaciones
