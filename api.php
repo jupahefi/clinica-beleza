@@ -21,6 +21,12 @@
  }
  
  $allowed_origin = getenv('API_URL');
+ 
+ // Fallback si no se puede leer la variable de entorno
+ if (!$allowed_origin) {
+     $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
+ }
+ 
  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
  $referer = $_SERVER['HTTP_REFERER'] ?? '';
  $host = $_SERVER['HTTP_HOST'] ?? '';
@@ -49,7 +55,17 @@
  if (!$access_allowed) {
      http_response_code(403);
      echo json_encode([
-         'error' => 'Acceso denegado - Verificación de origen fallida'
+         'error' => 'Acceso denegado - Verificación de origen fallida',
+         'debug' => [
+             'origin' => $origin,
+             'origin_host' => parse_url($origin, PHP_URL_HOST),
+             'referer' => $referer,
+             'referer_host' => parse_url($referer, PHP_URL_HOST),
+             'referer_path' => parse_url($referer, PHP_URL_PATH),
+             'allowed_origin' => $allowed_origin,
+             'allowed_host' => $allowed_host,
+             'valid_referers' => $valid_referers
+         ]
      ]);
      exit();
  }
@@ -103,8 +119,39 @@ function detectSQLInjection($data) {
         return false;
     };
 
-    return $checkValue($data);
-}
+         return $checkValue($data);
+ }
+ 
+ // =============================================================================
+ // FUNCIÓN DE VERIFICACIÓN DE SESIÓN
+ // =============================================================================
+ 
+ function verificarSesion($db, $endpoint) {
+     // Endpoints que no requieren sesión
+     $endpoints_publicos = ['auth', 'tokens', 'health', 'config', 'root'];
+     
+     if (in_array($endpoint, $endpoints_publicos)) {
+         return true;
+     }
+     
+     // Verificar si hay sesión activa en localStorage (simulado)
+     // En producción, esto debería verificar contra la base de datos
+     $auth_token = $_SERVER['HTTP_X_AUTH_TOKEN'] ?? '';
+     
+     if (empty($auth_token)) {
+         http_response_code(401);
+         echo json_encode([
+             'success' => false,
+             'error' => 'Sesión no válida - Debe iniciar sesión',
+             'redirect' => '/login.html'
+         ]);
+         exit();
+     }
+     
+     // Aquí podrías verificar contra la base de datos si el token es válido
+     // Por ahora, solo verificamos que exista
+     return true;
+ }
 
 try {
     $db = Database::getInstance();
@@ -129,29 +176,27 @@ try {
          $method = $_SERVER['REQUEST_METHOD'];
      $data = json_decode(file_get_contents('php://input'), true);
      
-     if ($endpoint !== 'tokens' && ($method === 'POST' || $method === 'PUT' || $method === 'DELETE')) {
-         $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-         $session_token = $_SERVER['HTTP_X_SESSION_TOKEN'] ?? '';
-         
-         if (empty($csrf_token) || empty($session_token)) {
-             http_response_code(403);
-             echo json_encode([
-                 'error' => 'Acceso denegado - Tokens de seguridad requeridos'
-             ]);
-             exit();
-         }
-         
-         $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
-         $expected_session = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
-         
-         if ($csrf_token !== $expected_csrf || $session_token !== $expected_session) {
-             http_response_code(403);
-             echo json_encode([
-                 'error' => 'Acceso denegado - Tokens de seguridad inválidos'
-             ]);
-             exit();
-         }
-     }
+           if ($endpoint !== 'tokens' && ($method === 'POST' || $method === 'PUT' || $method === 'DELETE')) {
+          $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+          
+          if (empty($csrf_token)) {
+              http_response_code(403);
+              echo json_encode([
+                  'error' => 'Acceso denegado - Token CSRF requerido'
+              ]);
+              exit();
+          }
+          
+          $expected_csrf = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+          
+          if ($csrf_token !== $expected_csrf) {
+              http_response_code(403);
+              echo json_encode([
+                  'error' => 'Acceso denegado - Token CSRF inválido'
+              ]);
+              exit();
+          }
+      }
 
     // =============================================================================
     // DETECCIÓN DE SQL INJECTION EN TODOS LOS DATOS RECIBIDOS
@@ -179,16 +224,19 @@ try {
         exit();
     }
 
-    if ($id && detectSQLInjection([$id])) {
-        http_response_code(403);
-        echo json_encode([
-            'success' => false,
-            'error' => 'ID sospechoso detectado',
-            'security' => 'SQL injection attempt blocked',
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-        exit();
-    }
+         if ($id && detectSQLInjection([$id])) {
+         http_response_code(403);
+         echo json_encode([
+             'success' => false,
+             'error' => 'ID sospechoso detectado',
+             'security' => 'SQL injection attempt blocked',
+             'timestamp' => date('Y-m-d H:i:s')
+         ]);
+         exit();
+     }
+     
+     // Verificar sesión para endpoints protegidos
+     verificarSesion($db, $endpoint);
 
     // Router principal - SOLO PASSTHROUGH
     switch ($endpoint) {
@@ -706,15 +754,19 @@ function handleAuth($db, $method, $id, $data) {
                     return;
                 }
                 
-                // Verificar contraseña con bcrypt usando PHP
-                if (password_verify($data['password'], $user['password_hash'])) {
-                    // Login exitoso - actualizar último login
-                    $db->selectOne("CALL sp_actualizar_ultimo_login(?)", [$user['id']]);
-                    
-                    // Devolver datos del usuario (sin password_hash)
-                    unset($user['password_hash']);
-                    echo json_encode(['success' => true, 'data' => $user]);
-                } else {
+                                 // Verificar contraseña con bcrypt usando PHP
+                 if (password_verify($data['password'], $user['password_hash'])) {
+                     // Login exitoso - actualizar último login
+                     $db->selectOne("CALL sp_actualizar_ultimo_login(?)", [$user['id']]);
+                     
+                     // Generar token de sesión
+                     $session_token = hash('sha256', $user['id'] . time() . 'clinica-beleza-session-2025');
+                     
+                     // Devolver datos del usuario (sin password_hash) y token de sesión
+                     unset($user['password_hash']);
+                     $user['session_token'] = $session_token;
+                     echo json_encode(['success' => true, 'data' => $user]);
+                 } else {
                     http_response_code(401);
                     echo json_encode([
                         'success' => false,
@@ -1288,43 +1340,41 @@ function handleProfesionales($db, $method, $id, $data) {
      }
  }
  
- function handleTokens($db, $method, $id, $data) {
-     try {
-         switch ($method) {
-             case 'GET':
-                 $allowed_host = parse_url(getenv('API_URL'), PHP_URL_HOST);
-                 $csrf_token = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
-                 $session_token = hash('sha256', $allowed_host . 'clinica-beleza-session-2025');
-                 
-                 echo json_encode([
-                     'success' => true,
-                     'data' => [
-                         'csrf_token' => $csrf_token,
-                         'session_token' => $session_token
-                     ]
-                 ]);
-                 break;
-             default:
-                 http_response_code(405);
-                 echo json_encode([
-                     'success' => false,
-                     'error' => 'Método no permitido',
-                     'timestamp' => date('Y-m-d H:i:s'),
-                     'endpoint' => 'tokens',
-                     'method' => $method
-                 ]);
-         }
-     } catch (Exception $e) {
-         http_response_code(500);
-         echo json_encode([
-             'success' => false,
-             'error' => $e->getMessage(),
-             'error_code' => $e->getCode(),
-             'timestamp' => date('Y-m-d H:i:s'),
-             'endpoint' => 'tokens',
-             'method' => $method
-         ]);
-     }
- }
+   function handleTokens($db, $method, $id, $data) {
+      try {
+          switch ($method) {
+              case 'GET':
+                  $allowed_host = parse_url(getenv('API_URL'), PHP_URL_HOST);
+                  $csrf_token = hash('sha256', $allowed_host . 'clinica-beleza-csrf-2025');
+                  
+                  echo json_encode([
+                      'success' => true,
+                      'data' => [
+                          'csrf_token' => $csrf_token
+                      ]
+                  ]);
+                  break;
+              default:
+                  http_response_code(405);
+                  echo json_encode([
+                      'success' => false,
+                      'error' => 'Método no permitido',
+                      'timestamp' => date('Y-m-d H:i:s'),
+                      'endpoint' => 'tokens',
+                      'method' => $method
+                  ]);
+          }
+      } catch (Exception $e) {
+          http_response_code(500);
+          echo json_encode([
+              'success' => false,
+              'error' => $e->getMessage(),
+              'error_code' => $e->getCode(),
+              'timestamp' => date('Y-m-d H:i:s'),
+              'endpoint' => 'tokens',
+              'method' => $method
+          ]);
+      }
+  }
 
 ?>

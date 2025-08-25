@@ -309,36 +309,35 @@
                 this.hideAlert();
                 this.setLoading(true);
                 
-                try {
-                    const tokensResponse = await fetch('/api.php/tokens');
-                    const tokensData = await tokensResponse.json();
-                    
-                    if (!tokensData.success) {
-                        throw new Error('Error obteniendo tokens de seguridad');
-                    }
-                    
-                    const response = await fetch('/api.php/auth', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': tokensData.data.csrf_token,
-                            'X-Session-Token': tokensData.data.session_token
-                        },
-                        body: JSON.stringify({ username, password })
-                    });
+                                 try {
+                     const tokensResponse = await fetch('/api.php/tokens');
+                     const tokensData = await tokensResponse.json();
+                     
+                     if (!tokensData.success) {
+                         throw new Error('Error obteniendo token CSRF');
+                     }
+                     
+                     const response = await fetch('/api.php/auth', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                             'X-CSRF-Token': tokensData.data.csrf_token
+                         },
+                         body: JSON.stringify({ username, password })
+                     });
                     
                     const data = await response.json();
                     
-                    if (data.success) {
-                                                
-                        // Guardar datos de sesión
-                        localStorage.setItem('authToken', 'logged_in'); // Token simple para indicar que está logueado
-                        localStorage.setItem('userData', JSON.stringify({
-                            id: data.data.id,
-                            nombre: data.data.nombre,
-                            email: data.data.email,
-                            rol: data.data.rol
-                        }));
+                                         if (data.success) {
+                                                 
+                         // Guardar datos de sesión
+                         localStorage.setItem('authToken', data.data.session_token);
+                         localStorage.setItem('userData', JSON.stringify({
+                             id: data.data.id,
+                             nombre: data.data.nombre,
+                             email: data.data.email,
+                             rol: data.data.rol
+                         }));
                         
                                                                                                 
                         this.showAlert('¡Inicio de sesión exitoso! Redirigiendo...', 'success');
@@ -361,10 +360,55 @@
             }
         }
 
-        // Inicializar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', () => {
-            new LoginManager();
-        });
+                 // Función global para hacer requests autenticados
+         window.makeAuthenticatedRequest = async function(url, options = {}) {
+             const authToken = localStorage.getItem('authToken');
+             
+             if (!authToken) {
+                 // Redirigir al login si no hay token
+                 window.location.href = '/login.html';
+                 return;
+             }
+             
+             // Obtener token CSRF
+             const tokensResponse = await fetch('/api.php/tokens');
+             const tokensData = await tokensResponse.json();
+             
+             if (!tokensData.success) {
+                 throw new Error('Error obteniendo token CSRF');
+             }
+             
+             // Configurar headers por defecto
+             const defaultHeaders = {
+                 'Content-Type': 'application/json',
+                 'X-CSRF-Token': tokensData.data.csrf_token,
+                 'X-Auth-Token': authToken
+             };
+             
+             // Combinar headers
+             const headers = { ...defaultHeaders, ...options.headers };
+             
+             // Hacer la request
+             const response = await fetch(url, {
+                 ...options,
+                 headers
+             });
+             
+             // Si la respuesta es 401, redirigir al login
+             if (response.status === 401) {
+                 localStorage.removeItem('authToken');
+                 localStorage.removeItem('userData');
+                 window.location.href = '/login.html';
+                 return;
+             }
+             
+             return response;
+         };
+         
+         // Inicializar cuando el DOM esté listo
+         document.addEventListener('DOMContentLoaded', () => {
+             new LoginManager();
+         });
     </script>
 </body>
 </html>
