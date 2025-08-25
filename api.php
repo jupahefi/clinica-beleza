@@ -6,11 +6,12 @@
  * Toda la lógica está en la base de datos
  */
 
- if ($_SERVER['HTTP_HOST'] !== 'clinica-beleza.equalitech.xyz') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Acceso denegado']);
-    exit();
-}
+ $allowed_origin = 'https://clinica-beleza.equalitech.xyz';
+ if (!isset($_SERVER['HTTP_ORIGIN']) || $_SERVER['HTTP_ORIGIN'] !== $allowed_origin) {
+     http_response_code(403);
+     echo json_encode(['error' => 'Acceso denegado']);
+     exit();
+ }
 
  header('Content-Type: application/json; charset=UTF-8');
  header('Access-Control-Allow-Origin: https://clinica-beleza.equalitech.xyz');
