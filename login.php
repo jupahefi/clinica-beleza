@@ -36,13 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Obtener información adicional del profesional si es necesario
                 $profesional_id = null;
-                if ($user['rol'] === 'profesional') {
-                    $stmt = $pdo->prepare("CALL sp_obtener_profesional_por_usuario_id(?)");
-                    $stmt->execute([$user['id']]);
-                    $profesional = $stmt->fetch();
-                    $stmt->closeCursor();
-                    $profesional_id = $profesional['id'] ?? null;
-                }
+                // Obtener profesional para cualquier rol que tenga uno asociado
+                $stmt = $pdo->prepare("CALL sp_obtener_profesional_por_usuario_id(?)");
+                $stmt->execute([$user['id']]);
+                $profesional = $stmt->fetch();
+                $stmt->closeCursor();
+                $profesional_id = $profesional['id'] ?? null;
                 
                 // Crear sesión de usuario
                 createUserSession([
