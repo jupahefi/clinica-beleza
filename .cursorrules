@@ -1,0 +1,36 @@
+# Cursor Rules for Clínica Belleza Project
+
+## Core Development Principles
+
+### Execution & Testing
+- NEVER execute commands or scripts - user is responsible for deployment and testing
+- NEVER attempt to run bash commands on local environment
+- User is solely responsible for deployment and testing
+
+### Error Handling & Logging
+- NEVER use console.log - use toast notifications instead
+- ALWAYS propagate native database errors to backend and frontend
+- Propagate JavaScript errors when appropriate
+- Use descriptive logging: MySQL and JavaScript engines provide descriptive logs
+- When errors originate from database, display raw DB error for maximum descriptiveness
+
+### Development Approach
+- NEVER develop things halfway - complete implementations only
+- NEVER make unsolicited code changes or remove functions not explicitly requested
+- Ask for clarification on business rules instead of inventing them
+
+### Architecture
+- All business logic in database: database centralized + API passthrough
+- All SQL logic MUST be implemented in stored procedures (SPs)
+- Direct SQL statements in code are NOT allowed
+- Every stored procedure MUST generate logs for audit history
+
+### Data Management
+- NO delete operations allowed - only soft deletions
+- Tables requiring soft deletion MUST have an 'estado' column
+- For sales, 'estado' field has two values: 'pendiente pago' and 'pagada'
+- Zero-cost sales default to 'pagada'
+
+### Security
+- Passwords MUST be hashed using bcrypt
+- Backend must perform hashing when receiving passwords
