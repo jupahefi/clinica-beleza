@@ -81,11 +81,7 @@ export class ReportesModule {
             
             const response = await logsActividadAPI.getLogs(filtros);
             
-            if (!response || !response.success) {
-                throw new Error(response?.error || 'Respuesta inválida del servidor');
-            }
-            
-            this.logsActividad = response.data || [];
+            this.logsActividad = response || [];
             
             this.mostrarHistorialActividad(this.logsActividad);
             this.ocultarLoading();
@@ -113,11 +109,7 @@ export class ReportesModule {
             
             const response = await logsActividadAPI.getLogs(filtros);
             
-            if (!response || !response.success) {
-                throw new Error(response?.error || 'Respuesta inválida del servidor');
-            }
-            
-            this.logsActividad = response.data || [];
+            this.logsActividad = response || [];
             
             this.mostrarHistorialActividad(this.logsActividad);
             this.ocultarLoading();
