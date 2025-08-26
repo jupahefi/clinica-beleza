@@ -14,9 +14,7 @@ $allowed_origin = getAllowedOrigin();
      http_response_code(500);
      echo json_encode([
          'success' => false,
-         'error' => 'Error de configuración - API_URL no definida',
-         'security' => 'Configuration error - missing API_URL environment variable',
-         'timestamp' => date('Y-m-d H:i:s')
+         'error' => 'Error de configuración'
      ]);
      exit();
  }
