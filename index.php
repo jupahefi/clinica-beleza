@@ -1075,27 +1075,40 @@ $user_data = getCurrentUserData();
                         <div class="data-header">
                             <h3>Actividad Reciente</h3>
                             <div class="filter-container">
-                                <select id="filtroHistorial">
-                                    <option value="todos">Todos</option>
-                                    <option value="pacientes">Pacientes</option>
-                                    <option value="ventas">Ventas</option>
-                                    <option value="pagos">Pagos</option>
-                                    <option value="sesiones">Sesiones</option>
-                                </select>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="fechaDesdeLogs" class="form-label">Desde:</label>
+                                        <input type="date" id="fechaDesdeLogs" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="fechaHastaLogs" class="form-label">Hasta:</label>
+                                        <input type="date" id="fechaHastaLogs" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="profesionalLogs" class="form-label">Profesional:</label>
+                                        <select id="profesionalLogs" class="form-select form-select-sm">
+                                            <option value="">Todos</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button id="btnFiltrarLogs" class="btn btn-primary btn-sm me-2">
+                                            <i class="fas fa-filter"></i> Filtrar
+                                        </button>
+                                        <button id="btnLimpiarFiltrosLogs" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-times"></i> Limpiar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="table-container">
-                            <table id="tablaHistorial" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Acción</th>
-                                        <th>Detalle</th>
-                                        <th>Usuario</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cuerpoTablaHistorial"></tbody>
-                            </table>
+                        <div id="historialActividadContainer" class="table-container">
+                            <!-- Aquí se cargará dinámicamente la tabla de logs -->
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando historial...</span>
+                                </div>
+                                <p class="mt-2">Cargando historial de actividad...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1146,6 +1159,15 @@ $user_data = getCurrentUserData();
                 window.limpiarFormularioOferta = function() {
                     // Esta función será llamada desde el HTML
                     // El módulo de ofertas se encarga de la lógica
+                };
+                
+                // Función global para mostrar detalles de log
+                window.mostrarDetallesLog = function(logId) {
+                    // Esta función será llamada desde el HTML
+                    // El módulo de reportes se encarga de la lógica
+                    if (window.reportesModule) {
+                        window.reportesModule.mostrarDetallesLog(logId);
+                    }
                 };
             </script>
 </body>

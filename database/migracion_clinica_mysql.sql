@@ -99,6 +99,8 @@ DROP PROCEDURE IF EXISTS sp_sucursales_update;
 DROP PROCEDURE IF EXISTS sp_sucursales_delete;
 DROP PROCEDURE IF EXISTS sp_tratamientos_get;
 DROP PROCEDURE IF EXISTS sp_obtener_profesional_por_usuario_id;
+DROP PROCEDURE IF EXISTS sp_registrar_actividad;
+DROP PROCEDURE IF EXISTS sp_logs_actividad_list;
 DROP PROCEDURE IF EXISTS sp_tratamientos_create;
 DROP PROCEDURE IF EXISTS sp_tratamientos_update;
 DROP PROCEDURE IF EXISTS sp_tratamientos_delete;
@@ -262,6 +264,25 @@ CREATE TABLE IF NOT EXISTS usuario (
   ultimo_login TIMESTAMP NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabla de logs para auditoría
+CREATE TABLE IF NOT EXISTS log_actividad (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id BIGINT NOT NULL,
+  profesional_id BIGINT NULL,
+  accion VARCHAR(100) NOT NULL,
+  tabla_afectada VARCHAR(50) NULL,
+  registro_id BIGINT NULL,
+  detalles JSON NULL,
+  ip_address VARCHAR(45) NULL,
+  user_agent TEXT NULL,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_log_usuario (usuario_id),
+  INDEX idx_log_profesional (profesional_id),
+  INDEX idx_log_fecha (fecha_creacion),
+  INDEX idx_log_accion (accion),
+  INDEX idx_log_tabla (tabla_afectada)
 );
 
 CALL AddIndexIfNotExists('ux_usuario_username', 'usuario', 'username', TRUE);
@@ -1125,10 +1146,15 @@ CREATE PROCEDURE sp_crear_ficha(
     IN p_fecha_nacimiento DATE,
     IN p_direccion TEXT,
     IN p_observaciones TEXT,
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT,
     OUT p_ficha_id BIGINT
 )
 BEGIN
     DECLARE v_existing_id BIGINT DEFAULT NULL;
+    DECLARE v_accion VARCHAR(100);
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -1143,13 +1169,35 @@ BEGIN
     IF v_existing_id IS NOT NULL THEN
         -- Si ya existe, devolver el ID existente
         SET p_ficha_id = v_existing_id;
+        SET v_accion = 'CONSULTAR_FICHA_EXISTENTE';
     ELSE
         -- Si no existe, crear nueva ficha
         INSERT INTO ficha (codigo, nombres, apellidos, rut, telefono, email, fecha_nacimiento, direccion, observaciones)
         VALUES (p_codigo, p_nombres, p_apellidos, p_rut, p_telefono, p_email, p_fecha_nacimiento, p_direccion, p_observaciones);
     
-    SET p_ficha_id = LAST_INSERT_ID();
+        SET p_ficha_id = LAST_INSERT_ID();
+        SET v_accion = 'CREAR_FICHA_NUEVA';
     END IF;
+    
+    -- Registrar log de la operación
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_profesional_id,
+        v_accion,
+        'ficha',
+        p_ficha_id,
+        JSON_OBJECT(
+            'codigo', p_codigo,
+            'nombres', p_nombres,
+            'apellidos', p_apellidos,
+            'rut', p_rut,
+            'email', p_email,
+            'fecha_nacimiento', p_fecha_nacimiento,
+            'ficha_existente', v_existing_id IS NOT NULL
+        ),
+        p_ip_address,
+        p_user_agent
+    );
     
     COMMIT;
 END$$
@@ -1246,6 +1294,9 @@ CREATE PROCEDURE sp_crear_venta(
     IN p_descuento_manual_pct DECIMAL(5,2),
     IN p_genero ENUM('M', 'F', 'U'),
     IN p_genero_indicado_por BIGINT,
+    IN p_usuario_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT,
     OUT p_venta_id BIGINT
 )
 BEGIN
@@ -1263,6 +1314,29 @@ BEGIN
     
     SET p_venta_id = LAST_INSERT_ID();
     
+    -- Registrar log de la venta creada
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_genero_indicado_por,
+        'CREAR_VENTA',
+        'venta',
+        p_venta_id,
+        JSON_OBJECT(
+            'ficha_id', p_ficha_id,
+            'evaluacion_id', p_evaluacion_id,
+            'ficha_especifica_id', p_ficha_especifica_id,
+            'tratamiento_id', p_tratamiento_id,
+            'pack_id', p_pack_id,
+            'cantidad_sesiones', p_cantidad_sesiones,
+            'precio_lista', p_precio_lista,
+            'descuento_manual_pct', p_descuento_manual_pct,
+            'genero', p_genero,
+            'estado', CASE WHEN p_precio_lista = 0 THEN 'pagado' ELSE 'pendiente' END
+        ),
+        p_ip_address,
+        p_user_agent
+    );
+    
     COMMIT;
 END$$
 DELIMITER ;
@@ -1278,6 +1352,9 @@ CREATE PROCEDURE sp_crear_venta_evaluacion(
     IN p_descuento_manual_pct DECIMAL(5,2),
     IN p_genero ENUM('M', 'F', 'U'),
     IN p_genero_indicado_por BIGINT,
+    IN p_usuario_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT,
     OUT p_venta_id BIGINT
 )
 BEGIN
@@ -1296,6 +1373,28 @@ BEGIN
     
     SET p_venta_id = LAST_INSERT_ID();
     
+    -- Registrar log de la venta de evaluación creada
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_genero_indicado_por,
+        'CREAR_VENTA_EVALUACION',
+        'venta',
+        p_venta_id,
+        JSON_OBJECT(
+            'ficha_id', p_ficha_id,
+            'tratamiento_id', p_tratamiento_id,
+            'pack_id', p_pack_id,
+            'cantidad_sesiones', p_cantidad_sesiones,
+            'precio_lista', p_precio_lista,
+            'descuento_manual_pct', p_descuento_manual_pct,
+            'genero', p_genero,
+            'estado', CASE WHEN p_precio_lista = 0 THEN 'pagado' ELSE 'pendiente' END,
+            'tipo', 'evaluacion_inicial'
+        ),
+        p_ip_address,
+        p_user_agent
+    );
+    
     COMMIT;
 END$$
 DELIMITER ;
@@ -1304,9 +1403,14 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE sp_aplicar_descuento_manual(
     IN p_venta_id BIGINT,
-    IN p_descuento_manual_pct DECIMAL(5,2)
+    IN p_descuento_manual_pct DECIMAL(5,2),
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT
 )
 BEGIN
+    DECLARE v_descuento_anterior DECIMAL(5,2);
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -1315,9 +1419,28 @@ BEGIN
     
     START TRANSACTION;
     
+    -- Obtener descuento anterior para el log
+    SELECT descuento_manual_pct INTO v_descuento_anterior FROM venta WHERE id = p_venta_id;
+    
     UPDATE venta 
     SET descuento_manual_pct = p_descuento_manual_pct
     WHERE id = p_venta_id;
+    
+    -- Registrar log del cambio de descuento
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_profesional_id,
+        'APLICAR_DESCUENTO_MANUAL',
+        'venta',
+        p_venta_id,
+        JSON_OBJECT(
+            'descuento_anterior', v_descuento_anterior,
+            'descuento_nuevo', p_descuento_manual_pct,
+            'diferencia', p_descuento_manual_pct - v_descuento_anterior
+        ),
+        p_ip_address,
+        p_user_agent
+    );
     
     COMMIT;
 END$$
@@ -1414,6 +1537,9 @@ CREATE PROCEDURE sp_agendar_sesion(
     IN p_profesional_id BIGINT,
     IN p_fecha_planificada TIMESTAMP,
     IN p_observaciones TEXT,
+    IN p_usuario_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT,
     OUT p_sesion_id BIGINT
 )
 BEGIN
@@ -1435,6 +1561,25 @@ BEGIN
         );
     
     SET p_sesion_id = LAST_INSERT_ID();
+    
+    -- Registrar log de la sesión agendada
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_profesional_id,
+        'AGENDAR_SESION',
+        'sesion',
+        p_sesion_id,
+        JSON_OBJECT(
+            'venta_id', p_venta_id,
+            'numero_sesion', p_numero_sesion,
+            'sucursal_id', p_sucursal_id,
+            'box_id', p_box_id,
+            'fecha_planificada', p_fecha_planificada,
+            'observaciones', p_observaciones
+        ),
+        p_ip_address,
+        p_user_agent
+    );
     
     COMMIT;
 END$$
@@ -2149,6 +2294,10 @@ CREATE PROCEDURE sp_crear_pago(
     IN p_venta_id BIGINT,
     IN p_monto_total DECIMAL(12,2),
     IN p_observaciones TEXT,
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT,
     OUT p_pago_id BIGINT
 )
 BEGIN
@@ -2164,6 +2313,22 @@ BEGIN
     VALUES (p_venta_id, p_monto_total, p_observaciones);
     
     SET p_pago_id = LAST_INSERT_ID();
+    
+    -- Registrar log del pago creado
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_profesional_id,
+        'CREAR_PAGO',
+        'pago',
+        p_pago_id,
+        JSON_OBJECT(
+            'venta_id', p_venta_id,
+            'monto_total', p_monto_total,
+            'observaciones', p_observaciones
+        ),
+        p_ip_address,
+        p_user_agent
+    );
     
     COMMIT;
 END$$
@@ -2200,9 +2365,15 @@ DELIMITER ;
 -- PAG-003: Confirmar pago
 DELIMITER $$
 CREATE PROCEDURE sp_confirmar_pago(
-    IN p_pago_id BIGINT
+    IN p_pago_id BIGINT,
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT
 )
 BEGIN
+    DECLARE v_venta_id BIGINT;
+    DECLARE v_monto_total DECIMAL(12,2);
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -2211,9 +2382,29 @@ BEGIN
     
     START TRANSACTION;
     
+    -- Obtener información del pago para el log
+    SELECT venta_id, monto_total INTO v_venta_id, v_monto_total FROM pago WHERE id = p_pago_id;
+    
     UPDATE pago 
     SET estado = 'pagado'
     WHERE id = p_pago_id;
+    
+    -- Registrar log de la confirmación del pago
+    CALL sp_registrar_actividad(
+        p_usuario_id,
+        p_profesional_id,
+        'CONFIRMAR_PAGO',
+        'pago',
+        p_pago_id,
+        JSON_OBJECT(
+            'venta_id', v_venta_id,
+            'monto_total', v_monto_total,
+            'estado_anterior', 'pendiente',
+            'estado_nuevo', 'pagado'
+        ),
+        p_ip_address,
+        p_user_agent
+    );
     
     COMMIT;
 END$$
@@ -4204,6 +4395,89 @@ BEGIN
     SELECT id, nombre, apellidos, tipo_profesional, especialidad, activo
     FROM profesional 
     WHERE usuario_id = p_usuario_id AND activo = TRUE;
+END$$
+DELIMITER ;
+
+-- =============================================================================
+-- STORED PROCEDURE PARA REGISTRAR ACTIVIDADES (LOGS)
+-- =============================================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_registrar_actividad(
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_accion VARCHAR(100),
+    IN p_tabla_afectada VARCHAR(50),
+    IN p_registro_id BIGINT,
+    IN p_detalles JSON,
+    IN p_ip_address VARCHAR(45),
+    IN p_user_agent TEXT
+)
+BEGIN
+    INSERT INTO log_actividad (
+        usuario_id, 
+        profesional_id, 
+        accion, 
+        tabla_afectada, 
+        registro_id, 
+        detalles, 
+        ip_address, 
+        user_agent
+    ) VALUES (
+        p_usuario_id,
+        p_profesional_id,
+        p_accion,
+        p_tabla_afectada,
+        p_registro_id,
+        p_detalles,
+        p_ip_address,
+        p_user_agent
+    );
+END$$
+DELIMITER ;
+
+-- =============================================================================
+-- STORED PROCEDURE PARA LISTAR LOGS DE ACTIVIDAD
+-- =============================================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_logs_actividad_list(
+    IN p_fecha_desde DATE,
+    IN p_fecha_hasta DATE,
+    IN p_usuario_id BIGINT,
+    IN p_profesional_id BIGINT,
+    IN p_accion VARCHAR(100),
+    IN p_tabla_afectada VARCHAR(50),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT 
+        la.id,
+        la.usuario_id,
+        u.username as usuario_nombre,
+        la.profesional_id,
+        CONCAT(p.nombre, ' ', p.apellido) as profesional_nombre,
+        la.accion,
+        la.tabla_afectada,
+        la.registro_id,
+        la.detalles,
+        la.ip_address,
+        la.user_agent,
+        la.fecha_creacion,
+        DATE_FORMAT(la.fecha_creacion, '%d/%m/%Y %H:%i:%s') as fecha_formateada
+    FROM log_actividad la
+    LEFT JOIN usuario u ON la.usuario_id = u.id
+    LEFT JOIN profesional p ON la.profesional_id = p.id
+    WHERE 1=1
+        AND (p_fecha_desde IS NULL OR DATE(la.fecha_creacion) >= p_fecha_desde)
+        AND (p_fecha_hasta IS NULL OR DATE(la.fecha_creacion) <= p_fecha_hasta)
+        AND (p_usuario_id IS NULL OR la.usuario_id = p_usuario_id)
+        AND (p_profesional_id IS NULL OR la.profesional_id = p_profesional_id)
+        AND (p_accion IS NULL OR la.accion = p_accion)
+        AND (p_tabla_afectada IS NULL OR la.tabla_afectada = p_tabla_afectada)
+    ORDER BY la.fecha_creacion DESC
+    LIMIT p_limit OFFSET p_offset;
 END$$
 DELIMITER ;
 

@@ -35,6 +35,10 @@ class ClinicaBelezaApp {
             mantenedores: mantenedoresModule,
             reportes: reportesModule
         };
+        
+        // Hacer el módulo de reportes disponible globalmente
+        window.reportesModule = reportesModule;
+        
         this.init();
     }
     

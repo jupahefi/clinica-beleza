@@ -275,6 +275,9 @@ try {
          case 'user':
              handleUser($db, $method, $id, $data);
              break;
+         case 'logs-actividad':
+             handleLogsActividad($db, $method, $id, $data);
+             break;
          default:
             http_response_code(404);
             echo json_encode([
@@ -1391,6 +1394,47 @@ function handleUser($db, $method, $id, $data) {
             'error_code' => $e->getCode(),
             'timestamp' => date('Y-m-d H:i:s'),
             'endpoint' => 'user',
+            'method' => $method
+        ]);
+    }
+}
+
+function handleLogsActividad($db, $method, $id, $data) {
+    try {
+        switch ($method) {
+            case 'GET':
+                $fecha_desde = $_GET['fecha_desde'] ?? null;
+                $fecha_hasta = $_GET['fecha_hasta'] ?? null;
+                $profesional_id = $_GET['profesional_id'] ?? null;
+                $limit = $_GET['limit'] ?? 100;
+                $offset = $_GET['offset'] ?? 0;
+                
+                $params = [
+                    $fecha_desde, $fecha_hasta, null, $profesional_id,
+                    null, null, $limit, $offset
+                ];
+                
+                $result = $db->select("CALL sp_logs_actividad_list(?, ?, ?, ?, ?, ?, ?, ?)", $params);
+                echo json_encode(['success' => true, 'data' => $result]);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Método no permitido',
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'endpoint' => 'logs-actividad',
+                    'method' => $method
+                ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'endpoint' => 'logs-actividad',
             'method' => $method
         ]);
     }

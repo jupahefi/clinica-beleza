@@ -624,3 +624,7 @@ export async function getConfig() {
         return null;
     }
 }
+
+export const logsActividadAPI = {
+    getLogs: (filtros = {}) => get('logs-actividad', filtros)
+};

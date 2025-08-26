@@ -1,391 +1,151 @@
 /**
  * Módulo de gestión de reportes
- * Maneja todas las operaciones relacionadas con reportes y estadísticas
- * Server-based architecture - Sin modo offline
+ * Solo historial de actividad - simple y funcional
  */
 
-import { reportesAPI } from '../api-client.js';
+import { logsActividadAPI } from '../api-client.js';
 import { mostrarNotificacion } from '../utils.js';
 
 export class ReportesModule {
     constructor() {
-        this.reportes = [];
+        this.logsActividad = [];
         this.init();
     }
 
     async init() {
-        this.configurarEventosReportes();
-        await this.cargarReportesDisponibles();
+        this.configurarEventos();
+        await this.cargarHistorialActividad();
     }
 
-    configurarEventosReportes() {
-        // Configurar botones de generación de reportes
-        const btnProgresoVentas = document.getElementById('btnProgresoVentas');
-        if (btnProgresoVentas) {
-            btnProgresoVentas.addEventListener('click', () => this.generarReporteProgresoVentas());
+    configurarEventos() {
+        const btnFiltrarLogs = document.getElementById('btnFiltrarLogs');
+        if (btnFiltrarLogs) {
+            btnFiltrarLogs.addEventListener('click', () => this.aplicarFiltrosLogs());
         }
 
-        const btnPlanVsEjecucion = document.getElementById('btnPlanVsEjecucion');
-        if (btnPlanVsEjecucion) {
-            btnPlanVsEjecucion.addEventListener('click', () => this.generarReportePlanVsEjecucion());
-        }
-
-        const btnDisponibilidadProfesionales = document.getElementById('btnDisponibilidadProfesionales');
-        if (btnDisponibilidadProfesionales) {
-            btnDisponibilidadProfesionales.addEventListener('click', () => this.generarReporteDisponibilidadProfesionales());
-        }
-
-        const btnOfertasAplicadas = document.getElementById('btnOfertasAplicadas');
-        if (btnOfertasAplicadas) {
-            btnOfertasAplicadas.addEventListener('click', () => this.generarReporteOfertasAplicadas());
+        const btnLimpiarFiltrosLogs = document.getElementById('btnLimpiarFiltrosLogs');
+        if (btnLimpiarFiltrosLogs) {
+            btnLimpiarFiltrosLogs.addEventListener('click', () => this.limpiarFiltrosLogs());
         }
     }
 
-    async cargarReportesDisponibles() {
+    async cargarHistorialActividad() {
         try {
-            // Aquí se podrían cargar reportes predefinidos o configuraciones
-                            } catch (error) {
-            console.error('[Reportes] Error cargando reportes disponibles:', error);
-            // Mostrar el error de la DB directamente si existe
-            const errorMessage = error?.message || error?.error || 'Error desconocido cargando reportes disponibles';
-            mostrarNotificacion(errorMessage, 'error');
-        }
-    }
-
-    async generarReporteProgresoVentas() {
-        try {
-                        mostrarNotificacion('Generando reporte de progreso de ventas...', 'info');
-            const reporte = await reportesAPI.progresoVentas();
-                        mostrarNotificacion('Reporte de progreso de ventas generado correctamente', 'success');
-            this.mostrarReporteProgresoVentas(reporte);
+            mostrarNotificacion('Cargando historial de actividad...', 'info');
+            
+            const logs = await logsActividadAPI.getLogs({ limit: 100 });
+            this.logsActividad = logs.data || [];
+            
+            this.mostrarHistorialActividad(this.logsActividad);
+            mostrarNotificacion('Historial de actividad cargado correctamente', 'success');
         } catch (error) {
-            console.error('[Reportes] Error generando reporte de progreso de ventas:', error);
-            // Mostrar el error de la DB directamente si existe
-            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de progreso de ventas';
+            const errorMessage = error?.message || error?.error || 'Error cargando historial de actividad';
             mostrarNotificacion(errorMessage, 'error');
         }
     }
 
-    async generarReportePlanVsEjecucion() {
+    async aplicarFiltrosLogs() {
         try {
-                        mostrarNotificacion('Generando reporte Plan vs Ejecución...', 'info');
-            const reporte = await reportesAPI.planVsEjecucion();
-                        mostrarNotificacion('Reporte Plan vs Ejecución generado correctamente', 'success');
-            this.mostrarReportePlanVsEjecucion(reporte);
+            mostrarNotificacion('Aplicando filtros...', 'info');
+            
+            const filtros = {};
+            const fechaDesde = document.getElementById('fechaDesdeLogs')?.value;
+            const fechaHasta = document.getElementById('fechaHastaLogs')?.value;
+            const profesionalId = document.getElementById('profesionalLogs')?.value;
+            
+            if (fechaDesde) filtros.fecha_desde = fechaDesde;
+            if (fechaHasta) filtros.fecha_hasta = fechaHasta;
+            if (profesionalId) filtros.profesional_id = profesionalId;
+            
+            filtros.limit = 100;
+            
+            const logs = await logsActividadAPI.getLogs(filtros);
+            this.logsActividad = logs.data || [];
+            
+            this.mostrarHistorialActividad(this.logsActividad);
+            mostrarNotificacion('Filtros aplicados correctamente', 'success');
         } catch (error) {
-            console.error('[Reportes] Error generando reporte Plan vs Ejecución:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte Plan vs Ejecución';
+            const errorMessage = error?.message || error?.error || 'Error aplicando filtros';
             mostrarNotificacion(errorMessage, 'error');
         }
     }
 
-    async generarReporteDisponibilidadProfesionales() {
-        try {
-                        mostrarNotificacion('Generando reporte de disponibilidad de profesionales...', 'info');
-            const reporte = await reportesAPI.disponibilidad();
-                        mostrarNotificacion('Reporte de disponibilidad de profesionales generado correctamente', 'success');
-            this.mostrarReporteDisponibilidadProfesionales(reporte);
-        } catch (error) {
-            console.error('[Reportes] Error generando reporte de disponibilidad de profesionales:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de disponibilidad de profesionales';
-            mostrarNotificacion(errorMessage, 'error');
-        }
+    limpiarFiltrosLogs() {
+        const inputs = ['fechaDesdeLogs', 'fechaHastaLogs', 'profesionalLogs'];
+        inputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.value = '';
+        });
+        
+        this.cargarHistorialActividad();
+        mostrarNotificacion('Filtros limpiados', 'info');
     }
 
-    async generarReporteOfertasAplicadas() {
-        try {
-                        mostrarNotificacion('Generando reporte de ofertas aplicadas...', 'info');
-            const reporte = await reportesAPI.ofertasAplicadas();
-                        mostrarNotificacion('Reporte de ofertas aplicadas generado correctamente', 'success');
-            this.mostrarReporteOfertasAplicadas(reporte);
-        } catch (error) {
-            console.error('[Reportes] Error generando reporte de ofertas aplicadas:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido generando reporte de ofertas aplicadas';
-            mostrarNotificacion(errorMessage, 'error');
-        }
-    }
-
-    mostrarReporteProgresoVentas(reporte) {
-        const container = document.getElementById('reporteProgresoVentas');
+    mostrarHistorialActividad(logs) {
+        const container = document.getElementById('historialActividadContainer');
         if (!container) return;
 
-        let html = `
-            <div class="reporte-container">
-                <h3>📊 Reporte de Progreso de Ventas</h3>
-                <div class="reporte-stats">
-                    <div class="stat-card">
-                        <h4>Ventas Totales</h4>
-                        <p class="stat-value">${reporte.ventasTotales || 0}</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Monto Total</h4>
-                        <p class="stat-value">$${this.formatearNumero(reporte.montoTotal || 0)}</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Promedio por Venta</h4>
-                        <p class="stat-value">$${this.formatearNumero(reporte.promedioPorVenta || 0)}</p>
-                    </div>
-                </div>
-                <div class="reporte-chart">
-                    <canvas id="chartProgresoVentas"></canvas>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-        container.style.display = 'block';
-
-        // Aquí se podría agregar la lógica para crear gráficos con Chart.js
-        this.crearGraficoProgresoVentas(reporte);
-    }
-
-    mostrarReportePlanVsEjecucion(reporte) {
-        const container = document.getElementById('reportePlanVsEjecucion');
-        if (!container) return;
-
-        let html = `
-            <div class="reporte-container">
-                <h3>📈 Reporte Plan vs Ejecución</h3>
-                <div class="reporte-table">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Métrica</th>
-                                <th>Planificado</th>
-                                <th>Ejecutado</th>
-                                <th>Diferencia</th>
-                                <th>% Cumplimiento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        if (reporte.metricas) {
-            reporte.metricas.forEach(metrica => {
-                const diferencia = metrica.ejecutado - metrica.planificado;
-                const porcentaje = metrica.planificado > 0 ? ((metrica.ejecutado / metrica.planificado) * 100).toFixed(1) : 0;
-
-                html += `
-                    <tr>
-                        <td>${metrica.nombre}</td>
-                        <td>${this.formatearNumero(metrica.planificado)}</td>
-                        <td>${this.formatearNumero(metrica.ejecutado)}</td>
-                        <td class="${diferencia >= 0 ? 'text-success' : 'text-danger'}">${this.formatearNumero(diferencia)}</td>
-                        <td>${porcentaje}%</td>
-                    </tr>
-                `;
-            });
-        }
-
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-        container.style.display = 'block';
-    }
-
-    mostrarReporteDisponibilidadProfesionales(reporte) {
-        const container = document.getElementById('reporteDisponibilidadProfesionales');
-        if (!container) return;
-
-        let html = `
-            <div class="reporte-container">
-                <h3>👥 Reporte de Disponibilidad de Profesionales</h3>
-                <div class="profesionales-grid">
-        `;
-
-        if (reporte.profesionales) {
-            reporte.profesionales.forEach(profesional => {
-                const disponibilidad = profesional.disponibilidad || 0;
-                const colorClase = disponibilidad >= 80 ? 'success' : disponibilidad >= 60 ? 'warning' : 'danger';
-
-                html += `
-                    <div class="profesional-card">
-                        <h4>${profesional.nombre}</h4>
-                        <p><strong>Especialidad:</strong> ${profesional.especialidad}</p>
-                        <p><strong>Disponibilidad:</strong> <span class="text-${colorClase}">${disponibilidad}%</span></p>
-                        <p><strong>Sesiones Programadas:</strong> ${profesional.sesionesProgramadas || 0}</p>
-                        <p><strong>Horas Disponibles:</strong> ${profesional.horasDisponibles || 0}</p>
-                    </div>
-                `;
-            });
-        }
-
-        html += `
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-        container.style.display = 'block';
-    }
-
-    mostrarReporteOfertasAplicadas(reporte) {
-        const container = document.getElementById('reporteOfertasAplicadas');
-        if (!container) return;
-
-        let html = `
-            <div class="reporte-container">
-                <h3>🎯 Reporte de Ofertas Aplicadas</h3>
-                <div class="ofertas-stats">
-                    <div class="stat-card">
-                        <h4>Ofertas Aplicadas</h4>
-                        <p class="stat-value">${reporte.totalOfertas || 0}</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Descuento Total</h4>
-                        <p class="stat-value">$${this.formatearNumero(reporte.descuentoTotal || 0)}</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Promedio Descuento</h4>
-                        <p class="stat-value">${reporte.promedioDescuento || 0}%</p>
-                    </div>
-                </div>
-                <div class="ofertas-detalle">
-                    <h4>Detalle por Oferta</h4>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Oferta</th>
-                                <th>Veces Aplicada</th>
-                                <th>Descuento Total</th>
-                                <th>Promedio Descuento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        if (reporte.detalleOfertas) {
-            reporte.detalleOfertas.forEach(oferta => {
-                html += `
-                    <tr>
-                        <td>${oferta.nombre}</td>
-                        <td>${oferta.vecesAplicada}</td>
-                        <td>$${this.formatearNumero(oferta.descuentoTotal)}</td>
-                        <td>${oferta.promedioDescuento}%</td>
-                    </tr>
-                `;
-            });
-        }
-
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-        container.style.display = 'block';
-    }
-
-    crearGraficoProgresoVentas(reporte) {
-        // Aquí se implementaría la lógica para crear gráficos con Chart.js
-        // Por ahora solo un placeholder
-        const canvas = document.getElementById('chartProgresoVentas');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#f8f9fa';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Gráfico de Progreso de Ventas', canvas.width / 2, canvas.height / 2);
-        }
-    }
-
-    formatearNumero(numero) {
-        return new Intl.NumberFormat('es-CL').format(numero);
-    }
-
-    mostrarLoading(mensaje) {
-        // Implementar loading spinner
-        const loadingDiv = document.getElementById('loadingReportes');
-        if (loadingDiv) {
-            loadingDiv.innerHTML = `
-                <div class="loading-spinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-2">${mensaje}</p>
+        if (!logs || logs.length === 0) {
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No se encontraron registros de actividad para los filtros aplicados.
                 </div>
             `;
-            loadingDiv.style.display = 'block';
+            return;
         }
-    }
 
-    ocultarLoading() {
-        const loadingDiv = document.getElementById('loadingReportes');
-        if (loadingDiv) {
-            loadingDiv.style.display = 'none';
-        }
-    }
+        const tabla = `
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Profesional</th>
+                            <th>Acción</th>
+                            <th>Tabla</th>
+                            <th>Registro ID</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>
+                                    <small class="text-muted">${log.fecha_formateada}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">${log.profesional_nombre || 'N/A'}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">${log.accion}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">${log.tabla_afectada || 'N/A'}</span>
+                                </td>
+                                <td>
+                                    <code>${log.registro_id || 'N/A'}</code>
+                                </td>
+                                <td>
+                                    <small class="text-muted">${log.ip_address || 'N/A'}</small>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Mostrando ${logs.length} registros de actividad (máximo 100)
+                </small>
+            </div>
+        `;
 
-    mostrarError(mensaje) {
-        // Este método queda para compatibilidad, pero ahora los errores se muestran directamente en los catch
-        console.error('[Reportes] Error:', mensaje);
-        mostrarNotificacion(mensaje, 'error');
-    }
-
-    async exportarReporte(tipoReporte, formato = 'csv') {
-        try {
-                        mostrarNotificacion(`Exportando reporte (${tipoReporte}) en formato ${formato}...`, 'info');
-            const reporte = await reportesAPI.progresoVentas(); // Usar el método correcto según el tipo
-            this.exportarDatos(reporte, tipoReporte, formato);
-            mostrarNotificacion('Reporte exportado correctamente', 'success');
-        } catch (error) {
-            console.error('[Reportes] Error exportando reporte:', error);
-            const errorMessage = error?.message || error?.error || 'Error exportando reporte';
-            mostrarNotificacion(errorMessage, 'error');
-        }
-    }
-
-    exportarDatos(datos, tipoReporte, formato) {
-        if (formato === 'csv') {
-            this.exportarCSV(datos, `reporte_${tipoReporte}.csv`);
-        } else if (formato === 'json') {
-            this.exportarJSON(datos, `reporte_${tipoReporte}.json`);
-        }
-    }
-
-    exportarCSV(datos, nombreArchivo) {
-        // Implementar exportación a CSV
-                mostrarNotificacion('Funcionalidad de exportación CSV en desarrollo', 'info');
-    }
-
-    exportarJSON(datos, nombreArchivo) {
-        // Implementar exportación a JSON
-                const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = nombreArchivo;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    descargarArchivo(contenido, nombreArchivo) {
-        const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-
-        link.setAttribute('href', url);
-        link.setAttribute('download', nombreArchivo);
-        link.style.visibility = 'hidden';
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    filtrarHistorial(tipo) {
-                mostrarNotificacion(`Filtro de historial: ${tipo} - Funcionalidad en desarrollo`, 'info');
+        container.innerHTML = tabla;
     }
 }
 
 // Exportar instancia global
 export const reportesModule = new ReportesModule();
+
