@@ -3,17 +3,20 @@
  * Solo historial de actividad - simple y funcional
  */
 
-import { logsActividadAPI } from '../api-client.js';
+import { logsActividadAPI, profesionalesAPI } from '../api-client.js';
 import { mostrarNotificacion } from '../utils.js';
 
 export class ReportesModule {
     constructor() {
         this.logsActividad = [];
+        this.profesionales = [];
         this.init();
     }
 
     async init() {
         this.configurarEventos();
+        this.establecerFechasPorDefecto();
+        await this.cargarProfesionales();
         await this.cargarHistorialActividad();
     }
 
@@ -29,16 +32,65 @@ export class ReportesModule {
         }
     }
 
+    establecerFechasPorDefecto() {
+        const fechaDesde = document.getElementById('fechaDesdeLogs');
+        const fechaHasta = document.getElementById('fechaHastaLogs');
+        
+        if (fechaDesde && fechaHasta) {
+            const hoy = new Date();
+            const ayer = new Date(hoy);
+            ayer.setDate(hoy.getDate() - 1);
+            
+            fechaDesde.value = ayer.toISOString().split('T')[0];
+            fechaHasta.value = hoy.toISOString().split('T')[0];
+        }
+    }
+
+    async cargarProfesionales() {
+        try {
+            const response = await profesionalesAPI.getAll();
+            this.profesionales = response.data || [];
+            
+            const selectProfesional = document.getElementById('profesionalLogs');
+            if (selectProfesional) {
+                selectProfesional.innerHTML = '<option value="">Todos</option>';
+                this.profesionales.forEach(prof => {
+                    const option = document.createElement('option');
+                    option.value = prof.id;
+                    option.textContent = `${prof.nombre} ${prof.apellidos}`;
+                    selectProfesional.appendChild(option);
+                });
+            }
+        } catch (error) {
+            mostrarNotificacion('Error cargando profesionales', 'error');
+        }
+    }
+
     async cargarHistorialActividad() {
         try {
-            mostrarNotificacion('Cargando historial de actividad...', 'info');
+            this.mostrarLoading();
             
-            const logs = await logsActividadAPI.getLogs({ limit: 100 });
-            this.logsActividad = logs.data || [];
+            const fechaDesde = document.getElementById('fechaDesdeLogs')?.value;
+            const fechaHasta = document.getElementById('fechaHastaLogs')?.value;
+            
+            const filtros = {
+                fecha_desde: fechaDesde,
+                fecha_hasta: fechaHasta,
+                limit: 100
+            };
+            
+            const response = await logsActividadAPI.getLogs(filtros);
+            
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Respuesta inválida del servidor');
+            }
+            
+            this.logsActividad = response.data || [];
             
             this.mostrarHistorialActividad(this.logsActividad);
-            mostrarNotificacion('Historial de actividad cargado correctamente', 'success');
+            this.ocultarLoading();
         } catch (error) {
+            this.ocultarLoading();
             const errorMessage = error?.message || error?.error || 'Error cargando historial de actividad';
             mostrarNotificacion(errorMessage, 'error');
         }
@@ -46,7 +98,7 @@ export class ReportesModule {
 
     async aplicarFiltrosLogs() {
         try {
-            mostrarNotificacion('Aplicando filtros...', 'info');
+            this.mostrarLoading();
             
             const filtros = {};
             const fechaDesde = document.getElementById('fechaDesdeLogs')?.value;
@@ -59,23 +111,31 @@ export class ReportesModule {
             
             filtros.limit = 100;
             
-            const logs = await logsActividadAPI.getLogs(filtros);
-            this.logsActividad = logs.data || [];
+            const response = await logsActividadAPI.getLogs(filtros);
+            
+            if (!response || !response.success) {
+                throw new Error(response?.error || 'Respuesta inválida del servidor');
+            }
+            
+            this.logsActividad = response.data || [];
             
             this.mostrarHistorialActividad(this.logsActividad);
+            this.ocultarLoading();
             mostrarNotificacion('Filtros aplicados correctamente', 'success');
         } catch (error) {
+            this.ocultarLoading();
             const errorMessage = error?.message || error?.error || 'Error aplicando filtros';
             mostrarNotificacion(errorMessage, 'error');
         }
     }
 
     limpiarFiltrosLogs() {
-        const inputs = ['fechaDesdeLogs', 'fechaHastaLogs', 'profesionalLogs'];
-        inputs.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) element.value = '';
-        });
+        this.establecerFechasPorDefecto();
+        
+        const selectProfesional = document.getElementById('profesionalLogs');
+        if (selectProfesional) {
+            selectProfesional.value = '';
+        }
         
         this.cargarHistorialActividad();
         mostrarNotificacion('Filtros limpiados', 'info');
@@ -112,7 +172,7 @@ export class ReportesModule {
                         ${logs.map(log => `
                             <tr>
                                 <td>
-                                    <small class="text-muted">${log.fecha_formateada}</small>
+                                    <small class="text-muted">${log.fecha_formateada || log.fecha}</small>
                                 </td>
                                 <td>
                                     <span class="badge bg-info">${log.profesional_nombre || 'N/A'}</span>
@@ -143,6 +203,24 @@ export class ReportesModule {
         `;
 
         container.innerHTML = tabla;
+    }
+
+    mostrarLoading() {
+        const container = document.getElementById('historialActividadContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando historial de actividad...</p>
+                </div>
+            `;
+        }
+    }
+
+    ocultarLoading() {
+        // El loading se oculta automáticamente cuando se muestra la tabla
     }
 }
 
