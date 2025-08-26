@@ -43,7 +43,7 @@ class ClinicaBelezaApp {
         initializeApiClient();
         
         // Obtener información del usuario desde el servidor
-        await this.loadUserInfo();
+        await this.loadUserData();
         
         await this.setupNavigation();
         this.setupMobileMenu();
@@ -56,22 +56,29 @@ class ClinicaBelezaApp {
         this.showWelcomeMessage();
     }
     
-    async loadUserInfo() {
+    async loadUserData() {
         try {
-            // Usar los datos del usuario que vienen desde PHP
-            if (window.userData && window.userData.id) {
+            // Intentar cargar desde PHP primero
+            if (window.userData) {
                 this.currentUser = window.userData;
                 console.log('✅ Usuario cargado desde sesión PHP:', this.currentUser);
+                return;
+            }
+
+            // Si no hay datos en PHP, cargar desde API
+            const response = await fetch('/api.php/user-data', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.currentUser = await response.json();
+                console.log('✅ Usuario cargado desde API:', this.currentUser);
             } else {
-                // Fallback: intentar obtener desde API si no están disponibles los datos de PHP
-                const { get } = await import('./api-client.js');
-                const userData = await get('user');
-                this.currentUser = userData;
+                console.warn('⚠️ No se pudo cargar usuario desde API');
             }
         } catch (error) {
-            console.error('Error cargando información del usuario:', error);
-            // Si no se puede cargar la información del usuario, redirigir al login
-            window.location.href = '/login.php';
+            console.error('❌ Error cargando datos de usuario:', error);
         }
     }
 

@@ -27,9 +27,6 @@ window.DevTools = {
       });
     }
     
-    // Limpiar localStorage si se desea
-    // localStorage.clear();
-    
     location.reload(true);
   },
   
@@ -59,26 +56,6 @@ window.DevTools = {
   },
   
   /**
-   * Exporta todos los datos del localStorage
-   */
-  exportData() {
-    const data = {};
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        data[key] = localStorage.getItem(key);
-      }
-    }
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `clinica-beleza-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
-  
-  /**
    * Ayuda con comandos disponibles
    */
   help() {
@@ -89,7 +66,6 @@ Comandos disponibles:
 - DevTools.hardReload()     : Recarga completa sin cache
 - DevTools.updateCache()    : Actualiza solo el service worker
 - DevTools.showCacheInfo()  : Muestra información de cache
-- DevTools.exportData()     : Exporta backup de datos
 - DevTools.help()           : Muestra esta ayuda
 
 Uso: Abre consola (F12) y escribe DevTools.comandoDeseado()

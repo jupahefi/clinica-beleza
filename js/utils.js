@@ -2,7 +2,7 @@
  * Utilidades y funciones auxiliares del sistema
  */
 
-let contadorIds = parseInt(localStorage.getItem('contadorIds') || '1');
+let contadorIds = 1;
 
 /**
  * Genera un nuevo ID único para las entidades
@@ -13,43 +13,16 @@ export function generarId() {
 
 /**
  * Obtiene el ID del profesional actual del contexto de sesión
- * @returns {number} ID del profesional actual o 1 como fallback
+ * @returns {number} ID del profesional actual
  */
 export function getCurrentProfesionalId() {
-    try {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-            const user = JSON.parse(userData);
-            if (user.profesional_id) {
-                return user.profesional_id;
-            }
-            if (user.id) {
-                return user.id;
-            }
-        }
-        
-        const profesionalData = localStorage.getItem('profesionalData');
-        if (profesionalData) {
-            const profesional = JSON.parse(profesionalData);
-            if (profesional.id) {
-                return profesional.id;
-            }
-        }
-        
-        // No hay datos de profesional disponibles
-        console.error('❌ No se pudo obtener profesional_id del contexto');
-        throw new Error('No se pudo obtener el ID del profesional actual');
-    } catch (error) {
-        console.error('❌ Error obteniendo profesional_id:', error);
-        throw error;
+    // Verificar window.userData (datos de PHP)
+    if (window.userData && window.userData.profesional_id) {
+        console.log('✅ Profesional ID obtenido desde window.userData:', window.userData.profesional_id);
+        return window.userData.profesional_id;
     }
-}
-
-/**
- * Guarda el contador de IDs en localStorage
- */
-export function guardarContadorIds() {
-  localStorage.setItem('contadorIds', contadorIds.toString());
+    
+    throw new Error('No se pudo obtener el ID del profesional actual');
 }
 
 /**

@@ -98,6 +98,7 @@ DROP PROCEDURE IF EXISTS sp_sucursales_create;
 DROP PROCEDURE IF EXISTS sp_sucursales_update;
 DROP PROCEDURE IF EXISTS sp_sucursales_delete;
 DROP PROCEDURE IF EXISTS sp_tratamientos_get;
+DROP PROCEDURE IF EXISTS sp_obtener_profesional_por_usuario_id;
 DROP PROCEDURE IF EXISTS sp_tratamientos_create;
 DROP PROCEDURE IF EXISTS sp_tratamientos_update;
 DROP PROCEDURE IF EXISTS sp_tratamientos_delete;
@@ -4191,6 +4192,19 @@ END$$
 
 
 
+DELIMITER ;
+
+-- =============================================================================
+-- STORED PROCEDURE PARA OBTENER PROFESIONAL POR USUARIO ID
+-- =============================================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_profesional_por_usuario_id(IN p_usuario_id BIGINT)
+BEGIN
+    SELECT id, nombre, apellidos, tipo_profesional, especialidad, activo
+    FROM profesional 
+    WHERE usuario_id = p_usuario_id AND activo = TRUE;
+END$$
 DELIMITER ;
 
 -- =============================================================================

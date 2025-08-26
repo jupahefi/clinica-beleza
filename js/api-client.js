@@ -51,8 +51,6 @@ function handleApiError(result) {
         // Manejar redirección por sesión inválida
         if (result.redirect && result.error && result.error.includes('Sesión no válida')) {
             console.warn('🔄 Redirigiendo al login por sesión inválida');
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userData');
             window.location.href = result.redirect;
             return;
         }
@@ -116,8 +114,6 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
                 // Manejar redirección por sesión inválida
                 if (errorData.redirect && errorData.error && errorData.error.includes('Sesión no válida')) {
                     console.warn('🔄 Redirigiendo al login por sesión inválida');
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('userData');
                     window.location.href = errorData.redirect;
                     return;
                 }
