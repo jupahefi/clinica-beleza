@@ -4457,7 +4457,7 @@ BEGIN
         la.usuario_id,
         u.username as usuario_nombre,
         la.profesional_id,
-        CONCAT(p.nombre, ' ', p.apellido) as profesional_nombre,
+        CONCAT(p.nombre, ' ', p.apellidos) as profesional_nombre,
         la.accion,
         la.tabla_afectada,
         la.registro_id,
