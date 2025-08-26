@@ -78,7 +78,7 @@ function detectSQLInjection($data) {
         '/[\'"]\s*(union|select|insert|update|delete|drop|create|alter|exec|execute)\b/i',
         '/\b(xp_cmdshell|sp_executesql|waitfor|delay)\b/i',
         '/\b(admin|root|system)\b/i',
-        '/[<>{}`~!@#$%^&*()+=|\\\\[\]/',
+        '/[<>{}`~!@#$%^&*()+=|\\\\[\\\\]]/',
         '/0x[0-9a-fA-F]+/',
         '/char\s*\(\s*\d+\s*\)/i',
         '/concat\s*\(/i'
