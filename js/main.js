@@ -61,7 +61,7 @@ class ClinicaBelezaApp {
             // Intentar cargar desde PHP primero
             if (window.userData) {
                 this.currentUser = window.userData;
-                console.log('✅ Usuario cargado desde sesión PHP:', this.currentUser);
+                
                 return;
             }
 
@@ -73,7 +73,7 @@ class ClinicaBelezaApp {
 
             if (response.ok) {
                 this.currentUser = await response.json();
-                console.log('✅ Usuario cargado desde API:', this.currentUser);
+                
             } else {
                 console.warn('⚠️ No se pudo cargar usuario desde API');
             }

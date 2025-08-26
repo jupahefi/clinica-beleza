@@ -405,16 +405,6 @@ export class SesionesModule {
         const duracion = document.getElementById('duracionSesion').value;
         const observaciones = document.getElementById('observacionesSesion').value || '';
         
-        console.log('📋 Valores obtenidos del formulario:', {
-            ventaId,
-            fechaPlanificada,
-            horaPlanificada,
-            boxId,
-            profesionalId,
-            duracion,
-            observaciones
-        });
-        
         // Crear fecha_planificada completa
         const fechaPlanificadaCompleta = fechaPlanificada && horaPlanificada 
             ? `${fechaPlanificada} ${horaPlanificada}:00` 
@@ -478,14 +468,6 @@ export class SesionesModule {
         const isDepilacion = tratamientoNombre.includes('DEPILACION') || tratamientoNombre.includes('DEPILACIÓN');
         const isFacial = tratamientoNombre.includes('FACIAL');
         const isCapilar = tratamientoNombre.includes('CAPILAR');
-        
-        console.log('🔍 Tipo de tratamiento detectado:', {
-            tratamiento: sesion.tratamiento_nombre,
-            isEvaluacion,
-            isDepilacion,
-            isFacial,
-            isCapilar
-        });
         
         // Generar contenido dinámico según el tratamiento
         let modalContent = '';

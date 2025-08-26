@@ -690,11 +690,6 @@ class VentasModule {
                 }
                 
                 const precioCalculado = parseFloat(venta.total_pagado || venta.precio_lista || 0);
-                console.log('[VENTAS] Precio calculado:', {
-                    total_pagado: venta.total_pagado,
-                    precio_lista: venta.precio_lista,
-                    precio_calculado: precioCalculado
-                });
                 
                 return {
                     id: venta.id,

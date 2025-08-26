@@ -235,15 +235,7 @@ class Calendar {
             // Usar fecha_planificada en lugar de fecha_inicio
             const eventTime = this.formatTime(new Date(event.fecha_planificada));
             const eventDate = date ? this.formatDate(new Date(event.fecha_planificada)) : this.formatDate(new Date(event.fecha_planificada));
-            
-            console.log('🔍 Evento:', {
-                id: event.id,
-                fecha_planificada: event.fecha_planificada,
-                eventTime: eventTime,
-                eventDate: eventDate,
-                matches: eventTime === time && (!date || eventDate === this.formatDate(date))
-            });
-            
+
             return eventTime === time && (!date || eventDate === this.formatDate(date));
         });
 
@@ -750,14 +742,6 @@ class Calendar {
             const eventDate = new Date(event.fecha_planificada);
             const isSameDay = this.isSameDay(eventDate, date);
             
-            console.log('🔍 Evento en getEventsForDate:', {
-                id: event.id,
-                fecha_planificada: event.fecha_planificada,
-                eventDate: eventDate,
-                targetDate: date,
-                isSameDay: isSameDay
-            });
-            
             return isSameDay;
         });
         
@@ -781,15 +765,6 @@ class Calendar {
             const eventDate = new Date(event.fecha_planificada);
             const isInRange = eventDate >= weekStart && eventDate < end;
             
-            console.log('🔍 Evento:', {
-                id: event.id,
-                fecha_planificada: event.fecha_planificada,
-                eventDate: eventDate,
-                weekStart: weekStart,
-                end: end,
-                isInRange: isInRange
-            });
-            
             return isInRange;
         });
         
@@ -808,15 +783,6 @@ class Calendar {
         const filteredEvents = this.events.filter(event => {
             const eventDate = new Date(event.fecha_planificada);
             const isInRange = eventDate >= start && eventDate <= end;
-            
-            console.log('🔍 Evento en getEventsForMonth:', {
-                id: event.id,
-                fecha_planificada: event.fecha_planificada,
-                eventDate: eventDate,
-                start: start,
-                end: end,
-                isInRange: isInRange
-            });
             
             return isInRange;
         });

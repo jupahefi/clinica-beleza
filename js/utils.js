@@ -18,7 +18,7 @@ export function generarId() {
 export function getCurrentProfesionalId() {
     // Verificar window.userData (datos de PHP)
     if (window.userData && window.userData.profesional_id) {
-        console.log('✅ Profesional ID obtenido desde window.userData:', window.userData.profesional_id);
+        
         return window.userData.profesional_id;
     }
     
