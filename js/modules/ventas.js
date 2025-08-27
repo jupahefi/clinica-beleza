@@ -4,7 +4,7 @@
  */
 
 import { fichasAPI, evaluacionesAPI, fichasEspecificasAPI, ventasAPI, tratamientosAPI, packsAPI } from '../api-client.js';
-import { mostrarNotificacion, getCurrentProfesionalId } from '../utils.js';
+import { mostrarNotificacion, mostrarErrorInteligente, getCurrentProfesionalId } from '../utils.js';
 
 class VentasModule {
     constructor() {
@@ -42,9 +42,7 @@ class VentasModule {
             }
     
         } catch (error) {
-            console.error('[VENTAS] Error cargando datos:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido cargando datos de ventas';
-            mostrarNotificacion(`[VENTAS] Error cargando datos: ${errorMessage}`, 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error cargando datos');
         }
     }
 
@@ -169,8 +167,7 @@ class VentasModule {
             // Recargar el selector de tratamientos
             this.cargarTratamientosEnSelect();
         } catch (error) {
-            console.error('[VENTAS] Error cargando tratamientos por género:', error);
-            mostrarNotificacion('Error cargando tratamientos por género', 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error cargando tratamientos por género');
         }
     }
 
@@ -183,13 +180,11 @@ class VentasModule {
                 try {
                     tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
                                     } catch (packError) {
-                    console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, packError);
                     tratamiento.packs = [];
                 }
             }
                     } catch (error) {
-            console.error('[VENTAS] Error cargando packs por género:', error);
-            mostrarNotificacion('Error cargando packs por género', 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error cargando packs por género');
         }
     }
 
@@ -208,7 +203,6 @@ class VentasModule {
             // Cargar packs específicos para este tratamiento
             tratamiento.packs = await packsAPI.getByTratamientoId(tratamiento.id, this.generoSeleccionado);
                     } catch (error) {
-            console.warn(`[VENTAS] Error cargando packs para ${tratamiento.nombre}:`, error);
             tratamiento.packs = [];
         }
     }
@@ -240,7 +234,6 @@ class VentasModule {
 
         // Ajustar automáticamente el número de sesiones al valor del pack
         if (!pack.sesiones_incluidas) {
-            console.error('[VENTAS] El pack no tiene sesiones_incluidas definidas');
             mostrarNotificacion('Error: El pack seleccionado no tiene sesiones definidas', 'error');
             return;
         }
@@ -312,7 +305,6 @@ class VentasModule {
             packsDiv.style.display = 'none';
             tratamientoIndividualDiv.style.display = 'block';
             if (!tratamiento.precio_por_sesion) {
-                console.error('[VENTAS] El tratamiento no tiene precio_por_sesion definido');
                 mostrarNotificacion('Error: El tratamiento seleccionado no tiene precio definido', 'error');
                 return;
             }
@@ -426,14 +418,12 @@ class VentasModule {
         if (packId !== "") {
             const pack = tratamiento.packs.find(p => p.id === parseInt(packId));
             if (!pack.precio_total) {
-                console.error('[VENTAS] El pack no tiene precio_total definido');
                 mostrarNotificacion('Error: El pack seleccionado no tiene precio definido', 'error');
                 return;
             }
             const precioTotal = pack.precio_total;
             
             if (!pack.sesiones_incluidas) {
-                console.error('[VENTAS] El pack no tiene sesiones_incluidas definidas');
                 mostrarNotificacion('Error: El pack seleccionado no tiene sesiones definidas', 'error');
                 return;
             }
@@ -462,7 +452,6 @@ class VentasModule {
         } else {
                             // Tratamiento individual (sin pack)
                 if (!tratamiento.precio_por_sesion) {
-                    console.error('[VENTAS] El tratamiento no tiene precio_por_sesion definido');
                     mostrarNotificacion('Error: El tratamiento seleccionado no tiene precio definido', 'error');
                     return;
                 }
@@ -498,7 +487,6 @@ class VentasModule {
 
         // Asegurar que precio sea un número válido
         if (isNaN(precio) || precio < 0) {
-            console.error('[VENTAS] Precio calculado no es válido:', precio);
             mostrarNotificacion('Error: No se pudo calcular un precio válido', 'error');
             return;
         }
@@ -650,10 +638,7 @@ class VentasModule {
                                 mostrarNotificacion('Venta registrada exitosamente.', 'success');
             }
         } catch (error) {
-            console.error('[VENTAS] Error confirmando venta:', error);
-            // Mostrar el error de la db si existe, si no, mensaje genérico
-            const errorMessage = error?.message || error?.error || 'Error desconocido al registrar la venta';
-            mostrarNotificacion(`[VENTAS] Error al registrar la venta: ${errorMessage}`, 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error confirmando venta');
         }
     }
 
@@ -705,9 +690,7 @@ class VentasModule {
             this.renderHistorial();
                         mostrarNotificacion(`Historial de ventas cargado para ${this.clienteSeleccionado.text}`, 'success');
         } catch (error) {
-            console.error('[VENTAS] Error cargando historial del cliente:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido cargando historial';
-            mostrarNotificacion(`[VENTAS] Error cargando historial del cliente: ${errorMessage}`, 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error cargando historial del cliente');
             this.historial = [];
             this.renderHistorial();
         }
@@ -819,9 +802,7 @@ class VentasModule {
             
     
         } catch (error) {
-            console.error('[VENTAS] Error cargando ventas:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido cargando ventas';
-            mostrarNotificacion(`[VENTAS] Error cargando ventas: ${errorMessage}`, 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error cargando ventas');
             this.historial = [];
             this.renderHistorial();
         }
@@ -831,9 +812,7 @@ class VentasModule {
         try {
             //no intenta cargar pacientes
         } catch (error) {
-            console.error('[VENTAS] Error configurando Select2:', error);
-            const errorMessage = error?.message || error?.error || 'Error desconocido configurando Select2';
-            mostrarNotificacion(`[VENTAS] Error configurando selector de pacientes: ${errorMessage}`, 'error');
+            mostrarErrorInteligente(error, '[VENTAS] Error configurando Select2');
         }
     }
 

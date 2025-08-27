@@ -33,7 +33,7 @@ export async function loadEnvironment() {
             }
         }
     } catch (error) {
-        console.warn('⚠️ No se pudo cargar configuración del servidor, usando valores por defecto:', error.message);
+        // No se pudo cargar configuración del servidor, usando valores por defecto
     }
     
     // Usar configuración por defecto
@@ -53,7 +53,6 @@ export function isEnvironmentLoaded() {
  */
 export function getEnv(key, defaultValue = '') {
     if (!isEnvironmentLoaded()) {
-        console.warn('⚠️ Variables de entorno no cargadas, cargando...');
         loadEnvironment();
     }
     
@@ -103,7 +102,6 @@ export function validateConfig() {
     }
     
     if (missing.length > 0) {
-        console.error('❌ Variables de entorno faltantes:', missing);
         return false;
     }
     

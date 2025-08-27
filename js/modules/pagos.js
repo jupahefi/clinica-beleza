@@ -20,8 +20,7 @@ export class PagosModule {
             this.configurarEventosPagos();
             await this.renderHistorialPagos();
         } catch (error) {
-            console.error('❌ Error inicializando PagosModule:', error);
-            mostrarNotificacion(`Error inicializando módulo de pagos: ${error.message || error}`, 'error');
+            mostrarErrorInteligente(error, 'Error inicializando PagosModule');
         }
     }
     
@@ -56,8 +55,7 @@ export class PagosModule {
                     await this.registrarPago();
                     
                 } catch (error) {
-                    console.error('❌ Error en formulario de pago:', error);
-                    mostrarNotificacion(error.message || 'Error inesperado en el formulario de pago', 'error');
+                    mostrarErrorInteligente(error, 'Error en formulario de pago');
                 } finally {
                     // Restaurar botón
                     submitBtn.innerHTML = originalText;
@@ -118,8 +116,7 @@ export class PagosModule {
                 montoInput.placeholder = `Máximo: ${formatearPrecio(pendiente)}`;
             }
                     } catch (error) {
-            console.error('❌ Error cargando venta:', error);
-            mostrarNotificacion(error.message || 'Error cargando venta', 'error');
+            mostrarErrorInteligente(error, 'Error cargando venta');
         }
     }
     
@@ -168,7 +165,6 @@ export class PagosModule {
     async registrarPago() {
         if (!this.ventaSeleccionadaPago) {
             mostrarNotificacion('Debe seleccionar una venta', 'error');
-            console.warn('⚠️ Intento de registrar pago sin venta seleccionada');
             return false;
         }
         
@@ -179,20 +175,17 @@ export class PagosModule {
         
         if (!monto || monto <= 0) {
             mostrarNotificacion('El monto debe ser mayor a 0', 'error');
-            console.warn('⚠️ Monto de pago inválido:', monto);
             return false;
         }
         
         if (!metodo) {
             mostrarNotificacion('Debe seleccionar un método de pago', 'error');
-            console.warn('⚠️ Método de pago no seleccionado');
             return false;
         }
         
         const pendiente = this.ventaSeleccionadaPago.precio_total - this.ventaSeleccionadaPago.total_pagado;
         if (monto > pendiente) {
             mostrarNotificacion(`El monto no puede ser mayor a ${formatearPrecio(pendiente)}`, 'error');
-            console.warn(`⚠️ Monto de pago (${monto}) mayor al pendiente (${pendiente})`);
             return false;
         }
         
@@ -223,13 +216,10 @@ export class PagosModule {
                 return true;
             } else {
                 mostrarNotificacion('Error al registrar pago', 'error');
-                console.error('❌ Error desconocido al registrar pago (respuesta vacía)');
                 return false;
             }
         } catch (error) {
-            console.error('❌ Error registrando pago:', error);
-            // Mostrar el error de la DB si existe, si no, mensaje genérico
-            mostrarNotificacion(error.message || 'Error registrando pago', 'error');
+            mostrarErrorInteligente(error, 'Error registrando pago');
             return false;
         }
     }
@@ -243,8 +233,7 @@ export class PagosModule {
         try {
             await ventasAPI.update(this.ventaSeleccionadaPago.id, nuevaVenta);
                     } catch (error) {
-            console.error('❌ Error actualizando venta después del pago:', error);
-            mostrarNotificacion(error.message || 'Error actualizando venta después del pago', 'error');
+            mostrarErrorInteligente(error, 'Error actualizando venta después del pago');
         }
     }
     
@@ -300,9 +289,8 @@ export class PagosModule {
             
             container.innerHTML = html;
                     } catch (error) {
-            console.error('❌ Error cargando historial de pagos:', error);
             container.innerHTML = '<p class="text-center text-danger">Error cargando historial de pagos</p>';
-            mostrarNotificacion(error.message || 'Error cargando historial de pagos', 'error');
+            mostrarErrorInteligente(error, 'Error cargando historial de pagos');
         }
     }
     
@@ -408,8 +396,7 @@ export class PagosModule {
             
 
         } catch (error) {
-            console.error('❌ Error cargando pacientes en pagos:', error);
-            mostrarNotificacion(error.message || 'Error cargando pacientes en pagos', 'error');
+            mostrarErrorInteligente(error, 'Error cargando pacientes en pagos');
         }
     }
     
@@ -451,8 +438,7 @@ export class PagosModule {
                             } else {
                             }
         } catch (error) {
-            console.error('❌ Error cargando ventas por paciente:', error);
-            mostrarNotificacion(error.message || 'Error cargando ventas por paciente', 'error');
+            mostrarErrorInteligente(error, 'Error cargando ventas por paciente');
         }
     }
 }

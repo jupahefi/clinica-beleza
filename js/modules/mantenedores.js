@@ -11,7 +11,7 @@ import {
     packsAPI, 
     profesionalesAPI 
 } from '../api-client.js';
-import { mostrarNotificacion } from '../utils.js';
+import { mostrarNotificacion, mostrarErrorInteligente } from '../utils.js';
 
 export class MantenedoresModule {
     constructor() {
@@ -53,8 +53,7 @@ export class MantenedoresModule {
             
 
         } catch (error) {
-            console.error('Error cargando datos de mantenedores:', error);
-            mostrarNotificacion(error.message || 'Error cargando mantenedores', 'error');
+            mostrarErrorInteligente(error, 'Error cargando datos de mantenedores');
         }
     }
     
@@ -199,8 +198,7 @@ export class MantenedoresModule {
                 await this.cargarDatosIniciales();
             }
         } catch (error) {
-            console.error('Error guardando box:', error);
-            mostrarNotificacion(error.message || 'Error al guardar box', 'error');
+            mostrarErrorInteligente(error, 'Error guardando box');
         }
     }
     
@@ -237,8 +235,7 @@ export class MantenedoresModule {
                     await this.cargarDatosIniciales();
                 }
             } catch (error) {
-                console.error('Error eliminando box:', error);
-                mostrarNotificacion(error.message || 'Error al eliminar box', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando box');
             }
         }
     }
@@ -321,8 +318,7 @@ export class MantenedoresModule {
                 await this.cargarDatosIniciales();
             }
         } catch (error) {
-            console.error('Error guardando sucursal:', error);
-            mostrarNotificacion(error.message || 'Error al guardar sucursal', 'error');
+            mostrarErrorInteligente(error, 'Error guardando sucursal');
         }
     }
     
@@ -359,8 +355,7 @@ export class MantenedoresModule {
                     await this.cargarDatosIniciales();
                 }
             } catch (error) {
-                console.error('Error eliminando sucursal:', error);
-                mostrarNotificacion(error.message || 'Error al eliminar sucursal', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando sucursal');
             }
         }
     }
@@ -443,8 +438,7 @@ export class MantenedoresModule {
                 await this.cargarDatosIniciales();
             }
         } catch (error) {
-            console.error('Error guardando tratamiento:', error);
-            mostrarNotificacion(error.message || 'Error al guardar tratamiento', 'error');
+            mostrarErrorInteligente(error, 'Error guardando tratamiento');
         }
     }
     
@@ -481,8 +475,7 @@ export class MantenedoresModule {
                     await this.cargarDatosIniciales();
                 }
             } catch (error) {
-                console.error('Error eliminando tratamiento:', error);
-                mostrarNotificacion(error.message || 'Error al eliminar tratamiento', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando tratamiento');
             }
         }
     }
@@ -568,8 +561,7 @@ export class MantenedoresModule {
                 await this.cargarDatosIniciales();
             }
         } catch (error) {
-            console.error('Error guardando pack:', error);
-            mostrarNotificacion(error.message || 'Error al guardar pack', 'error');
+            mostrarErrorInteligente(error, 'Error guardando pack');
         }
     }
     
@@ -608,8 +600,7 @@ export class MantenedoresModule {
                     await this.cargarDatosIniciales();
                 }
             } catch (error) {
-                console.error('Error eliminando pack:', error);
-                mostrarNotificacion(error.message || 'Error al eliminar pack', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando pack');
             }
         }
     }
@@ -696,8 +687,7 @@ export class MantenedoresModule {
                 await this.cargarDatosIniciales();
             }
         } catch (error) {
-            console.error('Error guardando profesional:', error);
-            mostrarNotificacion(error.message || 'Error al guardar profesional', 'error');
+            mostrarErrorInteligente(error, 'Error guardando profesional');
         }
     }
     
@@ -736,8 +726,7 @@ export class MantenedoresModule {
                     await this.cargarDatosIniciales();
                 }
             } catch (error) {
-                console.error('Error eliminando profesional:', error);
-                mostrarNotificacion(error.message || 'Error al eliminar profesional', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando profesional');
             }
         }
     }

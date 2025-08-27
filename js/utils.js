@@ -482,6 +482,54 @@ export function debounce(func, wait) {
 }
 
 /**
+ * Wrapper inteligente para errores que prioriza errores de DB
+ * @param {Error|Object} error - Error capturado
+ * @param {string} context - Contexto del error (opcional)
+ */
+export function mostrarErrorInteligente(error, context = '') {
+    let mensajeError = '';
+    
+    // 1. PRIORIDAD: Error de base de datos (API response)
+    if (error && typeof error === 'object') {
+        // Si es respuesta de API con error de DB
+        if (error.apiError && error.apiError.message) {
+            mensajeError = error.apiError.message;
+        }
+        // Si es objeto de respuesta con error
+        else if (error.error && typeof error.error === 'string') {
+            mensajeError = error.error;
+        }
+        // Si es objeto con mensaje directo
+        else if (error.message && typeof error.message === 'string') {
+            mensajeError = error.message;
+        }
+        // Si es string directo
+        else if (typeof error === 'string') {
+            mensajeError = error;
+        }
+    }
+    
+    // 2. FALLBACK: Error de JavaScript
+    if (!mensajeError && error) {
+        if (error.message) {
+            mensajeError = error.message;
+        } else if (error.toString) {
+            mensajeError = error.toString();
+        } else {
+            mensajeError = 'Error desconocido';
+        }
+    }
+    
+    // 3. ULTIMO RECURSO
+    if (!mensajeError) {
+        mensajeError = 'Error sin información disponible';
+    }
+    
+    // Mostrar el error completo sin personalización
+    mostrarNotificacion(mensajeError, 'error');
+}
+
+/**
  * Muestra notificación/alerta personalizada
  */
 export function mostrarNotificacion(mensaje, tipo = 'info') {
@@ -583,7 +631,7 @@ export async function copiarAlPortapapeles(texto) {
     await navigator.clipboard.writeText(texto);
     mostrarNotificacion('Copiado al portapapeles');
   } catch (err) {
-    console.error('Error al copiar:', err);
+    // Error silencioso al copiar
   }
 }
 

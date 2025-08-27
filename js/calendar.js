@@ -416,7 +416,6 @@ class Calendar {
             this.events = data || [];
             this.renderCalendar();
         } catch (error) {
-            console.error('❌ Error al cargar eventos:', error);
             this.events = [];
             mostrarNotificacion(error?.message || 'Error al cargar eventos', 'error');
         }
@@ -431,7 +430,6 @@ class Calendar {
             this.boxes = data || [];
             this.updateBoxFilter();
         } catch (error) {
-            console.error('❌ Error al cargar boxes:', error);
             this.boxes = [];
             mostrarNotificacion(error?.message || 'Error al cargar boxes', 'error');
         }
@@ -497,7 +495,7 @@ class Calendar {
             }, 2000);
             
                     } else {
-            console.error('❌ No se encontró el formulario de sesión');
+            // No se encontró el formulario de sesión
         }
     }
     
@@ -640,7 +638,6 @@ class Calendar {
             if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe
                 const msg = data?.error || 'Error abriendo sesión';
-                console.error('❌ Error abriendo sesión:', msg);
                 mostrarNotificacion(msg, 'error');
                 return;
             }
@@ -653,7 +650,6 @@ class Calendar {
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error abriendo sesión';
-            console.error('❌ Error abriendo sesión:', msg);
             mostrarNotificacion(msg, 'error');
         }
     }
@@ -666,7 +662,6 @@ class Calendar {
             if (!data.success) {
                 // Si la API devuelve error, mostrar el mensaje de la db si existe
                 const msg = data?.error || 'Error cerrando sesión';
-                console.error('❌ Error cerrando sesión:', msg);
                 mostrarNotificacion(msg, 'error');
             }
             
@@ -678,7 +673,6 @@ class Calendar {
         } catch (error) {
             // Si el error viene de la db, mostrar el mensaje de la db
             const msg = error?.message || 'Error cerrando sesión';
-            console.error('❌ Error cerrando sesión:', msg);
             mostrarNotificacion(msg, 'error');
         }
     }

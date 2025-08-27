@@ -3,7 +3,7 @@
  * Maneja todas las operaciones relacionadas con fichas de pacientes
  */
 
-import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion } from '../utils.js';
+import { generarId, formatearRut, autocompletarRut, validarRut, formatearEmail, sugerirEmail, validarEmail, validarEmailTiempoReal, formatearTelefono, sugerirTelefono, validarTelefono, mostrarNotificacion, mostrarErrorInteligente } from '../utils.js';
 import { fichasAPI, tiposFichaEspecificaAPI, fichasEspecificasAPI } from '../api-client.js';
 // Las constantes se obtienen desde la API, no desde constants.js
 
@@ -98,8 +98,7 @@ export class PacientesModule {
                     }
                     
                 } catch (error) {
-                    console.error('Error en formulario paciente:', error);
-                    mostrarNotificacion(`Error inesperado: ${error.message}`, 'error');
+                    mostrarErrorInteligente(error, 'Error en formulario paciente');
                 } finally {
                     // Restaurar botón
                     submitBtn.innerHTML = originalText;
@@ -155,8 +154,7 @@ export class PacientesModule {
             this.actualizarTablaPacientes();
             
   } catch (error) {
-    console.error('Error cargando pacientes:', error);
-            mostrarNotificacion('Error cargando pacientes', 'error');
+            mostrarErrorInteligente(error, 'Error cargando pacientes');
         }
     }
     
@@ -217,8 +215,7 @@ export class PacientesModule {
             this.pacienteActual = paciente;
             this.llenarFormularioPaciente(paciente);
   } catch (error) {
-    console.error('Error cargando paciente:', error);
-            mostrarNotificacion('Error cargando paciente', 'error');
+            mostrarErrorInteligente(error, 'Error cargando paciente');
         }
     }
     
@@ -591,8 +588,7 @@ export class PacientesModule {
             this.llenarFormularioPaciente(paciente);
             mostrarNotificacion('Paciente cargado para edición', 'info');
         } catch (error) {
-            console.error('Error cargando paciente para edición:', error);
-            mostrarNotificacion('Error cargando paciente', 'error');
+            mostrarErrorInteligente(error, 'Error cargando paciente para edición');
         }
     }
     
@@ -606,8 +602,7 @@ export class PacientesModule {
             await this.cargarPacientesSelect(); // Esto también actualizará la tabla
             mostrarNotificacion('Paciente eliminado exitosamente', 'success');
         } catch (error) {
-            console.error('Error eliminando paciente:', error);
-            mostrarNotificacion('Error eliminando paciente', 'error');
+            mostrarErrorInteligente(error, 'Error eliminando paciente');
         }
     }
     

@@ -26,8 +26,7 @@ export class FichasEspecificasModule {
             const { zonasAPI } = await import('../api-client.js');
             this.zonas = await zonasAPI.getAll();
                     } catch (error) {
-            console.error('❌ Error cargando zonas:', error);
-            mostrarNotificacion('Error cargando zonas: ' + (error?.message || 'Error desconocido'), 'error');
+            mostrarErrorInteligente(error, 'Error cargando zonas');
             this.zonas = [];
         }
     }
@@ -196,7 +195,6 @@ export class FichasEspecificasModule {
             
             this.consentimientoText = textContent.trim();
         } catch (error) {
-            console.warn('No se pudo cargar el consentimiento:', error);
             const errorMessage = error.message || 'Error desconocido cargando consentimiento';
             mostrarNotificacion('No se pudo cargar el consentimiento: ' + errorMessage, 'warning');
             this.consentimientoText = this.getDefaultConsentimientoText();
@@ -259,14 +257,12 @@ Fecha: ${new Date().toLocaleDateString()}
             } else {
                 // Mostrar el error de la db si viene
                 const dbError = response?.error || 'Error guardando firma digital';
-                console.error('❌ Error guardando firma digital:', dbError);
                 mostrarNotificacion('Error guardando firma digital: ' + dbError, 'error');
                 throw new Error(dbError);
             }
         } catch (error) {
             // Si el error viene de la db, mostrarlo tal cual
             const errorMessage = error?.message || 'Error desconocido guardando firma digital';
-            console.error('❌ Error guardando firma digital:', errorMessage);
             mostrarNotificacion('Error guardando firma digital: ' + errorMessage, 'error');
             throw new Error(errorMessage);
         }
@@ -280,13 +276,11 @@ Fecha: ${new Date().toLocaleDateString()}
                                 return response.data;
             } else {
                 const dbError = response?.error || 'No se encontró consentimiento firmado';
-                console.warn('⚠️ No se encontró consentimiento firmado:', dbError);
                 mostrarNotificacion('No se encontró consentimiento firmado: ' + dbError, 'warning');
                 return null;
             }
         } catch (error) {
             const errorMessage = error?.message || 'Error desconocido verificando consentimiento';
-            console.error('❌ Error verificando consentimiento:', errorMessage);
             mostrarNotificacion('Error verificando consentimiento: ' + errorMessage, 'error');
             return null;
         }
@@ -342,13 +336,11 @@ Fecha: ${new Date().toLocaleDateString()}
             } else {
                 // Mostrar el error de la db si viene
                 const dbError = response?.error || 'Error guardando ficha de depilación';
-                console.error('❌ Error guardando ficha de depilación:', dbError);
                 mostrarNotificacion('Error guardando ficha de depilación: ' + dbError, 'error');
                 throw new Error(dbError);
             }
         } catch (error) {
             const errorMessage = error?.message || 'Error desconocido guardando ficha de depilación';
-            console.error('❌ Error guardando ficha de depilación:', errorMessage);
             mostrarNotificacion('Error guardando ficha de depilación: ' + errorMessage, 'error');
             throw new Error(errorMessage);
         }
@@ -439,13 +431,11 @@ Fecha: ${new Date().toLocaleDateString()}
             } else {
                 // Mostrar el error de la db si viene
                 const dbError = response?.error || 'Error guardando ficha corporal/facial';
-                console.error('❌ Error guardando ficha corporal/facial:', dbError);
                 mostrarNotificacion('Error guardando ficha corporal/facial: ' + dbError, 'error');
                 throw new Error(dbError);
             }
         } catch (error) {
             const errorMessage = error?.message || 'Error desconocido guardando ficha corporal/facial';
-            console.error('❌ Error guardando ficha corporal/facial:', errorMessage);
             mostrarNotificacion('Error guardando ficha corporal/facial: ' + errorMessage, 'error');
             throw new Error(errorMessage);
         }

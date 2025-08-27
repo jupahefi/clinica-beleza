@@ -38,24 +38,13 @@ function getEnv(key, defaultValue = '') {
  */
 function handleApiError(result) {
     if (!result.success) {
-        // Log detallado del error para debugging
-        console.error('🚨 Error del API:', {
-            error: result.error,
-            code: result.error_code,
-            timestamp: result.timestamp,
-            endpoint: result.endpoint,
-            method: result.method,
-            fullResponse: result
-        });
-        
         // Manejar redirección por sesión inválida
         if (result.redirect && result.error && result.error.includes('Sesión no válida')) {
-            console.warn('🔄 Redirigiendo al login por sesión inválida');
             window.location.href = result.redirect;
             return;
         }
         
-        // Crear un error más descriptivo con toda la información del servidor
+        // Crear un error con toda la información del servidor
         const error = new Error(result.error || 'Error en la petición');
         error.apiError = {
             message: result.error,
@@ -95,17 +84,8 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-            // Log del error HTTP para debugging
-            console.error('🚨 Error HTTP:', {
-                status: response.status,
-                statusText: response.statusText,
-                url: url,
-                method: options.method || 'GET'
-            });
-            
             // Intentar obtener el cuerpo de la respuesta para más detalles
             const errorBody = await response.text();
-            console.error('🚨 Cuerpo del error:', errorBody);
             
             // Intentar parsear el JSON para obtener el error específico de la DB
             try {
@@ -113,7 +93,6 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
                 
                 // Manejar redirección por sesión inválida
                 if (errorData.redirect && errorData.error && errorData.error.includes('Sesión no válida')) {
-                    console.warn('🔄 Redirigiendo al login por sesión inválida');
                     window.location.href = errorData.redirect;
                     return;
                 }
@@ -132,7 +111,6 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.retries) {
         clearTimeout(timeoutId);
         
         if (retries > 0 && (error.name === 'AbortError' || error.message.includes('HTTP 5'))) {
-            console.warn(`🔄 Reintentando petición (${API_CONFIG.retries - retries + 1}/${API_CONFIG.retries}): ${error.message}`);
             await new Promise(resolve => setTimeout(resolve, 1000));
             return fetchWithRetry(url, options, retries - 1);
         }
@@ -232,7 +210,6 @@ export async function checkConnection() {
             error: data.success ? null : (data.data?.error || 'Error desconocido')
         };
     } catch (error) {
-        console.error('❌ Error verificando conexión:', error);
         return {
             connected: false,
             error: error.message || 'Error de conexión'
@@ -606,7 +583,6 @@ export async function healthCheck() {
         const data = await response.json();
         return data.success;
     } catch (error) {
-        console.error('❌ Error en health check:', error);
         return false;
     }
 }
@@ -620,7 +596,6 @@ export async function getConfig() {
         const data = await response.json();
         return data.config;
     } catch (error) {
-        console.error('❌ Error obteniendo configuración:', error);
         return null;
     }
 }

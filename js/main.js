@@ -79,10 +79,10 @@ class ClinicaBelezaApp {
                 this.currentUser = await response.json();
                 
             } else {
-                console.warn('⚠️ No se pudo cargar usuario desde API');
+                // No se pudo cargar usuario desde API
             }
         } catch (error) {
-            console.error('❌ Error cargando datos de usuario:', error);
+            // Error cargando datos de usuario
         }
     }
 
@@ -328,10 +328,8 @@ class ClinicaBelezaApp {
             if (error.apiError) {
                 // Si viene desde la DB, mostrar el mensaje de la DB directamente
                 if (error.apiError.dbError) {
-                    console.error('🚨 Error de la base de datos:', error.apiError.dbError);
                     showMessage(error.apiError.dbError, 'error');
                 } else {
-                    console.error('🚨 Error de API:', error.apiError);
                     showMessage(
                         `Error: ${error.apiError.message}\n` +
                         `Endpoint: ${error.apiError.endpoint}\n` +
@@ -342,11 +340,9 @@ class ClinicaBelezaApp {
                 }
             } else if (error && error.dbError) {
                 // Si el error viene directamente de la DB
-                console.error('🚨 Error de la base de datos:', error.dbError);
                 showMessage(error.dbError, 'error');
             } else {
                 // Error genérico
-                console.error('🚨 Error no manejado:', error);
                 showMessage(`Error: ${error.message || 'Error desconocido'}`, 'error');
             }
             
@@ -356,7 +352,6 @@ class ClinicaBelezaApp {
         
         // Capturar errores de JavaScript
         window.addEventListener('error', (event) => {
-            console.error('🚨 Error de JavaScript:', event.error);
             showMessage(`Error de JavaScript: ${event.error?.message || 'Error desconocido'}`, 'error');
         });
     }
@@ -367,11 +362,9 @@ class ClinicaBelezaApp {
             // Cargar datos básicos de forma individual para manejar errores
             const loadPromises = [
                 this.modules.pacientes.cargarPacientes().catch(e => {
-                    console.warn('⚠️ Error cargando pacientes:', e.message);
                     showMessage(`Error cargando pacientes: ${e.dbError || e.message}`, 'error');
                 }),
                 this.modules.ventas.loadVentas().catch(e => {
-                    console.warn('⚠️ Error cargando ventas:', e.message);
                     showMessage(`Error cargando ventas: ${e.dbError || e.message}`, 'error');
                 }),
                 // PAGOS: Inspirado en pacientes.js, logs y notificaciones descriptivas
@@ -384,21 +377,17 @@ class ClinicaBelezaApp {
                         }
                                                     } catch (e) {
                         if (e && e.dbError) {
-                            console.error('⚠️ Error cargando pagos (DB):', e.dbError);
                             showMessage(e.dbError, 'error');
                         } else {
-                            console.error('⚠️ Error cargando pagos:', e.message);
                             showMessage(`Error cargando pagos: ${e.message}`, 'error');
                         }
                     }
                 })(),
                 this.modules.sesiones.loadSesiones().catch(e => {
-                    console.warn('⚠️ Error cargando sesiones:', e.message);
                     showMessage(`Error cargando sesiones: ${e.dbError || e.message}`, 'error');
                 }),
 
                 this.modules.ofertas.cargarOfertas().catch(e => {
-                    console.warn('⚠️ Error cargando ofertas:', e.message);
                     showMessage(`Error cargando ofertas: ${e.dbError || e.message}`, 'error');
                 })
             ];
@@ -499,7 +488,6 @@ class ClinicaBelezaApp {
                         showMessage('Datos importados correctamente', 'success');
             
         } catch (error) {
-            console.error('Error importando datos:', error);
             showMessage('Error importando datos: ' + (error.dbError || error.message), 'error');
         }
     }

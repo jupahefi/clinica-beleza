@@ -4,7 +4,7 @@
  */
 
 import { logsActividadAPI, profesionalesAPI } from '../api-client.js';
-import { mostrarNotificacion } from '../utils.js';
+import { mostrarNotificacion, mostrarErrorInteligente } from '../utils.js';
 
 export class ReportesModule {
     constructor() {
@@ -62,7 +62,7 @@ export class ReportesModule {
                 });
             }
         } catch (error) {
-            mostrarNotificacion('Error cargando profesionales', 'error');
+            mostrarErrorInteligente(error);
         }
     }
 
@@ -87,8 +87,7 @@ export class ReportesModule {
             this.ocultarLoading();
         } catch (error) {
             this.ocultarLoading();
-            const errorMessage = error?.message || error?.error || 'Error cargando historial de actividad';
-            mostrarNotificacion(errorMessage, 'error');
+            mostrarErrorInteligente(error);
         }
     }
 
@@ -116,8 +115,7 @@ export class ReportesModule {
             mostrarNotificacion('Filtros aplicados correctamente', 'success');
         } catch (error) {
             this.ocultarLoading();
-            const errorMessage = error?.message || error?.error || 'Error aplicando filtros';
-            mostrarNotificacion(errorMessage, 'error');
+            mostrarErrorInteligente(error);
         }
     }
 

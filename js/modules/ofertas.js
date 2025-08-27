@@ -22,7 +22,7 @@ export class OfertasModule {
             await this.cargarPacks();
             this.configurarEventosOfertas();
                     } catch (error) {
-            console.error('[OFERTAS] Error en inicialización:', error);
+            mostrarErrorInteligente(error, '[OFERTAS] Error en inicialización');
         }
     }
     
@@ -49,8 +49,7 @@ export class OfertasModule {
             this.ofertas = await ofertasAPI.getAll();
             this.actualizarTablaOfertas();
         } catch (error) {
-            console.error('Error cargando ofertas:', error);
-            mostrarNotificacion(error.message || 'Error cargando ofertas', 'error');
+            mostrarErrorInteligente(error, 'Error cargando ofertas');
         }
     }
     
@@ -60,7 +59,7 @@ export class OfertasModule {
             this.tratamientos = await tratamientosAPI.getAll();
             this.actualizarSelectorTratamientos();
         } catch (error) {
-            console.error('[OFERTAS] Error cargando tratamientos:', error);
+            mostrarErrorInteligente(error, '[OFERTAS] Error cargando tratamientos');
             this.tratamientos = [];
         }
     }
@@ -71,7 +70,7 @@ export class OfertasModule {
             this.packs = await packsAPI.getAll();
             this.actualizarSelectorPacks();
         } catch (error) {
-            console.error('[OFERTAS] Error cargando packs:', error);
+            mostrarErrorInteligente(error, '[OFERTAS] Error cargando packs');
             this.packs = [];
         }
     }
@@ -83,7 +82,6 @@ export class OfertasModule {
         select.innerHTML = '<option value="">-- Selecciona tratamiento --</option>';
         
         if (!this.tratamientos || !Array.isArray(this.tratamientos)) {
-            console.warn('Tratamientos no es un array válido:', this.tratamientos);
             return;
         }
         
@@ -102,7 +100,6 @@ export class OfertasModule {
         select.innerHTML = '<option value="">-- Selecciona pack --</option>';
         
         if (!this.packs || !Array.isArray(this.packs)) {
-            console.warn('Packs no es un array válido:', this.packs);
             return;
         }
         
@@ -225,15 +222,13 @@ export class OfertasModule {
                 mostrarNotificacion('Error al guardar oferta', 'error');
             }
         } catch (error) {
-            console.error('Error guardando oferta:', error);
-            mostrarNotificacion(error.message || 'Error guardando oferta', 'error');
+            mostrarErrorInteligente(error, 'Error guardando oferta');
         }
     }
     
     async editarOferta(ofertaId) {
         const oferta = this.ofertas.find(o => o.id === ofertaId);
         if (!oferta) {
-            console.error(`No se encontró la oferta con ID ${ofertaId} para editar`);
             mostrarNotificacion('No se encontró la oferta para editar', 'error');
             return;
         }
@@ -272,7 +267,6 @@ export class OfertasModule {
     async eliminarOferta(ofertaId) {
         const oferta = this.ofertas.find(o => o.id === ofertaId);
         if (!oferta) {
-            console.error(`No se encontró la oferta con ID ${ofertaId} para eliminar`);
             mostrarNotificacion('No se encontró la oferta para eliminar', 'error');
             return;
         }
@@ -288,8 +282,7 @@ export class OfertasModule {
                     mostrarNotificacion('Error al eliminar oferta', 'error');
                 }
             } catch (error) {
-                console.error('Error eliminando oferta:', error);
-                mostrarNotificacion(error.message || 'Error eliminando oferta', 'error');
+                mostrarErrorInteligente(error, 'Error eliminando oferta');
             }
         }
     }

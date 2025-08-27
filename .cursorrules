@@ -18,6 +18,7 @@
 - NEVER develop things halfway - complete implementations only
 - NEVER make unsolicited code changes or remove functions not explicitly requested
 - Ask for clarification on business rules instead of inventing them
+- NEVER use fallbacks. The only fallback that exists is for the error handling wrapper. No more fallback than that.
 
 ### Architecture
 - All business logic in database: database centralized + API passthrough
