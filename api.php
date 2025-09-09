@@ -611,7 +611,7 @@ function handleVentas($db, $method, $id, $data) {
                             $data['descuento_manual_pct'] ?? null,
                             $data['genero'],
                             $data['genero_indicado_por'],
-                            $_SESSION['user']['id'],
+                            $_SESSION['user_id'],
                             $_SERVER['REMOTE_ADDR'],
                             $_SERVER['HTTP_USER_AGENT']
                         ]);
