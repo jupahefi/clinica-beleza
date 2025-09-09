@@ -602,7 +602,7 @@ function handleVentas($db, $method, $id, $data) {
                     $tratamiento = $db->selectOne("CALL sp_tratamientos_get(?)", [$tratamientoId]);
                     if ($tratamiento && stripos($tratamiento['nombre'], 'EVALUACION') !== false) {
                         // Es una venta de evaluación
-                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
+                        $result = $db->selectOne("CALL sp_crear_venta_evaluacion(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @venta_id)", [
                             $data['ficha_id'],
                             $data['tratamiento_id'],
                             $data['pack_id'] ?? null,
@@ -610,7 +610,10 @@ function handleVentas($db, $method, $id, $data) {
                             $data['precio_lista'],
                             $data['descuento_manual_pct'] ?? null,
                             $data['genero'],
-                            $data['genero_indicado_por']
+                            $data['genero_indicado_por'],
+                            $_SESSION['user']['id'],
+                            $_SERVER['REMOTE_ADDR'],
+                            $_SERVER['HTTP_USER_AGENT']
                         ]);
                         
                         // Obtener la venta creada
