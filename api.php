@@ -7,6 +7,21 @@
 
 require_once 'init.php';
 
+/**
+ * Helper function to validate SP results and return proper JSON response
+ */
+function validateAndRespond($result, $successMessage = null, $errorMessage = 'Error en la operación') {
+    if ($result !== false && $result !== null) {
+        $response = ['success' => true, 'data' => $result];
+        if ($successMessage) {
+            $response['message'] = $successMessage;
+        }
+        echo json_encode($response);
+    } else {
+        echo json_encode(['success' => false, 'error' => $errorMessage]);
+    }
+}
+
 $allowed_origin = getAllowedOrigin();
  
  // Si no se puede leer la variable de entorno, fallar de forma segura
@@ -344,7 +359,7 @@ function handleHealth($db) {
             'database' => 'connected',
             'api_version' => getenv('APP_VERSION') ?: '2.0.0'
         ];
-        echo json_encode(['success' => true, 'data' => $health]);
+        validateAndRespond($health);
     } catch (Exception $e) {
         http_response_code(503);
         echo json_encode([
@@ -367,19 +382,19 @@ function handleFichas($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_fichas_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_fichas_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la ficha');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_fichas_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la ficha');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_fichas_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la ficha');
                 break;
             default:
                 http_response_code(405);
@@ -409,7 +424,7 @@ function handleTiposFichaEspecifica($db, $method, $id, $data) {
         switch ($method) {
             case 'GET':
                 $result = $db->select("CALL sp_tipos_ficha_especifica_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -443,19 +458,19 @@ function handleFichasEspecificas($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_fichas_especificas_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_fichas_especificas_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la ficha específica');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_fichas_especificas_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la ficha específica');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_fichas_especificas_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la ficha específica');
                 break;
             default:
                 http_response_code(405);
@@ -489,19 +504,19 @@ function handleConsentimientoFirma($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_consentimiento_firma_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_consentimiento_firma_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_consentimiento_firma_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_consentimiento_firma_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -535,19 +550,19 @@ function handleEvaluaciones($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_evaluaciones_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_evaluaciones_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la evaluación');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_evaluaciones_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la evaluación');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_evaluaciones_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la evaluación');
                 break;
             default:
                 http_response_code(405);
@@ -587,7 +602,7 @@ function handleVentas($db, $method, $id, $data) {
                         $result = $db->select("CALL sp_ventas_list()");
                     }
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 // Validar que se incluya género en la venta
@@ -640,15 +655,15 @@ function handleVentas($db, $method, $id, $data) {
                     throw new Exception('ID de tratamiento es obligatorio');
                 }
                 
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la venta');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_ventas_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la venta');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_ventas_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la venta');
                 break;
             default:
                 http_response_code(405);
@@ -678,7 +693,7 @@ function handleHistorialVentas($db, $method, $id, $data) {
         switch ($method) {
             case 'GET':
                 $result = $db->select("CALL sp_ventas_historial_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -730,7 +745,7 @@ function handleAuth($db, $method, $id, $data) {
                      // Devolver datos del usuario (sin password_hash) y token de sesión
                      unset($user['password_hash']);
                      $user['session_token'] = $session_token;
-                     echo json_encode(['success' => true, 'data' => $user]);
+                     validateAndRespond($user);
                  } else {
                     http_response_code(401);
                     echo json_encode([
@@ -771,19 +786,19 @@ function handlePagos($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_pagos_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_pagos_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear el pago');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_pagos_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar el pago');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_pagos_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar el pago');
                 break;
             default:
                 http_response_code(405);
@@ -817,19 +832,19 @@ function handleSesiones($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_sesiones_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_sesiones_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la sesión');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_sesiones_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la sesión');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_sesiones_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo cancelar la sesión');
                 break;
             default:
                 http_response_code(405);
@@ -863,19 +878,19 @@ function handleAgenda($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_agenda_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_agenda_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la cita');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_agenda_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la cita');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_agenda_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la cita');
                 break;
             default:
                 http_response_code(405);
@@ -909,19 +924,19 @@ function handleOfertas($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_ofertas_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_ofertas_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear la oferta');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_ofertas_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar la oferta');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_ofertas_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo eliminar la oferta');
                 break;
             default:
                 http_response_code(405);
@@ -951,7 +966,7 @@ function handleOfertasCombo($db, $method, $id, $data) {
         switch ($method) {
             case 'GET':
                 $result = $db->select("CALL sp_ofertas_combo_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -981,7 +996,7 @@ function handleOfertasAplicables($db, $method, $id, $data) {
         switch ($method) {
             case 'GET':
                 $result = $db->select("CALL sp_ofertas_aplicables_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1017,19 +1032,19 @@ function handleTratamientos($db, $method, $id, $data) {
                     $genero = $_GET['genero'] ?? null;
                     $result = $db->select("CALL sp_tratamientos_list(?)", [$genero]);
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_tratamientos_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo crear el tratamiento');
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_tratamientos_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result, null, 'No se pudo actualizar el tratamiento');
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_tratamientos_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1059,7 +1074,7 @@ function handleZonas($db, $method, $id, $data) {
         switch ($method) {
             case 'GET':
                 $result = $db->select("CALL sp_zonas_list()");
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1100,19 +1115,19 @@ function handlePacks($db, $method, $id, $data) {
                         $result = $db->select("CALL sp_packs_list()");
                     }
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_packs_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_packs_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_packs_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1146,19 +1161,19 @@ function handleSucursales($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_sucursales_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_sucursales_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_sucursales_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_sucursales_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1192,19 +1207,19 @@ function handleBoxes($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_boxes_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_boxes_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_boxes_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_boxes_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1238,19 +1253,19 @@ function handleProfesionales($db, $method, $id, $data) {
                 } else {
                     $result = $db->select("CALL sp_profesionales_list()");
                 }
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'POST':
                 $result = $db->selectOne("CALL sp_profesionales_create(?)", [json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'PUT':
                 $result = $db->selectOne("CALL sp_profesionales_update(?, ?)", [$id, json_encode($data)]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             case 'DELETE':
                 $result = $db->selectOne("CALL sp_profesionales_delete(?)", [$id]);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
@@ -1280,7 +1295,7 @@ function handleProfesionales($db, $method, $id, $data) {
          switch ($method) {
              case 'GET':
                  $result = $db->select("CALL sp_reportes_list()");
-                 echo json_encode(['success' => true, 'data' => $result]);
+                 validateAndRespond($result);
                  break;
              default:
                  http_response_code(405);
@@ -1418,7 +1433,7 @@ function handleLogsActividad($db, $method, $id, $data) {
                 ];
                 
                 $result = $db->select("CALL sp_logs_actividad_list(?, ?, ?, ?, ?, ?, ?, ?)", $params);
-                echo json_encode(['success' => true, 'data' => $result]);
+                validateAndRespond($result);
                 break;
             default:
                 http_response_code(405);
