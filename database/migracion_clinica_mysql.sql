@@ -590,6 +590,7 @@ CREATE TABLE IF NOT EXISTS sesion (
   profesional_id BIGINT NOT NULL,
   google_calendar_event_id VARCHAR(255) NULL, -- NULL hasta integrar con Google Calendar
   fecha_planificada TIMESTAMP NOT NULL,
+  duracion_minutos INT NOT NULL, -- Duración específica de esta sesión
   fecha_ejecucion TIMESTAMP NULL, -- NULL hasta ejecutar la sesión
   estado VARCHAR(30) NOT NULL DEFAULT 'planificada', -- planificada|confirmada|realizada|no_show|cancelada
   paciente_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1037,7 +1038,7 @@ SELECT
   v.estado AS venta_estado,
   t.nombre AS tratamiento_nombre,
   p.nombre AS pack_nombre,
-  COALESCE(p.duracion_sesion_min, t.duracion_sesion_min) AS duracion,
+  s.duracion_minutos AS duracion,
   prof.nombre AS profesional_nombre,
   prof.tipo_profesional,
   suc.nombre AS sucursal_nombre,
@@ -1536,6 +1537,7 @@ CREATE PROCEDURE sp_agendar_sesion(
     IN p_box_id BIGINT,
     IN p_profesional_id BIGINT,
     IN p_fecha_planificada TIMESTAMP,
+    IN p_duracion_minutos INT,
     IN p_observaciones TEXT,
     IN p_usuario_id BIGINT,
     IN p_ip_address VARCHAR(45),
@@ -1553,11 +1555,11 @@ BEGIN
     
             INSERT INTO sesion (
             venta_id, numero_sesion, sucursal_id, box_id, profesional_id, 
-            fecha_planificada, observaciones
+            fecha_planificada, duracion_minutos, observaciones
         )
         VALUES (
             p_venta_id, p_numero_sesion, p_sucursal_id, p_box_id, p_profesional_id,
-            p_fecha_planificada, p_observaciones
+            p_fecha_planificada, p_duracion_minutos, p_observaciones
         );
     
     SET p_sesion_id = LAST_INSERT_ID();
@@ -1618,8 +1620,8 @@ BEGIN
     WHILE v_sesion_actual <= v_cantidad_sesiones DO
         -- Verificar si la sesion ya existe
         IF NOT EXISTS (SELECT 1 FROM sesion WHERE venta_id = p_venta_id AND numero_sesion = v_sesion_actual) THEN
-            INSERT INTO sesion (venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada, estado)
-            VALUES (p_venta_id, v_sesion_actual, p_sucursal_id, p_box_id, p_profesional_id, v_fecha_actual, 'planificada');
+            INSERT INTO sesion (venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada, duracion_minutos, estado)
+            VALUES (p_venta_id, v_sesion_actual, p_sucursal_id, p_box_id, p_profesional_id, v_fecha_actual, p_duracion_minutos, 'planificada');
         END IF;
         
         SET v_sesion_actual = v_sesion_actual + 1;
@@ -2946,7 +2948,7 @@ CREATE PROCEDURE sp_sesiones_list()
 BEGIN
     SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
            p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre,
-           COALESCE(pack.duracion_sesion_min, t.duracion_sesion_min) as duracion_sesion_min
+           s.duracion_minutos as duracion_sesion_min
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
@@ -2966,7 +2968,7 @@ CREATE PROCEDURE sp_agenda_list()
 BEGIN
     SELECT s.*, f.codigo as ficha_codigo, f.nombres, f.apellidos,
            p.nombre as profesional_nombre, b.nombre as box_nombre, suc.nombre as sucursal_nombre,
-           COALESCE(pack.duracion_sesion_min, t.duracion_sesion_min) as duracion_sesion_min
+           s.duracion_minutos as duracion_sesion_min
     FROM sesion s
     JOIN venta v ON s.venta_id = v.id
     JOIN ficha f ON v.ficha_id = f.id
@@ -3988,7 +3990,7 @@ BEGIN
     DECLARE v_id INT;
     INSERT INTO sesion (
         venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada,
-        estado, observaciones, fecha_creacion
+        duracion_minutos, estado, observaciones, fecha_creacion
     ) VALUES (
         JSON_EXTRACT(p_data, '$.venta_id'),
         COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), 1),
@@ -3996,6 +3998,7 @@ BEGIN
         JSON_EXTRACT(p_data, '$.box_id'),
         JSON_EXTRACT(p_data, '$.profesional_id'),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
+        JSON_EXTRACT(p_data, '$.duracion_minutos'),
         'planificada',
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
         NOW()
@@ -4009,6 +4012,7 @@ BEGIN
     UPDATE sesion SET
         fecha_planificada = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')), fecha_planificada),
         numero_sesion = COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), numero_sesion),
+        duracion_minutos = COALESCE(JSON_EXTRACT(p_data, '$.duracion_minutos'), duracion_minutos),
         estado = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.estado')), estado),
         observaciones = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')), observaciones),
         fecha_actualizacion = NOW()
@@ -4033,7 +4037,7 @@ BEGIN
     DECLARE v_id INT;
     INSERT INTO sesion (
         venta_id, numero_sesion, sucursal_id, box_id, profesional_id, fecha_planificada,
-        estado, observaciones, fecha_creacion
+        duracion_minutos, estado, observaciones, fecha_creacion
     ) VALUES (
         JSON_EXTRACT(p_data, '$.venta_id'),
         COALESCE(JSON_EXTRACT(p_data, '$.numero_sesion'), 1),
@@ -4041,6 +4045,7 @@ BEGIN
         JSON_EXTRACT(p_data, '$.box_id'),
         JSON_EXTRACT(p_data, '$.profesional_id'),
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.fecha_planificada')),
+        JSON_EXTRACT(p_data, '$.duracion_minutos'),
         'planificada',
         JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.observaciones')),
         NOW()
