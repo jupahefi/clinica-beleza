@@ -836,7 +836,7 @@ export class SesionesModule {
                 document.querySelector('.sesion-modal').remove();
                 await this.loadSesiones();
             } else {
-                mostrarErrorInteligente(response, 'Error abriendo sesión');
+                mostrarErrorInteligente(response.error || response, 'Error abriendo sesión');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error confirmando apertura de sesión');
@@ -977,7 +977,7 @@ export class SesionesModule {
                     
                     await this.loadSesiones();
                 } else {
-                    mostrarErrorInteligente(response, 'Error cerrando sesión');
+                    mostrarErrorInteligente(response.error || response, 'Error cerrando sesión');
                 }
             } catch (error) {
                 mostrarErrorInteligente(error, 'Error cerrando sesión');
@@ -1211,7 +1211,7 @@ export class SesionesModule {
             if (response.success) {
                 mostrarNotificacion('✅ Intensidades guardadas exitosamente', 'success');
             } else {
-                mostrarErrorInteligente(response, 'Error guardando intensidades');
+                mostrarErrorInteligente(response.error || response, 'Error guardando intensidades');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error guardando intensidades');
@@ -1379,7 +1379,7 @@ export class SesionesModule {
                                 mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
                 await this.loadSesiones();
             } else {
-                mostrarErrorInteligente(response, 'Error confirmando paciente');
+                mostrarErrorInteligente(response.error || response, 'Error confirmando paciente');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error confirmando paciente');
@@ -1449,7 +1449,7 @@ export class SesionesModule {
                                                         mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
-                            mostrarErrorInteligente(response, 'Error reprogramando sesión');
+                            mostrarErrorInteligente(response.error || response, 'Error reprogramando sesión');
                         }
                     } catch (error) {
                         mostrarErrorInteligente(error, 'Error reprogramando sesión');
@@ -1511,7 +1511,7 @@ export class SesionesModule {
                                                         mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
                             await this.loadSesiones();
                                     } else {
-                mostrarErrorInteligente(response, 'Error cancelando sesión');
+                mostrarErrorInteligente(response.error || response, 'Error cancelando sesión');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error cancelando sesión');

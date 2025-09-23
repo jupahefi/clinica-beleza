@@ -219,7 +219,7 @@ export class OfertasModule {
                 this.mostrarCamposSegunTipo();
                 await this.cargarOfertas();
             } else {
-                mostrarErrorInteligente(response, 'Error guardando oferta');
+                mostrarErrorInteligente(response.error || response, 'Error guardando oferta');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error guardando oferta');

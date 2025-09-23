@@ -215,7 +215,7 @@ export class PagosModule {
                 
                 return true;
             } else {
-                mostrarErrorInteligente(response, 'Error registrando pago');
+                mostrarErrorInteligente(response.error || response, 'Error registrando pago');
                 return false;
             }
         } catch (error) {
