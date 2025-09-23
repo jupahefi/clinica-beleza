@@ -219,7 +219,7 @@ export class OfertasModule {
                 this.mostrarCamposSegunTipo();
                 await this.cargarOfertas();
             } else {
-                mostrarNotificacion('Error al guardar oferta', 'error');
+                mostrarErrorInteligente(response, 'Error guardando oferta');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error guardando oferta');
@@ -279,7 +279,7 @@ export class OfertasModule {
                                         mostrarNotificacion('Oferta eliminada correctamente', 'success');
                     await this.cargarOfertas();
                 } else {
-                    mostrarNotificacion('Error al eliminar oferta', 'error');
+                    mostrarErrorInteligente(resultado, 'Error eliminando oferta');
                 }
             } catch (error) {
                 mostrarErrorInteligente(error, 'Error eliminando oferta');

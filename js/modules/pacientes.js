@@ -551,7 +551,7 @@ export class PacientesModule {
     
     return true;
   } catch (error) {
-    mostrarNotificacion(`Error al guardar paciente: ${error.message}`, 'error');
+    mostrarErrorInteligente(error, 'Error guardando paciente');
     return false;
   }
 }

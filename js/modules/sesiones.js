@@ -780,12 +780,12 @@ export class SesionesModule {
         try {
             // Validaciones específicas según el tipo
             if (tipoFichaElement && !tipoFicha) {
-                mostrarNotificacion('❌ Debe seleccionar el tipo de ficha específica para la evaluación', 'error');
+                mostrarNotificacion(' Debe seleccionar el tipo de ficha específica para la evaluación', 'error');
                 return;
             }
             
             if (consentimientoElement && !consentimientoVerificado) {
-                mostrarNotificacion('❌ Debe verificar el consentimiento informado antes de continuar', 'error');
+                mostrarNotificacion(' Debe verificar el consentimiento informado antes de continuar', 'error');
                 return;
             }
             
@@ -836,7 +836,7 @@ export class SesionesModule {
                 document.querySelector('.sesion-modal').remove();
                 await this.loadSesiones();
             } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                mostrarErrorInteligente(response, 'Error abriendo sesión');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error confirmando apertura de sesión');
@@ -977,7 +977,7 @@ export class SesionesModule {
                     
                     await this.loadSesiones();
                 } else {
-                    mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                    mostrarErrorInteligente(response, 'Error cerrando sesión');
                 }
             } catch (error) {
                 mostrarErrorInteligente(error, 'Error cerrando sesión');
@@ -1211,7 +1211,7 @@ export class SesionesModule {
             if (response.success) {
                 mostrarNotificacion('✅ Intensidades guardadas exitosamente', 'success');
             } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                mostrarErrorInteligente(response, 'Error guardando intensidades');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error guardando intensidades');
@@ -1379,7 +1379,7 @@ export class SesionesModule {
                                 mostrarNotificacion('✅ Paciente confirmado exitosamente', 'success');
                 await this.loadSesiones();
             } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                mostrarErrorInteligente(response, 'Error confirmando paciente');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error confirmando paciente');
@@ -1390,7 +1390,7 @@ export class SesionesModule {
                 
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
-            mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
+            mostrarNotificacion(' Error: Bootstrap no está disponible', 'error');
             return;
         }
         
@@ -1449,7 +1449,7 @@ export class SesionesModule {
                                                         mostrarNotificacion('✅ Sesión reprogramada exitosamente', 'success');
                             await this.loadSesiones();
                         } else {
-                            mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                            mostrarErrorInteligente(response, 'Error reprogramando sesión');
                         }
                     } catch (error) {
                         mostrarErrorInteligente(error, 'Error reprogramando sesión');
@@ -1467,7 +1467,7 @@ export class SesionesModule {
                 
         // Verificar que Bootstrap esté disponible
         if (typeof bootstrap === 'undefined') {
-            mostrarNotificacion('❌ Error: Bootstrap no está disponible', 'error');
+            mostrarNotificacion(' Error: Bootstrap no está disponible', 'error');
             return;
         }
         
@@ -1511,7 +1511,7 @@ export class SesionesModule {
                                                         mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
                             await this.loadSesiones();
                                     } else {
-                mostrarNotificacion('❌ Error: ' + (response.error || 'Error desconocido'), 'error');
+                mostrarErrorInteligente(response, 'Error cancelando sesión');
             }
         } catch (error) {
             mostrarErrorInteligente(error, 'Error cancelando sesión');
