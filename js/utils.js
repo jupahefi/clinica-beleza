@@ -487,6 +487,8 @@ export function debounce(func, wait) {
  * @param {string} context - Contexto del error (opcional)
  */
 export function mostrarErrorInteligente(error, context = '') {
+    console.log('DEBUG mostrarErrorInteligente - error:', error); // DEBUG TEMPORAL
+    console.log('DEBUG mostrarErrorInteligente - context:', context); // DEBUG TEMPORAL
     let mensajeError = '';
     
     // 1. PRIORIDAD: Error de base de datos (API response)
@@ -506,6 +508,15 @@ export function mostrarErrorInteligente(error, context = '') {
         // Si es string directo
         else if (typeof error === 'string') {
             mensajeError = error;
+        }
+        // NUEVO: Si es objeto sin propiedades reconocidas, intentar JSON.stringify
+        else {
+            try {
+                mensajeError = JSON.stringify(error);
+                console.log('DEBUG: Using JSON.stringify for object:', mensajeError); // DEBUG TEMPORAL
+            } catch (e) {
+                mensajeError = 'Error desconocido (utils.js linea 518)';
+            }
         }
     }
     
