@@ -2957,7 +2957,7 @@ BEGIN
     LEFT JOIN profesional p ON s.profesional_id = p.id
     LEFT JOIN box b ON s.box_id = b.id
     LEFT JOIN sucursal suc ON b.sucursal_id = suc.id
-    WHERE f.activo = TRUE
+    WHERE f.activo = TRUE AND s.estado != 'cancelada'
     ORDER BY s.fecha_planificada DESC;
 END$$
 DELIMITER ;
@@ -3701,11 +3701,20 @@ END$$
 
 CREATE PROCEDURE sp_fichas_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE ficha SET 
         activo = FALSE,
         fecha_actualizacion = NOW() 
     WHERE id = p_id;
-    SELECT 'Ficha marcada como eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM ficha WHERE id = p_id;
 END$$
 
 -- ---------- FICHAS ESPECIFICAS CRUD ----------
@@ -3744,11 +3753,20 @@ END$$
 
 CREATE PROCEDURE sp_fichas_especificas_delete(IN p_id INT)
 BEGIN
-    UPDATE ficha_especifica SET 
+    DECLARE affected_rows INT;
+    
+    UPDATE ficha_especifica SET
         activo = FALSE,
         fecha_actualizacion = NOW() 
     WHERE id = p_id;
-    SELECT 'Ficha específica marcada como eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ficha específica no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM ficha_especifica WHERE id = p_id;
 END$$
 
 -- ---------- CONSENTIMIENTO FIRMA CRUD ----------
@@ -3786,11 +3804,20 @@ END$$
 
 CREATE PROCEDURE sp_consentimiento_firma_delete(IN p_id INT)
 BEGIN
-    UPDATE consentimiento_firma SET 
+    DECLARE affected_rows INT;
+    
+    UPDATE consentimiento_firma SET
         activo = FALSE,
         fecha_firma = NOW()
     WHERE id = p_id;
-    SELECT 'Consentimiento marcado como eliminado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Consentimiento no encontrado o ya eliminado';
+    END IF;
+    
+    SELECT * FROM consentimiento_firma WHERE id = p_id;
 END$$
 
 -- ---------- EVALUACIONES CRUD ----------
@@ -3829,11 +3856,20 @@ END$$
 
 CREATE PROCEDURE sp_evaluaciones_delete(IN p_id INT)
 BEGIN
-    UPDATE evaluacion SET 
+    DECLARE affected_rows INT;
+    
+    UPDATE evaluacion SET
         estado = 'ELIMINADA',
         fecha_actualizacion = NOW()
     WHERE id = p_id;
-    SELECT 'Evaluación marcada como eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Evaluación no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM evaluacion WHERE id = p_id;
 END$$
 
 -- ---------- VENTAS CRUD ----------
@@ -3867,8 +3903,17 @@ END$$
 
 CREATE PROCEDURE sp_ventas_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE venta SET estado = 'anulado', fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Venta anulada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Venta no encontrada o ya anulada';
+    END IF;
+    
+    SELECT * FROM venta WHERE id = p_id;
 END$$
 
 -- ---------- AUTH ----------
@@ -3975,8 +4020,17 @@ END$$
 
 CREATE PROCEDURE sp_pagos_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE pago SET estado = 'cancelado', fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Pago cancelado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Pago no encontrado o ya cancelado';
+    END IF;
+    
+    SELECT * FROM pago WHERE id = p_id;
 END$$
 
 -- ---------- SESIONES CRUD ----------
@@ -4022,8 +4076,17 @@ END$$
 
 CREATE PROCEDURE sp_sesiones_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE sesion SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Sesión cancelada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Sesión no encontrada o ya cancelada';
+    END IF;
+    
+    SELECT * FROM sesion WHERE id = p_id;
 END$$
 
 -- ---------- AGENDA CRUD ----------
@@ -4068,8 +4131,17 @@ END$$
 
 CREATE PROCEDURE sp_agenda_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE sesion SET estado = 'cancelada', fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Cita cancelada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cita no encontrada o ya cancelada';
+    END IF;
+    
+    SELECT * FROM sesion WHERE id = p_id;
 END$$
 
 -- ---------- OFERTAS CRUD ----------
@@ -4119,8 +4191,17 @@ END$$
 
 CREATE PROCEDURE sp_ofertas_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE oferta SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Oferta eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Oferta no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM oferta WHERE id = p_id;
 END$$
 
 -- ---------- TRATAMIENTOS CRUD ----------
@@ -4162,8 +4243,17 @@ END$$
 
 CREATE PROCEDURE sp_tratamientos_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE tratamiento SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Tratamiento eliminado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tratamiento no encontrado o ya eliminado';
+    END IF;
+    
+    SELECT * FROM tratamiento WHERE id = p_id;
 END$$
 
 -- ---------- PACKS CRUD ----------
@@ -4216,8 +4306,17 @@ END$$
 
 CREATE PROCEDURE sp_packs_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE pack SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Pack eliminado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Pack no encontrado o ya eliminado';
+    END IF;
+    
+    SELECT * FROM pack WHERE id = p_id;
 END$$
 
 -- ---------- SUCURSALES CRUD ----------
@@ -4259,8 +4358,17 @@ END$$
 
 CREATE PROCEDURE sp_sucursales_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE sucursal SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Sucursal eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Sucursal no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM sucursal WHERE id = p_id;
 END$$
 
 -- ---------- PROFESIONALES CRUD ----------
@@ -4304,8 +4412,17 @@ END$$
 
 CREATE PROCEDURE sp_profesionales_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE profesional SET activo = FALSE, fecha_actualizacion = NOW() WHERE id = p_id;
-    SELECT 'Profesional eliminado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Profesional no encontrado o ya eliminado';
+    END IF;
+    
+    SELECT * FROM profesional WHERE id = p_id;
 END$$
 
 -- ---------- BOXES CRUD ----------
@@ -4343,8 +4460,17 @@ END$$
 
 CREATE PROCEDURE sp_boxes_delete(IN p_id INT)
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE box SET activo = FALSE WHERE id = p_id;
-    SELECT 'Box eliminado' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Box no encontrado o ya eliminado';
+    END IF;
+    
+    SELECT * FROM box WHERE id = p_id;
 END$$
 
 -- ---------- ZONAS CRUD ----------
@@ -4382,8 +4508,17 @@ END$$
 
 CREATE PROCEDURE sp_zonas_delete(IN p_codigo VARCHAR(10))
 BEGIN
+    DECLARE affected_rows INT;
+    
     UPDATE zona_cuerpo SET activo = FALSE, fecha_actualizacion = NOW() WHERE codigo = p_codigo;
-    SELECT 'Zona eliminada' as mensaje;
+    
+    SET affected_rows = ROW_COUNT();
+    
+    IF affected_rows = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Zona no encontrada o ya eliminada';
+    END IF;
+    
+    SELECT * FROM zona_cuerpo WHERE codigo = p_codigo;
 END$$
 
 

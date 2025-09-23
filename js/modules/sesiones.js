@@ -1506,7 +1506,6 @@ export class SesionesModule {
                 document.getElementById('confirmarCancelar').onclick = async () => {
                     try {
                                                 const response = await sesionesAPI.delete(sesionId);
-                        console.log('DEBUG cancelar - response completo:', response); // DEBUG TEMPORAL
                         
                         if (response.success) {
                                                         mostrarNotificacion('✅ Sesión cancelada exitosamente', 'success');
