@@ -1,5 +1,20 @@
 % Presentación: "La Aventura de los Datos"
 
+**Duración total objetivo**: 15 minutos
+
+**Cronograma sugerido**
+- Slide 1 (Bienvenida): 1 min
+- Slide 2 (Qué hace un ingeniero de datos): 1.5 min
+- Slide 3 (Datos cotidianos): 1.5 min
+- Slide 4 (Viaje de un dato): 2 min
+- Slide 5 (Hadoop): 1.5 min
+- Slide 6 (Herramientas): 1.5 min
+- Slide 7 (Superpoderes): 1.5 min
+- Slide 8 (Mini misión): 3 min
+- Slide 9 (Trabajo real): 1.5 min
+- Slide 10 (Invitación final + certificados): 1.5 min
+- Slide extra (preguntas/fotos): usar margen si termina antes o en Q&A
+
 # Slide 1 — ¡Bienvenidos a la aventura de los datos!
 - Hola, soy [Tu Nombre], ¡un ingeniero de datos!
 - Hoy viajaremos por el mundo de los datos como exploradores curiosos.
